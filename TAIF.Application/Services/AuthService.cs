@@ -22,8 +22,7 @@ public class AuthService : IAuthService
             string firstName,
             string lastName,
             string email,
-            string password
-        )
+            string password)
     {
         var existing = await _userRepository.GetByEmailAsync(email);
         if (existing != null)

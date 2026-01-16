@@ -13,6 +13,7 @@ namespace TAIF.Domain.Entities
         public string LastName { get; set; } = null!;
         public string Email { get; set; } = null!;
         public string PasswordHash { get; set; } = null!;
+        public DateTime Birthday { get; set; }
         public bool IsActive { get; set; } = true;
         public string? RefreshToken { get; set; }
         public DateTime? RefreshTokenExpiresAt { get; set; }
