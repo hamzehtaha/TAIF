@@ -1,0 +1,38 @@
+﻿using Microsoft.EntityFrameworkCore;
+using TAIF.Application.Interfaces;
+using TAIF.Domain.Entities;
+using TAIF.Infrastructure.Data;
+
+namespace TAIF.Infrastructure.Repositories;
+
+public class UserRepository : IUserRepository
+{
+    private readonly TaifDbContext _context;
+
+    public UserRepository(TaifDbContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<User?> GetByEmailAsync(string email)
+    {
+        return await _context.Users
+            .FirstOrDefaultAsync(x => x.Email == email);
+    }
+
+    public async Task AddAsync(User user)
+    {
+        await _context.Users.AddAsync(user);
+    }
+
+    public async Task SaveChangesAsync()
+    {
+        await _context.SaveChangesAsync();
+    }
+    public async Task<User?> GetByRefreshTokenAsync(string refreshToken)
+    {
+        return await _context.Users
+            .FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
+    }
+
+}

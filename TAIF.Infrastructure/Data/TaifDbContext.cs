@@ -1,0 +1,19 @@
+﻿using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using TAIF.Domain.Entities;
+
+namespace TAIF.Infrastructure.Data
+{
+    public class TaifDbContext : DbContext
+    {
+        public TaifDbContext(DbContextOptions<TaifDbContext> options)
+            : base(options)
+        {
+        }
+        public DbSet<User> Users => Set<User>();
+    }
+}
