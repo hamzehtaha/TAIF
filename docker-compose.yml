@@ -1,0 +1,44 @@
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: taif-sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=TaifDB@2026!
+      - MSSQL_PID=Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    networks:
+      - taif-network
+    # healthcheck:
+#   test: ["CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "TaifDB@2026!", "-Q", "SELECT 1"]
+#   interval: 15s
+#   timeout: 10s
+#   retries: 15
+#   start_period: 60s
+
+  taif-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: taif-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:5000
+    ports:
+      - "5000:5000"
+    depends_on:
+      - sqlserver
+    networks:
+      - taif-network
+    volumes:
+      - ./Logs:/app/Logs
+
+networks:
+  taif-network:
+    driver: bridge
+
+volumes:
+  sqlserver-data:
