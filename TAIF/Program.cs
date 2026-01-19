@@ -7,6 +7,9 @@ using TAIF.Application.Services;
 using TAIF.Infrastructure.Data;
 using TAIF.Infrastructure.Repositories;
 using Serilog;
+using TAIF.API.Seeder;
+using System.Reflection;
+using Microsoft.AspNetCore.Cors.Infrastructure;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -30,6 +33,7 @@ builder.Services.AddDbContext<TaifDbContext>(options =>
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<ICourseRepository, CourseRepository>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -63,7 +67,33 @@ builder.Services.AddCors(options =>
     });
 });
 
+InjectSeeders();
+
 var app = builder.Build();
+
+if (args.Length >= 2 && args[0].Equals("seed", StringComparison.OrdinalIgnoreCase))
+{
+    var entityName = args[1].ToLower();
+    using var scope = app.Services.CreateScope();
+    var allSeeders = scope.ServiceProvider.GetServices<IEntitySeeder>();
+    if (entityName == "all")
+    {
+        foreach (var s in allSeeders) await s.SeedAsync();
+        return;
+    }
+
+    var seederToRun = allSeeders.FirstOrDefault(s =>
+        s.GetType().Name.Equals($"{entityName}Seeder", StringComparison.OrdinalIgnoreCase));
+
+    if (seederToRun == null)
+    {
+        Console.WriteLine($"Seeder for '{entityName}' not found.");
+        return;
+    }
+
+    await seederToRun.SeedAsync();
+    return;
+}
 
 // Auto-migrate database on startup
 using (var scope = app.Services.CreateScope())
@@ -90,3 +120,16 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.Run();
+
+void InjectSeeders()
+{
+    var seederType = typeof(IEntitySeeder);
+    var seeders = Assembly.GetAssembly(seederType)!
+        .GetTypes()
+        .Where(t => seederType.IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract);
+
+    foreach (var seeder in seeders)
+    {
+        builder.Services.AddScoped(seederType, seeder);
+    }
+}
