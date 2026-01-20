@@ -2,7 +2,9 @@
 {
     public class Course
     {
-        public int Id { get; set; } // Identity (1,1) by EF Core convention
-        public string Name { get; set; } = null!;
+        public int Id { get; set; }
+        public string? Name { get; set; } = null;
+        public string? Description { get; set; }
+        public string? Photo { get; set; }
     }
 }

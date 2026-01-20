@@ -43,6 +43,8 @@ namespace TAIF.Infrastructure.Repositories
             var existing = await _context.Courses.FindAsync(course.Id);
             if (existing == null) return false;
             existing.Name = course.Name;
+            existing.Description = course.Description;
+            existing.Photo = course.Photo;
             await _context.SaveChangesAsync();
             return true;
         }

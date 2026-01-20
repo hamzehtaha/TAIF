@@ -16,5 +16,6 @@ namespace TAIF.Infrastructure.Data
         }
         public DbSet<User> Users => Set<User>();
         public DbSet<Course> Courses { get; set; }
+        public DbSet<LessonItem> LessonItems { get; set; }
     }
 }

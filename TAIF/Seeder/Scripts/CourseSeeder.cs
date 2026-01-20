@@ -1,8 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 using System.Text.Json;
-using TAIF.Domain.Entities;
 using TAIF.Infrastructure.Data;
-using TAIF.Infrastructure.Migrations;
 
 namespace TAIF.API.Seeder.Scripts
 {
@@ -45,6 +43,8 @@ namespace TAIF.API.Seeder.Scripts
                     var newCourse = new Domain.Entities.Course
                     {
                         Name = course.Name,
+                        Description = course.Description,
+                        Photo = course.Photo
                     };
                     _context.Courses.Add(newCourse);
                 }
@@ -57,6 +57,8 @@ namespace TAIF.API.Seeder.Scripts
         private class CourseJson
         {
             public string Name { get; set; } = null!;
+            public string Description { get; set; } = null!;
+            public string Photo { get; set; } = null!;
         }
     }
 }

@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using TAIF.Application.DTOs;
 using TAIF.Application.Interfaces;
-using TAIF.Application.Services;
 using TAIF.Domain.Entities;
+using TAIF.Infrastructure.Repositories;
 
 namespace TAIF.Controllers
 {
@@ -11,10 +11,13 @@ namespace TAIF.Controllers
     public class CourseController : ControllerBase
     {
         private readonly ICourseRepository _repository;
+        private readonly ILessonItemRepository _lessonItemRepository;
 
-        public CourseController(ICourseRepository repository)
+
+        public CourseController(ICourseRepository courseRepository, ILessonItemRepository lessonItemRepository)
         {
-            _repository = repository;
+            _repository = courseRepository;
+            _lessonItemRepository = lessonItemRepository;
         }
 
         [HttpGet]
@@ -31,10 +34,22 @@ namespace TAIF.Controllers
             return course;
         }
 
+        [HttpGet("{id}/content")]
+        public async Task<IActionResult> GetCourseContent(int id)
+        {
+            var lessonItems = await _lessonItemRepository.GetByCourseIdAsync(id);
+            return Ok(lessonItems);
+        }
+
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateCourseRequest request)
         {
-            var course = new Course { Name = request.Name };
+            var course = new Course
+            {
+                Name = request.Name,
+                Description = request.Description,
+                Photo = request.Photo
+            };
             var created = await _repository.CreateAsync(course);
             return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
         }

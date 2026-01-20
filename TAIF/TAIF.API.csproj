@@ -8,10 +8,12 @@
 
   <ItemGroup>
     <Content Remove="Seeder\Data\Course.seed.json" />
+    <Content Remove="Seeder\Data\LessonItem.seed.json" />
     <Content Remove="Seeder\Data\User.seed.json" />
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="Seeder\Data\LessonItem.seed.json" />
     <None Include="Seeder\Data\Course.seed.json" />
     <None Include="Seeder\Data\User.seed.json" />
   </ItemGroup>
