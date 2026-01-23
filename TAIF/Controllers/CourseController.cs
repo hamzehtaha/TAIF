@@ -11,13 +11,13 @@ namespace TAIF.Controllers
     public class CourseController : ControllerBase
     {
         private readonly ICourseRepository _repository;
-        private readonly ILessonItemRepository _lessonItemRepository;
+        private readonly ILessonRepository _lessonRepository;
 
 
-        public CourseController(ICourseRepository courseRepository, ILessonItemRepository lessonItemRepository)
+        public CourseController(ICourseRepository courseRepository, ILessonRepository lessonRepository)
         {
             _repository = courseRepository;
-            _lessonItemRepository = lessonItemRepository;
+            _lessonRepository = lessonRepository;
         }
 
         [HttpGet]
@@ -27,7 +27,7 @@ namespace TAIF.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Course>> Get(int id)
+        public async Task<ActionResult<Course>> Get(Guid id)
         {
             var course = await _repository.GetByIdAsync(id);
             if (course == null) return NotFound();
@@ -35,10 +35,10 @@ namespace TAIF.Controllers
         }
 
         [HttpGet("{id}/content")]
-        public async Task<IActionResult> GetCourseContent(int id)
+        public async Task<IActionResult> GetCourseContent(Guid id)
         {
-            var lessonItems = await _lessonItemRepository.GetByCourseIdAsync(id);
-            return Ok(lessonItems);
+            var lessons = await _lessonRepository.GetByCourseIdAsync(id);
+            return Ok(lessons);
         }
 
         [HttpPost]
@@ -55,16 +55,22 @@ namespace TAIF.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] Course course)
+        public async Task<IActionResult> Update(Guid id, [FromBody] CreateCourseRequest request)
         {
-            if (id != course.Id) return BadRequest();
+            var course = await _repository.GetByIdAsync(id);
+            if (course == null) return NotFound();
+
+            course.Name = request.Name;
+            course.Description = request.Description;
+            course.Photo = request.Photo;
+
             var result = await _repository.UpdateAsync(course);
             if (!result) return NotFound();
             return NoContent();
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(Guid id)
         {
             var result = await _repository.DeleteAsync(id);
             if (!result) return NotFound();

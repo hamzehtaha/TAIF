@@ -1,9 +1,11 @@
-﻿namespace TAIF.Domain.Entities
+﻿using System;
+using TAIF.Domain.Entities;
+
+namespace TAIF.Domain.Entities
 {
-    public class Course
+    public class Course : Base
     {
-        public int Id { get; set; }
-        public string? Name { get; set; } = null;
+        public string? Name { get; set; }
         public string? Description { get; set; }
         public string? Photo { get; set; }
     }

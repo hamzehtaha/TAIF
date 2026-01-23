@@ -2,6 +2,7 @@
 using TAIF.Domain.Entities;
 using TAIF.Infrastructure.Data;
 using TAIF.Application.Interfaces;
+using TAIF.Application.DTOs;
 
 namespace TAIF.Infrastructure.Repositories
 {
@@ -19,7 +20,7 @@ namespace TAIF.Infrastructure.Repositories
             return await _context.Courses.ToListAsync();
         }
 
-        public async Task<Course?> GetByIdAsync(int id)
+        public async Task<Course?> GetByIdAsync(Guid id)
         {
             return await _context.Courses.FindAsync(id);
         }
@@ -45,11 +46,12 @@ namespace TAIF.Infrastructure.Repositories
             existing.Name = course.Name;
             existing.Description = course.Description;
             existing.Photo = course.Photo;
+            existing.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
             return true;
         }
 
-        public async Task<bool> DeleteAsync(int id)
+        public async Task<bool> DeleteAsync(Guid id)
         {
             var course = await _context.Courses.FindAsync(id);
             if (course == null) return false;

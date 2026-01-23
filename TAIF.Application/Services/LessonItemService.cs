@@ -13,10 +13,10 @@ namespace TAIF.Application.Services
         }
 
         public Task<List<LessonItem>> GetAllAsync() => _repository.GetAllAsync();
-        public Task<LessonItem?> GetByIdAsync(int id) => _repository.GetByIdAsync(id);
-        public Task<List<LessonItem>> GetByCourseIdAsync(int courseId) => _repository.GetByCourseIdAsync(courseId);
+        public Task<LessonItem?> GetByIdAsync(Guid id) => _repository.GetByIdAsync(id);
+        public Task<List<LessonItem>> GetByLessonIdAsync(Guid lessonId) => _repository.GetByLessonIdAsync(lessonId);
         public Task<LessonItem> CreateAsync(LessonItem lessonItem) => _repository.CreateAsync(lessonItem);
         public Task<bool> UpdateAsync(LessonItem lessonItem) => _repository.UpdateAsync(lessonItem);
-        public Task<bool> DeleteAsync(int id) => _repository.DeleteAsync(id);
+        public Task<bool> DeleteAsync(Guid id) => _repository.DeleteAsync(id);
     }
 }
