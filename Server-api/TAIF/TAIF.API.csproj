@@ -7,16 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Remove="Seeder\Data\Course.seed.json" />
-    <Content Remove="Seeder\Data\Lesson.seed.json" />
-    <Content Remove="Seeder\Data\LessonItem.seed.json" />
     <Content Remove="Seeder\Data\User.seed.json" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="Seeder\Data\LessonItem.seed.json" />
-    <None Include="Seeder\Data\Lesson.seed.json" />
-    <None Include="Seeder\Data\Course.seed.json" />
     <None Include="Seeder\Data\User.seed.json" />
   </ItemGroup>
 
@@ -36,6 +30,10 @@
   <ItemGroup>
     <ProjectReference Include="..\TAIF.Application\TAIF.Application.csproj" />
     <ProjectReference Include="..\TAIF.Infrastructure\TAIF.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Logs\" />
   </ItemGroup>
 
 </Project>

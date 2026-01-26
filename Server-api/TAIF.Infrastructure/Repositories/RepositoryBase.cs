@@ -3,7 +3,7 @@ using System.Linq.Expressions;
 using TAIF.Application.Interfaces;
 using TAIF.Domain.Entities;
 
-namespace TipMe_api.Repositories
+namespace TAIF.Infrastructure.Repositories
 {
     public class RepositoryBase<T> : IRepository<T> where T : Base
     {
@@ -374,8 +374,6 @@ namespace TipMe_api.Repositories
     }
     public class RepositoryException : Exception
     {
-        public RepositoryException() { }
-        public RepositoryException(string message) : base(message) { }
         public RepositoryException(string message, Exception innerException) : base(message, innerException) { }
     }
 }

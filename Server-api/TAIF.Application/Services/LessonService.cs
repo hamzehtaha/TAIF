@@ -3,20 +3,18 @@ using TAIF.Domain.Entities;
 
 namespace TAIF.Application.Services
 {
-    public class LessonService : ILessonRepository
+    public class LessonService : ServiceBase<Lesson>, ILessonService
     {
-        private readonly ILessonRepository _repository;
+        private readonly ILessonRepository _lessonRepository;
 
-        public LessonService(ILessonRepository repository)
+        public LessonService(ILessonRepository repository) : base(repository)
         {
-            _repository = repository;
+            _lessonRepository = repository;
         }
 
-        public Task<List<Lesson>> GetAllAsync() => _repository.GetAllAsync();
-        public Task<Lesson?> GetByIdAsync(Guid id) => _repository.GetByIdAsync(id);
-        public Task<List<Lesson>> GetByCourseIdAsync(Guid courseId) => _repository.GetByCourseIdAsync(courseId);
-        public Task<Lesson> CreateAsync(Lesson lesson) => _repository.CreateAsync(lesson);
-        public Task<bool> UpdateAsync(Lesson lesson) => _repository.UpdateAsync(lesson);
-        public Task<bool> DeleteAsync(Guid id) => _repository.DeleteAsync(id);
+        public async Task<List<Lesson>> GetByCourseIdAsync(Guid courseId, bool withDeleted = false)
+        {
+            return await _lessonRepository.GetByCourseIdAsync(courseId, withDeleted);
+        }
     }
 }

@@ -1,8 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
-using TAIF.Domain.Entities;
+﻿using TAIF.Domain.Entities;
 using TAIF.Infrastructure.Data;
 using TAIF.Application.Interfaces;
-using TipMe_api.Repositories;
 
 namespace TAIF.Infrastructure.Repositories
 {
@@ -10,9 +8,14 @@ namespace TAIF.Infrastructure.Repositories
     {
         private readonly TaifDbContext _context;
 
-        public CourseRepository(TaifDbContext context):base(context)
+        public CourseRepository(TaifDbContext context) : base(context)
         {
             _context = context;
+        }
+
+        public async Task<List<Course>> GetByCategoryIdAsync(Guid categoryId, bool withDeleted = false)
+        {
+            return await FindNoTrackingAsync(((course) => course.CategoryId.Equals(categoryId)), withDeleted);
         }
     }
 }

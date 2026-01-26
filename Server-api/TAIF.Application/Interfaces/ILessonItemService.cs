@@ -1,8 +1,8 @@
-﻿using TAIF.Domain.Entities;
+using TAIF.Domain.Entities;
 
 namespace TAIF.Application.Interfaces
 {
-    public interface ILessonItemRepository : IRepository<LessonItem>
+    public interface ILessonItemService : IService<LessonItem>
     {
         Task<List<LessonItem>> GetByLessonIdAsync(Guid lessonId, bool withDeleted = false);
     }

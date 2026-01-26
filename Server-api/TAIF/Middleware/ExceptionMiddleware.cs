@@ -1,6 +1,6 @@
 ﻿using System.Net;
 using System.Text.Json;
-using TAIF.API.Models;
+using TAIF.Application.DTOs;
 
 namespace TAIF.API.Middleware;
 
@@ -30,9 +30,9 @@ public class ExceptionMiddleware
             context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
             context.Response.ContentType = "application/json";
 
-            var response = new ApiErrorResponse
+            var response = new ApiResponse<object>
             {
-                StatusCode = context.Response.StatusCode,
+                ErrorCode = context.Response.StatusCode,
                 Message = "An unexpected error occurred"
             };
 

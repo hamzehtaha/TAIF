@@ -30,6 +30,14 @@ namespace TAIF.Controllers
             return Ok(ApiResponse<Course>.SuccessResponse(course));
         }
 
+        [HttpGet("category/{categoryId}")]
+        public async Task<ActionResult<List<Course>>> GetByCategoryId([FromRoute] Guid categoryId)
+        {
+            var courses = await _courseService.GetByCategoryIdAsync(categoryId);
+            if (courses is null || courses.Count == 0) return NotFound();
+            return Ok(ApiResponse<List<Course>>.SuccessResponse(courses));
+        }
+
         [HttpPost("")]
         public async Task<IActionResult> Create([FromBody] CreateCourseRequest request)
         {
@@ -37,7 +45,8 @@ namespace TAIF.Controllers
             {
                 Name = request.Name,
                 Description = request.Description,
-                Photo = request.Photo
+                Photo = request.Photo,
+                CategoryId = request.CategoryId
             };
             var created_course = await _courseService.CreateAsync(course);
             return Ok(ApiResponse<Course>.SuccessResponse(created_course));

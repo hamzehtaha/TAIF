@@ -3,36 +3,37 @@ using TAIF.Application.DTOs;
 using TAIF.Application.Interfaces;
 using TAIF.Domain.Entities;
 
-namespace TAIF.API.Controllers
+namespace TAIF.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
     public class LessonItemController : ControllerBase
     {
-        private readonly ILessonItemRepository _service;
+        private readonly ILessonItemService _lessonItemService;
 
-        public LessonItemController(ILessonItemRepository service)
+        public LessonItemController(ILessonItemService lessonItemService)
         {
-            _service = service;
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> GetAll()
-        {
-            var items = await _service.GetAllAsync();
-            return Ok(items);
+            _lessonItemService = lessonItemService;
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(Guid id)
+        public async Task<ActionResult<LessonItem>> Get([FromRoute] Guid id)
         {
-            var item = await _service.GetByIdAsync(id);
-            if (item == null) return NotFound();
-            return Ok(item);
+            var lessonItem = await _lessonItemService.GetByIdAsync(id);
+            if (lessonItem is null) return NotFound();
+            return Ok(ApiResponse<LessonItem>.SuccessResponse(lessonItem));
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Create([FromBody] LessonItemRequest request)
+        [HttpGet("lesson/{lessonId}")]
+        public async Task<ActionResult<List<LessonItem>>> GetByLessonId([FromRoute] Guid lessonId)
+        {
+            var lessonItems = await _lessonItemService.GetByLessonIdAsync(lessonId);
+            if (lessonItems is null) return NotFound();
+            return Ok(ApiResponse<List<LessonItem>>.SuccessResponse(lessonItems));
+        }
+
+        [HttpPost("")]
+        public async Task<IActionResult> Create([FromBody] CreateLessonItemRequest request)
         {
             var lessonItem = new LessonItem
             {
@@ -42,32 +43,23 @@ namespace TAIF.API.Controllers
                 Type = request.Type,
                 LessonId = request.LessonId
             };
-            var created = await _service.CreateAsync(lessonItem);
-            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+            var created_lessonItem = await _lessonItemService.CreateAsync(lessonItem);
+            return Ok(ApiResponse<LessonItem>.SuccessResponse(created_lessonItem));
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(Guid id, [FromBody] LessonItemRequest request)
+        public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateLessonItemRequest lessonItem)
         {
-            var lessonItem = new LessonItem
-            {
-                Id = id,
-                Name = request.Name,
-                URL = request.URL,
-                Content = request.Content,
-                Type = request.Type
-            };
-            var updated = await _service.UpdateAsync(lessonItem);
-            if (!updated) return NotFound();
-            return NoContent();
+            var updatedLessonItem = await _lessonItemService.UpdateAsync(id, lessonItem);
+            return Ok(ApiResponse<LessonItem>.SuccessResponse(updatedLessonItem));
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(Guid id)
+        public async Task<IActionResult> Delete([FromRoute] Guid id)
         {
-            var deleted = await _service.DeleteAsync(id);
-            if (!deleted) return NotFound();
-            return NoContent();
+            var result = await _lessonItemService.DeleteAsync(id);
+            if (!result) return NotFound();
+            return Ok(ApiResponse<bool>.SuccessResponse(result));
         }
     }
 }

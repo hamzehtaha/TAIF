@@ -9,6 +9,6 @@ namespace TAIF.Application.Interfaces
 {
     public interface ICourseService : IService<Course>
     {
-
+        Task<List<Course>> GetByCategoryIdAsync(Guid categoryId);
     }
 }

@@ -2,81 +2,62 @@
 using TAIF.Application.DTOs;
 using TAIF.Application.Interfaces;
 using TAIF.Domain.Entities;
-using TAIF.Infrastructure.Repositories;
 
-namespace TAIF.API.Controllers
+namespace TAIF.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
     public class LessonController : ControllerBase
     {
-        private readonly ILessonRepository _lessonRepository;
-        private readonly ILessonItemRepository _lessonItemRepository;
+        private readonly ILessonService _lessonService;
 
-        public LessonController(ILessonRepository lessonRepository, ILessonItemRepository lessonItemRepository)
+        public LessonController(ILessonService lessonService)
         {
-            _lessonRepository = lessonRepository;
-            _lessonItemRepository = lessonItemRepository;
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> GetAll()
-        {
-            var items = await _lessonRepository.GetAllAsync();
-            return Ok(items);
+            _lessonService = lessonService;
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(Guid id)
+        public async Task<ActionResult<Lesson>> Get([FromRoute] Guid id)
         {
-            var item = await _lessonRepository.GetByIdAsync(id);
-            if (item == null) return NotFound();
-            return Ok(item);
+            var lesson = await _lessonService.GetByIdAsync(id);
+            if (lesson is null) return NotFound();
+            return Ok(ApiResponse<Lesson>.SuccessResponse(lesson));
         }
 
-        [HttpGet("{lessonId}/content")]
-        public async Task<IActionResult> GetLessonContent(Guid lessonId)
+        [HttpGet("course/{courseId}")]
+        public async Task<ActionResult<List<Lesson>>> GetByCourseId([FromRoute] Guid courseId)
         {
-            var items = await _lessonItemRepository.GetByLessonIdAsync(lessonId);
-            return Ok(items);
+            var lessons = await _lessonService.GetByCourseIdAsync(courseId);
+            if (lessons is null) return NotFound();
+            return Ok(ApiResponse<List<Lesson>>.SuccessResponse(lessons));
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Create([FromBody] LessonRequest request)
+        [HttpPost("")]
+        public async Task<IActionResult> Create([FromBody] CreateLessonRequest request)
         {
             var lesson = new Lesson
             {
                 Title = request.Title,
-                URL = request.URL,
                 CourseId = request.CourseId,
                 Photo = request.Photo
             };
-            var created = await _lessonRepository.CreateAsync(lesson);
-            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+            var created_lesson = await _lessonService.CreateAsync(lesson);
+            return Ok(ApiResponse<Lesson>.SuccessResponse(created_lesson));
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(Guid id, [FromBody] LessonRequest request)
+        public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateLessonRequest lesson)
         {
-            var lesson = new Lesson
-            {
-                Id = id,
-                Title = request.Title,
-                URL = request.URL,
-                CourseId = request.CourseId,
-                Photo = request.Photo
-            };
-            var updated = await _lessonRepository.UpdateAsync(lesson);
-            if (!updated) return NotFound();
-            return NoContent();
+            var updatedLesson = await _lessonService.UpdateAsync(id, lesson);
+            return Ok(ApiResponse<Lesson>.SuccessResponse(updatedLesson));
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(Guid id)
+        public async Task<IActionResult> Delete([FromRoute] Guid id)
         {
-            var deleted = await _lessonRepository.DeleteAsync(id);
-            if (!deleted) return NotFound();
-            return NoContent();
+            var result = await _lessonService.DeleteAsync(id);
+            if (!result) return NotFound();
+            return Ok(ApiResponse<bool>.SuccessResponse(result));
         }
     }
 }

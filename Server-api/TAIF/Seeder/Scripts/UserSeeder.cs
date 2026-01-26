@@ -47,7 +47,7 @@ namespace TAIF.API.Seeder.Scripts
                         LastName = user.LastName,
                         Email = user.Email,
                         IsActive = true,
-                        Birthday = DateTime.Now,
+                        Birthday = DateOnly.FromDateTime(DateTime.Now),
                         // password = 123
                         PasswordHash = "pmWkWSBCL51Bfkhn79xPuKBKHz//H6B+mY6G9/eieuM=",
                     };
