@@ -24,7 +24,7 @@ namespace TAIF.API.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(int id)
+        public async Task<IActionResult> GetById(Guid id)
         {
             var item = await _service.GetByIdAsync(id);
             if (item == null) return NotFound();
@@ -36,25 +36,26 @@ namespace TAIF.API.Controllers
         {
             var lessonItem = new LessonItem
             {
-                Title = request.Title,
+                Name = request.Name,
                 URL = request.URL,
-                LessonType = request.LessonType,
-                CourseId = request.CourseId
+                Content = request.Content,
+                Type = request.Type,
+                LessonId = request.LessonId
             };
             var created = await _service.CreateAsync(lessonItem);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] LessonItemRequest request)
+        public async Task<IActionResult> Update(Guid id, [FromBody] LessonItemRequest request)
         {
             var lessonItem = new LessonItem
             {
                 Id = id,
-                Title = request.Title,
+                Name = request.Name,
                 URL = request.URL,
-                LessonType = request.LessonType,
-                CourseId = request.CourseId
+                Content = request.Content,
+                Type = request.Type
             };
             var updated = await _service.UpdateAsync(lessonItem);
             if (!updated) return NotFound();
@@ -62,7 +63,7 @@ namespace TAIF.API.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(Guid id)
         {
             var deleted = await _service.DeleteAsync(id);
             if (!deleted) return NotFound();

@@ -19,14 +19,14 @@ namespace TAIF.Infrastructure.Repositories
             return await _context.LessonItems.ToListAsync();
         }
 
-        public async Task<LessonItem?> GetByIdAsync(int id)
+        public async Task<LessonItem?> GetByIdAsync(Guid id)
         {
             return await _context.LessonItems.FindAsync(id);
         }
-        public async Task<List<LessonItem>> GetByCourseIdAsync(int courseId)
+        public async Task<List<LessonItem>> GetByLessonIdAsync(Guid lessonId)
         {
             return await _context.LessonItems
-                .Where(li => li.CourseId == courseId)
+                .Where(li => li.LessonId == lessonId)
                 .ToListAsync();
         }
 
@@ -41,15 +41,16 @@ namespace TAIF.Infrastructure.Repositories
         {
             var existing = await _context.LessonItems.FindAsync(lessonItem.Id);
             if (existing == null) return false;
-            existing.Title = lessonItem.Title;
+            existing.Name = lessonItem.Name;
             existing.URL = lessonItem.URL;
-            existing.LessonType = lessonItem.LessonType;
-            existing.CourseId = lessonItem.CourseId;
+            existing.Content = lessonItem.Content;
+            existing.Type = lessonItem.Type;
+            existing.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
             return true;
         }
 
-        public async Task<bool> DeleteAsync(int id)
+        public async Task<bool> DeleteAsync(Guid id)
         {
             var lessonItem = await _context.LessonItems.FindAsync(id);
             if (lessonItem == null) return false;

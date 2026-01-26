@@ -1,10 +1,11 @@
 ﻿using System.Text.Json.Serialization;
 using System.Text.Json;
 using TAIF.Infrastructure.Data;
+using TAIF.Domain.Entities;
 
 namespace TAIF.API.Seeder.Scripts
 {
-    // dotnet run -- seed LessonItem
+    // dotnet run -- seed lessonItem
     public class LessonItemSeeder : IEntitySeeder
     {
         private readonly TaifDbContext _context;
@@ -21,7 +22,7 @@ namespace TAIF.API.Seeder.Scripts
         [Obsolete]
         public async Task SeedAsync()
         {
-            string seedName = "LessonItem";
+            string seedName = "lessonItem";
             var filePath = Path.Combine(_env.ContentRootPath, "Seeder", "Data", seedName + ".seed.json");
 
             if (!File.Exists(filePath))
@@ -33,34 +34,36 @@ namespace TAIF.API.Seeder.Scripts
                 PropertyNameCaseInsensitive = true,
                 Converters = { new JsonStringEnumConverter() }
             };
-            var lesonItems = JsonSerializer.Deserialize<List<LessonItemJson>>(json, options)
-                       ?? throw new InvalidOperationException("Invalid lesson item JSON");
+            var lessonItems = JsonSerializer.Deserialize<List<lessonItemJson>>(json, options)
+                       ?? throw new InvalidOperationException("Invalid lesson Item JSON");
 
-            foreach (var lessonItem in lesonItems)
+            foreach (var lessonItem in lessonItems)
             {
-                if (!_context.LessonItems.Any(f => f.Title == lessonItem.Title))
+                if (!_context.LessonItems.Any(f => f.Name == lessonItem.Name))
                 {
-                    var newLessonItem = new Domain.Entities.LessonItem
+                    var newlessonItem = new Domain.Entities.LessonItem
                     {
-                        Title = lessonItem.Title,
+                        Name = lessonItem.Name,
                         URL = lessonItem.URL,
-                        LessonType = lessonItem.LessonType,
-                        CourseId = lessonItem.CourseId
+                        Content = lessonItem.Content,
+                        Type = lessonItem.Type,
+                        LessonId = lessonItem.LessonId
                     };
-                    _context.LessonItems.Add(newLessonItem);
+                    _context.LessonItems.Add(newlessonItem);
                 }
             }
 
             await _context.SaveChangesAsync();
-            Console.WriteLine("✅ LessonItems seeded successfully");
+            Console.WriteLine("✅ lessonItems seeded successfully");
         }
 
-        private class LessonItemJson
+        private class lessonItemJson : Base
         {
-            public string Title { get; set; } = null!;
+            public string Name { get; set; } = null!;
             public string URL { get; set; } = null!;
-            public int LessonType { get; set; }
-            public int CourseId { get; set; }
+            public string Content { get; set; } = null!;
+            public int Type { get; set; }
+            public Guid LessonId { get; set; }
         }
     }
 }

@@ -2,9 +2,10 @@
 {
     public class LessonItemRequest
     {
-        public string Title { get; set; } = null!;
+        public string Name { get; set; } = null!;
         public string URL { get; set; } = null!;
-        public int LessonType { get; set; }
-        public int CourseId { get; set; }
+        public string Content { get; set; } = null!;
+        public int Type { get; set; }
+        public Guid LessonId { get; set; }
     }
 }

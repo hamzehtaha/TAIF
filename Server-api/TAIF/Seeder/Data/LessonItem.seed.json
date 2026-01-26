@@ -1,14 +1,16 @@
 [
   {
-    "Title": "Blindom: Lesson 1",
+    "Name": "Lesson Item 1",
     "URL": "https://www.youtube.com/watch?v=lhFU5H5KPFE",
-    "LessonType": 0,
-    "CourseId": 1
+    "Content": "A fun game where players are blindfolded and must find their way to a goal using only verbal instructions from teammates.",
+    "Type": 0,
+    "LessonId": "FFC1D598-DCF7-4CAD-DCF7-08DE5A7FA7E4"
   },
   {
-    "Title": "Blindom: Lesson 2",
-    "URL": "https://www.youtube.com/watch?v=IWH8LZx8qoQ",
-    "LessonType": 0,
-    "CourseId": 1
+    "Name": "Lesson Item 2",
+    "URL": "https://www.youtube.com/watch?v=lhFU5H5KPFE",
+    "Content": "A fun game where players are blindfolded and must find their way to a goal using only verbal instructions from teammates.",
+    "Type": 1,
+    "LessonId": "FFC1D598-DCF7-4CAD-DCF7-08DE5A7FA7E4"
   }
 ]
