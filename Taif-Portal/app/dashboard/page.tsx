@@ -1,0 +1,208 @@
+"use client";
+
+import { MainLayout } from "@/components/layout/MainLayout";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useTranslation } from "@/hooks/useTranslation";
+import { authService } from "@/services/authService";
+import { courseService, Course } from "@/services/courseService";
+import { CourseCard } from "@/components/CourseCard";
+import { PuzzleLoader } from "@/components/PuzzleLoader";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { BookOpen, Award, Clock, TrendingUp } from "lucide-react";
+
+export default function DashboardHome() {
+  const t = useTranslation();
+  const router = useRouter();
+  const user = authService.getUser();
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Check authentication
+    if (!authService.isAuthenticated()) {
+      router.push("/login");
+      return;
+    }
+
+    // Load enrolled courses
+    const loadCourses = async () => {
+      try {
+        const data = await courseService.getEnrolledCourses();
+        setCourses(data.slice(0, 3));
+      } catch (error) {
+        // Silently use mock data - backend courses endpoint not implemented yet
+        console.log("Using mock course data (backend endpoint not available)");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCourses();
+  }, [router]);
+
+  const stats = [
+    {
+      icon: BookOpen,
+      label: t.dashboard.coursesEnrolled,
+      value: "12",
+      color: "bg-primary",
+    },
+    {
+      icon: Clock,
+      label: t.dashboard.hoursLearned,
+      value: "48",
+      color: "bg-accent",
+    },
+    {
+      icon: Award,
+      label: t.dashboard.certificates,
+      value: "3",
+      color: "bg-success",
+    },
+    {
+      icon: TrendingUp,
+      label: t.dashboard.completionRate,
+      value: "85%",
+      color: "bg-warning",
+    },
+  ];
+
+  if (loading) {
+    return <PuzzleLoader />;
+  }
+
+  return (
+    <MainLayout>
+      <div className="container mx-auto px-4 py-12">
+        {/* Welcome Section */}
+        <div className="mb-12">
+          <h1 className="text-4xl font-bold mb-2">
+            {t.dashboard.welcome}, {user?.firstName}!
+          </h1>
+          <p className="text-lg text-muted-foreground">
+            {t.dashboard.continueJourney}
+          </p>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+          {stats.map((stat, index) => {
+            const Icon = stat.icon;
+            return (
+              <Card key={index} className="hover:shadow-lg transition-shadow">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">
+                        {stat.label}
+                      </p>
+                      <p className="text-3xl font-bold">{stat.value}</p>
+                    </div>
+                    <div
+                      className={`${stat.color} p-3 rounded-lg text-white`}
+                    >
+                      <Icon className="w-6 h-6" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+
+        {/* Courses In Progress Section */}
+        <div className="mb-12">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold mb-2">
+                {t.dashboard.myLearning}
+              </h2>
+              <p className="text-muted-foreground">
+                {t.dashboard.continueLeaning}
+              </p>
+            </div>
+            <Link href="/dashboard/courses">
+              <Button variant="outline">
+                {t.courses.allCourses}
+              </Button>
+            </Link>
+          </div>
+
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-muted rounded-lg h-96 animate-pulse" />
+              ))}
+            </div>
+          ) : courses.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {courses.map((course) => (
+                <CourseCard key={course.id} course={course} />
+              ))}
+            </div>
+          ) : (
+            <Card className="border-dashed">
+              <CardContent className="p-12 text-center">
+                <BookOpen className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-lg font-semibold mb-2">
+                  {t.dashboard.noCourses}
+                </h3>
+                <p className="text-muted-foreground mb-6">
+                  {t.dashboard.startNewCourse}
+                </p>
+                <Link href="/dashboard/courses">
+                  <Button>
+                    {t.home.heroCta}
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Quick Links */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Link href="/dashboard/settings">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+              <CardHeader>
+                <CardTitle className="text-lg">{t.dashboard.settings}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  {t.dashboard.manageProfile}
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/dashboard/certificates">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full bg-primary/5 border-primary/20">
+              <CardHeader>
+                <CardTitle className="text-lg">{t.dashboard.yourCertificates}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  {t.dashboard.viewDownloadCertificates}
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full bg-accent/5 border-accent/20">
+            <CardHeader>
+              <CardTitle className="text-lg">{t.dashboard.helpSupport}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                {t.dashboard.getHelp}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </MainLayout>
+  );
+}

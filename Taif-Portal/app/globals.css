@@ -1,0 +1,239 @@
+/** @import must precede all other statements */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Puzzle Loader Animations */
+@keyframes puzzle-1 {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translate(-5px, -5px) rotate(-5deg);
+    opacity: 1;
+  }
+}
+
+@keyframes puzzle-2 {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translate(5px, -5px) rotate(5deg);
+    opacity: 1;
+  }
+}
+
+@keyframes puzzle-3 {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translate(-5px, 5px) rotate(5deg);
+    opacity: 1;
+  }
+}
+
+@keyframes puzzle-4 {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translate(5px, 5px) rotate(-5deg);
+    opacity: 1;
+  }
+}
+
+.animate-puzzle-1 {
+  animation: puzzle-1 1.5s ease-in-out infinite;
+}
+
+.animate-puzzle-2 {
+  animation: puzzle-2 1.5s ease-in-out infinite 0.2s;
+}
+
+.animate-puzzle-3 {
+  animation: puzzle-3 1.5s ease-in-out infinite 0.4s;
+}
+
+.animate-puzzle-4 {
+  animation: puzzle-4 1.5s ease-in-out infinite 0.6s;
+}
+
+@layer base {
+  /**
+   * SELS Color Palette - Accessibility-First Design
+   * Primary: Blue (#1E88E5) - Trust & Calm
+   * Secondary: Green (#43A047) - Success & Growth
+   * Accent: Purple (#7E57C2) - Creativity (use sparingly)
+   * WCAG AA compliant text colors
+   */
+  :root {
+    /* Background & Surface - Light, calming backgrounds */
+    --background: 0 0% 98%;           /* #FAFAFA */
+    --foreground: 0 0% 13%;           /* #212121 - Text Primary */
+
+    --card: 0 0% 100%;                /* #FFFFFF */
+    --card-foreground: 0 0% 13%;      /* #212121 */
+
+    --popover: 0 0% 100%;             /* #FFFFFF */
+    --popover-foreground: 0 0% 13%;   /* #212121 */
+
+    /* Primary Blue */
+    --primary: 207 79% 51%;           /* #1E88E5 */
+    --primary-foreground: 0 0% 100%;  /* White */
+
+    /* Secondary - Support Green */
+    --secondary: 122 40% 45%;         /* #43A047 */
+    --secondary-foreground: 0 0% 100%;
+
+    /* Success - Green */
+    --success: 122 40% 45%;           /* #43A047 */
+    --success-foreground: 0 0% 100%;
+
+    /* Warning - Amber */
+    --warning: 45 95% 56%;            /* #F9A825 */
+    --warning-foreground: 0 0% 13%;
+
+    /* Info - Blue */
+    --info: 207 79% 51%;              /* #1E88E5 */
+    --info-foreground: 0 0% 100%;
+
+    /* Muted - For secondary text and backgrounds */
+    --muted: 0 0% 96%;                /* #F5F5F5 */
+    --muted-foreground: 0 0% 46%;     /* #757575 */
+
+    /* Accent - Calm Purple (use sparingly) */
+    --accent: 262 47% 55%;            /* #7E57C2 */
+    --accent-foreground: 0 0% 100%;
+
+    /* Destructive/Error - Soft red */
+    --destructive: 0 69% 67%;         /* #E57373 */
+    --destructive-foreground: 0 0% 100%;
+
+    /* Border & Input */
+    --border: 0 0% 88%;               /* #E0E0E0 */
+    --input: 0 0% 96%;                /* #F5F5F5 */
+    --ring: 207 79% 51%;              /* Primary Blue focus ring */
+
+    --radius: 0.75rem;
+
+    /* Sidebar */
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 0 0% 13%;
+    --sidebar-primary: 207 79% 51%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 262 47% 55%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 88%;
+    --sidebar-ring: 207 79% 51%;
+  }
+
+  .dark {
+    /* Dark mode - Softer contrast for accessibility */
+    --background: 220 13% 10%;        /* Dark blue-gray */
+    --foreground: 0 0% 98%;           /* Near white */
+
+    --card: 220 13% 14%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 220 13% 14%;
+    --popover-foreground: 0 0% 98%;
+
+    /* Primary Blue - Lighter for dark mode */
+    --primary: 207 79% 60%;
+    --primary-foreground: 220 13% 10%;
+
+    /* Secondary Green */
+    --secondary: 122 40% 55%;
+    --secondary-foreground: 220 13% 10%;
+
+    /* Success */
+    --success: 122 40% 55%;
+    --success-foreground: 220 13% 10%;
+
+    /* Warning */
+    --warning: 45 95% 60%;
+    --warning-foreground: 220 13% 10%;
+
+    /* Info */
+    --info: 207 79% 60%;
+    --info-foreground: 220 13% 10%;
+
+    /* Muted */
+    --muted: 220 13% 20%;
+    --muted-foreground: 0 0% 70%;
+
+    /* Accent Purple */
+    --accent: 262 47% 65%;
+    --accent-foreground: 220 13% 10%;
+
+    /* Destructive */
+    --destructive: 0 69% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    /* Border & Input */
+    --border: 220 13% 25%;
+    --input: 220 13% 18%;
+    --ring: 207 79% 60%;
+
+    /* Sidebar */
+    --sidebar-background: 220 13% 12%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 207 79% 60%;
+    --sidebar-primary-foreground: 220 13% 10%;
+    --sidebar-accent: 262 47% 65%;
+    --sidebar-accent-foreground: 220 13% 10%;
+    --sidebar-border: 220 13% 25%;
+    --sidebar-ring: 207 79% 60%;
+  }
+}
+
+html {
+  font-size: 16px !important;
+}
+
+html.font-small {
+  font-size: 14px !important;
+}
+
+html.font-medium {
+  font-size: 16px !important;
+}
+
+html.font-large {
+  font-size: 18px !important;
+}
+
+html.font-extra-large {
+  font-size: 20px !important;
+}
+
+@layer base {
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-inter), sans-serif;
+  }
+
+  :where(p, span, li, a, label, td, th) {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  pre,
+  code {
+    overflow-x: auto;
+    white-space: pre;
+  }
+}
