@@ -36,8 +36,6 @@ public class AuthService : IAuthService
             Email = email,
             PasswordHash = HashPassword(password),
             IsActive = true,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
         };
 
         var accessToken = _tokenService.GenerateAccessToken(user);

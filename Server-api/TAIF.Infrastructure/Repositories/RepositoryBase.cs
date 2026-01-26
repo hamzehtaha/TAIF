@@ -1,10 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 using TAIF.Application.Interfaces;
+using TAIF.Domain.Entities;
 
 namespace TipMe_api.Repositories
 {
-    public class RepositoryBase<T> : IRepository<T> where T : class
+    public class RepositoryBase<T> : IRepository<T> where T : Base
     {
         protected readonly DbContext _context;
         protected readonly DbSet<T> _dbSet;
@@ -21,7 +22,11 @@ namespace TipMe_api.Repositories
 
             try
             {
-                return await _dbSet.FindAsync(id);
+                IQueryable<T> query = _dbSet;
+                if (!withDeleted)
+                    query = query.Where(e => !e.IsDeleted);
+                
+                return await query.FirstOrDefaultAsync(e => e.Id == id);
             }
             catch (Exception ex)
             {
@@ -35,20 +40,25 @@ namespace TipMe_api.Repositories
 
             try
             {
-                // Assumes the entity has a Guid Id property
-                return await _dbSet.AsNoTracking()
-                    .FirstOrDefaultAsync(e => EF.Property<Guid>(e, "Id") == id);
+                IQueryable<T> query = _dbSet.AsNoTracking();
+                if (!withDeleted)
+                    query = query.Where(e => !e.IsDeleted);
+                
+                return await query.FirstOrDefaultAsync(e => e.Id == id);
             }
             catch (Exception ex)
             {
                 throw new RepositoryException($"Error fetching (no tracking) entity of type {typeof(T).Name} by Id.", ex);
             }
         }
-        public virtual async Task<List<T>> GetAllAsync(Expression<Func<T, object>>? orderBy = null, bool orderByDescending = false, bool withDeleted = false)
+        public virtual async Task<List<T>> GetAllAsync(bool withDeleted = false, Expression<Func<T, object>>? orderBy = null, bool orderByDescending = false)
         {
             try
             {
                 IQueryable<T> query = _dbSet;
+                if (!withDeleted)
+                    query = query.Where(e => !e.IsDeleted);
+                
                 if (orderBy != null)
                 {
                     query = orderByDescending ? query.OrderByDescending(orderBy) : query.OrderBy(orderBy);
@@ -60,7 +70,7 @@ namespace TipMe_api.Repositories
                 throw new RepositoryException($"Error fetching all entities of type {typeof(T).Name}.", ex);
             }
         }
-        public virtual async Task<List<T>> GetAllNoTrackingWithIncludeAsync(Expression<Func<T, object>>? orderBy = null, bool orderByDescending = false, params Expression<Func<T, object>>[] includes)
+        public virtual async Task<List<T>> GetAllNoTrackingWithIncludeAsync(bool withDeleted = false, Expression<Func<T, object>>? orderBy = null, bool orderByDescending = false, params Expression<Func<T, object>>[] includes)
         {
             try
             {
@@ -68,6 +78,9 @@ namespace TipMe_api.Repositories
                     throw new ArgumentNullException(nameof(includes));
 
                 IQueryable<T> query = _dbSet;
+                if (!withDeleted)
+                    query = query.Where(e => !e.IsDeleted);
+                
                 foreach (var include in includes)
                 {
                     query = query.Include(include);
@@ -83,11 +96,14 @@ namespace TipMe_api.Repositories
                 throw new RepositoryException($"Error fetching all entities of type {typeof(T).Name}.", ex);
             }
         }
-        public virtual async Task<List<T>> GetAllNoTrackingAsync(Expression<Func<T, object>>? orderBy = null, bool orderByDescending = false, bool withDeleted = false)
+        public virtual async Task<List<T>> GetAllNoTrackingAsync(bool withDeleted = false, Expression<Func<T, object>>? orderBy = null, bool orderByDescending = false)
         {
             try
             {
                 IQueryable<T> query = _dbSet.AsNoTracking();
+                if (!withDeleted)
+                    query = query.Where(e => !e.IsDeleted);
+                
                 if (orderBy != null)
                 {
                     query = orderByDescending ? query.OrderByDescending(orderBy) : query.OrderBy(orderBy);
@@ -99,14 +115,18 @@ namespace TipMe_api.Repositories
                 throw new RepositoryException($"Error fetching all (no tracking) entities of type {typeof(T).Name}.", ex);
             }
         }
-        public virtual async Task<List<T>> FindAsync(Expression<Func<T, bool>> predicate, Expression<Func<T, object>>? orderBy = null, bool orderByDescending = false, bool withDeleted = false)
+        public virtual async Task<List<T>> FindAsync(Expression<Func<T, bool>> predicate, bool withDeleted = false, Expression<Func<T, object>>? orderBy = null, bool orderByDescending = false)
         {
             if (predicate == null)
                 throw new ArgumentNullException(nameof(predicate));
 
             try
             {
-                IQueryable<T> query = _dbSet.Where(predicate);
+                IQueryable<T> query = _dbSet;
+                if (!withDeleted)
+                    query = query.Where(e => !e.IsDeleted);
+                
+                query = query.Where(predicate);
 
                 if (orderBy != null)
                 {
@@ -119,14 +139,18 @@ namespace TipMe_api.Repositories
                 throw new RepositoryException($"Error finding entities of type {typeof(T).Name}.", ex);
             }
         }
-        public virtual async Task<List<T>> FindNoTrackingAsync(Expression<Func<T, bool>> predicate, Expression<Func<T, object>>? orderBy = null, bool orderByDescending = false, bool withDeleted = false)
+        public virtual async Task<List<T>> FindNoTrackingAsync(Expression<Func<T, bool>> predicate, bool withDeleted = false, Expression<Func<T, object>>? orderBy = null, bool orderByDescending = false)
         {
             if (predicate == null)
                 throw new ArgumentNullException(nameof(predicate));
 
             try
             {
-                IQueryable<T> query = _dbSet.AsNoTracking().Where(predicate);
+                IQueryable<T> query = _dbSet.AsNoTracking();
+                if (!withDeleted)
+                    query = query.Where(e => !e.IsDeleted);
+                
+                query = query.Where(predicate);
 
                 if (orderBy != null)
                 {
@@ -139,35 +163,43 @@ namespace TipMe_api.Repositories
                 throw new RepositoryException($"Error finding (no tracking) entities of type {typeof(T).Name}.", ex);
             }
         }
-        public async Task<T> FindOneAsync(Expression<Func<T, bool>> predicate, bool withDeleted = false)
+        public virtual async Task<T> FindOneAsync(Expression<Func<T, bool>> predicate, bool withDeleted = false)
         {
             if (predicate == null)
                 throw new ArgumentNullException(nameof(predicate));
 
             try
             {
-                return await _dbSet.Where(predicate).SingleOrDefaultAsync();
+                IQueryable<T> query = _dbSet;
+                if (!withDeleted)
+                    query = query.Where(e => !e.IsDeleted);
+                
+                return await query.Where(predicate).SingleOrDefaultAsync();
             }
             catch (Exception ex)
             {
                 throw new RepositoryException($"Error finding entities of type {typeof(T).Name}.", ex);
             }
         }
-        public async Task<T> FindOneNoTrackingAsync(Expression<Func<T, bool>> predicate, bool withDeleted = false)
+        public virtual async Task<T> FindOneNoTrackingAsync(Expression<Func<T, bool>> predicate, bool withDeleted = false)
         {
             if (predicate == null)
                 throw new ArgumentNullException(nameof(predicate));
 
             try
             {
-                return await _dbSet.AsNoTracking().Where(predicate).SingleOrDefaultAsync();
+                IQueryable<T> query = _dbSet.AsNoTracking();
+                if (!withDeleted)
+                    query = query.Where(e => !e.IsDeleted);
+                
+                return await query.Where(predicate).SingleOrDefaultAsync();
             }
             catch (Exception ex)
             {
                 throw new RepositoryException($"Error finding (no tracking) entities of type {typeof(T).Name}.", ex);
             }
         }
-        public virtual async Task<List<T>> FindWithIncludesAsync(Expression<Func<T, bool>> predicate, Expression<Func<T, object>>? orderBy = null, bool orderByDescending = false, params Expression<Func<T, object>>[] includes)
+        public virtual async Task<List<T>> FindWithIncludesAsync(Expression<Func<T, bool>> predicate, bool withDeleted = false, Expression<Func<T, object>>? orderBy = null, bool orderByDescending = false, params Expression<Func<T, object>>[] includes)
         {
             if (predicate == null)
                 throw new ArgumentNullException(nameof(predicate));
@@ -176,7 +208,11 @@ namespace TipMe_api.Repositories
 
             try
             {
-                IQueryable<T> query = _dbSet.Where(predicate);
+                IQueryable<T> query = _dbSet;
+                if (!withDeleted)
+                    query = query.Where(e => !e.IsDeleted);
+                
+                query = query.Where(predicate);
                 foreach (var include in includes)
                 {
                     query = query.Include(include);
@@ -193,7 +229,7 @@ namespace TipMe_api.Repositories
                 throw new RepositoryException($"Error finding entities with includes of type {typeof(T).Name}.", ex);
             }
         }
-        public virtual async Task<List<T>> FindWithIncludesNoTrackingAsync(Expression<Func<T, bool>> predicate, Expression<Func<T, object>>? orderBy = null, bool orderByDescending = false, params Expression<Func<T, object>>[] includes)
+        public virtual async Task<List<T>> FindWithIncludesNoTrackingAsync(Expression<Func<T, bool>> predicate, bool withDeleted = false, Expression<Func<T, object>>? orderBy = null, bool orderByDescending = false, params Expression<Func<T, object>>[] includes)
         {
             if (predicate == null)
                 throw new ArgumentNullException(nameof(predicate));
@@ -202,7 +238,11 @@ namespace TipMe_api.Repositories
 
             try
             {
-                IQueryable<T> query = _dbSet.AsNoTracking().Where(predicate);
+                IQueryable<T> query = _dbSet.AsNoTracking();
+                if (!withDeleted)
+                    query = query.Where(e => !e.IsDeleted);
+                
+                query = query.Where(predicate);
                 foreach (var include in includes)
                 {
                     query = query.Include(include);
@@ -225,6 +265,8 @@ namespace TipMe_api.Repositories
 
             try
             {
+                entity.CreatedAt = DateTime.UtcNow;
+                entity.UpdatedAt = DateTime.UtcNow;
                 await _dbSet.AddAsync(entity);
             }
             catch (Exception ex)
@@ -241,6 +283,7 @@ namespace TipMe_api.Repositories
 
             try
             {
+                entity.UpdatedAt = DateTime.UtcNow;
                 _dbSet.Attach(entity);
                 var entry = _context.Entry(entity);
 
@@ -248,13 +291,35 @@ namespace TipMe_api.Repositories
                 {
                     entry.Property(property).IsModified = true;
                 }
+                entry.Property(e => e.UpdatedAt).IsModified = true;
             }
             catch (Exception ex)
             {
                 throw new RepositoryException($"Error updating entity of type {typeof(T).Name}.", ex);
             }
         }
-        public virtual void Remove(T entity)
+        public virtual void SoftDelete(T entity)
+        {
+            if (entity == null)
+                throw new ArgumentNullException(nameof(entity));
+
+            try
+            {
+                entity.IsDeleted = true;
+                entity.DeletedAt = DateTime.UtcNow;
+                entity.UpdatedAt = DateTime.UtcNow;
+                _dbSet.Attach(entity);
+                var entry = _context.Entry(entity);
+                entry.Property(e => e.IsDeleted).IsModified = true;
+                entry.Property(e => e.DeletedAt).IsModified = true;
+                entry.Property(e => e.UpdatedAt).IsModified = true;
+            }
+            catch (Exception ex)
+            {
+                throw new RepositoryException($"Error soft deleting entity of type {typeof(T).Name}.", ex);
+            }
+        }
+        public virtual void PermanentDelete(T entity)
         {
             if (entity == null)
                 throw new ArgumentNullException(nameof(entity));
@@ -265,21 +330,25 @@ namespace TipMe_api.Repositories
             }
             catch (Exception ex)
             {
-                throw new RepositoryException($"Error removing entity of type {typeof(T).Name}.", ex);
+                throw new RepositoryException($"Error permanently deleting entity of type {typeof(T).Name}.", ex);
             }
         }
         public virtual async Task<int> SaveChangesAsync()
         {
             return await _context.SaveChangesAsync();
         }
-        public async Task<bool> AnyAsync(Expression<Func<T, bool>> predicate, bool withDeleted = false)
+        public virtual async Task<bool> AnyAsync(Expression<Func<T, bool>> predicate, bool withDeleted = false)
         {
             if (predicate == null)
                 throw new ArgumentNullException(nameof(predicate));
 
             try
             {
-                return await _dbSet.AnyAsync(predicate);
+                IQueryable<T> query = _dbSet;
+                if (!withDeleted)
+                    query = query.Where(e => !e.IsDeleted);
+                
+                return await query.AnyAsync(predicate);
             }
             catch (Exception ex)
             {
@@ -293,11 +362,13 @@ namespace TipMe_api.Repositories
 
             try
             {
-                
+                entity.IsDeleted = false;
+                _dbSet.Attach(entity);
+                _context.Entry(entity).Property(e => e.IsDeleted).IsModified = true;
             }
             catch (Exception ex)
             {
-                throw new RepositoryException($"Error removing entity of type {typeof(T).Name}.", ex);
+                throw new RepositoryException($"Error restoring entity of type {typeof(T).Name}.", ex);
             }
         }
     }

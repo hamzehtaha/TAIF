@@ -9,6 +9,6 @@ namespace TAIF.Application.Interfaces
 {
     public interface ICourseService : IService<Course>
     {
-        public Task<bool> UpdateAsync(Course dto);
+
     }
 }

@@ -1,10 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System.Diagnostics.Metrics;
 using TAIF.Application.DTOs;
 using TAIF.Application.Interfaces;
 using TAIF.Domain.Entities;
-using TAIF.Infrastructure.Repositories;
-
 namespace TAIF.Controllers
 {
     [ApiController]
@@ -12,35 +9,28 @@ namespace TAIF.Controllers
     public class CourseController : ControllerBase
     {
         private readonly ICourseService _courseService;
-
-
         public CourseController(ICourseService courseService)
         {
             _courseService = courseService;
         }
 
-        [HttpGet]
+        [HttpGet("")]
         public async Task<ActionResult<List<Course>>> GetAll()
         {
-            return await _courseService.GetAllAsync();
+            var courses = await _courseService.GetAllAsync();
+            if (courses is null) return NotFound();
+            return Ok(ApiResponse<List<Course>>.SuccessResponse(courses));
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Course>> Get(Guid id)
+        public async Task<ActionResult<Course>> Get([FromRoute] Guid id)
         {
             var course = await _courseService.GetByIdAsync(id);
-            if (course == null) return NotFound();
-            return course;
+            if (course is null) return NotFound();
+            return Ok(ApiResponse<Course>.SuccessResponse(course));
         }
 
-        //[HttpGet("{id}/content")]
-        //public async Task<IActionResult> GetCourseContent(int id)
-        //{
-        //    var lessonItems = await _lessonItemRepository.GetByCourseIdAsync(id);
-        //    return Ok(lessonItems);
-        //}
-
-        [HttpPost]
+        [HttpPost("")]
         public async Task<IActionResult> Create([FromBody] CreateCourseRequest request)
         {
             var course = new Course
@@ -54,16 +44,14 @@ namespace TAIF.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(Guid id, [FromBody] Course course)
+        public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateCourseRequest course)
         {
-            if (id != course.Id) return BadRequest();
-            var result = await _courseService.UpdateAsync(course);
-            if (!result) return NotFound();
-            return Ok(ApiResponse<bool>.SuccessResponse(result));
+            var Course = await _courseService.UpdateAsync(id, course);
+            return Ok(ApiResponse<Course>.SuccessResponse(Course));
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(Guid id)
+        public async Task<IActionResult> Delete([FromRoute] Guid id)
         {
             var result = await _courseService.DeleteAsync(id);
             if (!result) return NotFound();
