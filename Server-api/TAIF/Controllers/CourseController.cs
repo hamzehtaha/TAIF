@@ -15,7 +15,7 @@ namespace TAIF.Controllers
         }
 
         [HttpGet("")]
-        public async Task<ActionResult<List<Course>>> GetAll()
+        public async Task<IActionResult> GetAll()
         {
             var courses = await _courseService.GetAllAsync();
             if (courses is null) return NotFound();
@@ -23,7 +23,7 @@ namespace TAIF.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Course>> Get([FromRoute] Guid id)
+        public async Task<IActionResult> Get([FromRoute] Guid id)
         {
             var course = await _courseService.GetByIdAsync(id);
             if (course is null) return NotFound();
@@ -31,7 +31,7 @@ namespace TAIF.Controllers
         }
 
         [HttpGet("category/{categoryId}")]
-        public async Task<ActionResult<List<Course>>> GetByCategoryId([FromRoute] Guid categoryId)
+        public async Task<IActionResult> GetByCategoryId([FromRoute] Guid categoryId)
         {
             var courses = await _courseService.GetByCategoryIdAsync(categoryId);
             if (courses is null || courses.Count == 0) return NotFound();

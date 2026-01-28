@@ -5,11 +5,11 @@ using TAIF.Infrastructure.Data;
 
 namespace TAIF.Infrastructure.Repositories;
 
-public class UserRepository : IUserRepository
+public class UserRepository : RepositoryBase<User>, IUserRepository
 {
     private readonly TaifDbContext _context;
 
-    public UserRepository(TaifDbContext context)
+    public UserRepository(TaifDbContext context) : base(context)
     {
         _context = context;
     }

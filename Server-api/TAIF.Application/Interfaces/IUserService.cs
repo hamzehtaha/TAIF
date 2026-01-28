@@ -7,10 +7,8 @@ using TAIF.Domain.Entities;
 
 namespace TAIF.Application.Interfaces
 {
-    public interface IUserRepository : IRepository<User>
+    public interface IUserService : IService<User>
     {
-        Task<User?> GetByEmailAsync(string email);
-        Task<User?> GetByRefreshTokenAsync(string refreshToken);
 
     }
 }

@@ -32,6 +32,8 @@ builder.Services.AddDbContext<TaifDbContext>(options =>
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserService, UserService>();
+
 builder.Services.AddScoped<ITokenService, TokenService>();
 
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();

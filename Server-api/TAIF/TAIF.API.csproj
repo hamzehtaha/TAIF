@@ -7,6 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Logs\**" />
+    <Content Remove="Logs\**" />
+    <EmbeddedResource Remove="Logs\**" />
+    <None Remove="Logs\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Remove="Seeder\Data\User.seed.json" />
   </ItemGroup>
 
@@ -30,10 +37,6 @@
   <ItemGroup>
     <ProjectReference Include="..\TAIF.Application\TAIF.Application.csproj" />
     <ProjectReference Include="..\TAIF.Infrastructure\TAIF.Infrastructure.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Logs\" />
   </ItemGroup>
 
 </Project>
