@@ -11,5 +11,6 @@ namespace TAIF.Domain.Entities
         public LessonItemType Type { get; set; }
         public Guid LessonId { get; set; }
         public Lesson Lesson { get; set; } = null!;
+        public double durationInSeconds { get; set; } = 0;
     }
 }
