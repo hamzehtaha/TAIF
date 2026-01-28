@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using TAIF.API.Controllers;
 using TAIF.Application.DTOs;
 using TAIF.Application.Interfaces.Services;
 using TAIF.Domain.Entities;
@@ -7,7 +8,7 @@ namespace TAIF.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class CategoryController : ControllerBase
+    public class CategoryController : TaifControllerBase
     {
         private readonly ICategoryService _categoryService;
 
@@ -17,7 +18,7 @@ namespace TAIF.Controllers
         }
 
         [HttpGet("")]
-        public async Task<ActionResult<List<Category>>> GetAll()
+        public async Task<IActionResult> GetAll()
         {
             var categories = await _categoryService.GetAllAsync();
             if (categories is null) return NotFound();
@@ -25,7 +26,7 @@ namespace TAIF.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Category>> Get([FromRoute] Guid id)
+        public async Task<IActionResult> Get([FromRoute] Guid id)
         {
             var category = await _categoryService.GetByIdAsync(id);
             if (category is null) return NotFound();

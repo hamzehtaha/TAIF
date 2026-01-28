@@ -203,8 +203,6 @@ namespace TAIF.Infrastructure.Repositories
         {
             if (predicate == null)
                 throw new ArgumentNullException(nameof(predicate));
-            if (includes == null)
-                throw new ArgumentNullException(nameof(includes));
 
             try
             {
@@ -213,9 +211,13 @@ namespace TAIF.Infrastructure.Repositories
                     query = query.Where(e => !e.IsDeleted);
                 
                 query = query.Where(predicate);
-                foreach (var include in includes)
+                
+                if (includes != null && includes.Length > 0)
                 {
-                    query = query.Include(include);
+                    foreach (var include in includes)
+                    {
+                        query = query.Include(include);
+                    }
                 }
 
                 if (orderBy != null)
@@ -233,8 +235,6 @@ namespace TAIF.Infrastructure.Repositories
         {
             if (predicate == null)
                 throw new ArgumentNullException(nameof(predicate));
-            if (includes == null)
-                throw new ArgumentNullException(nameof(includes));
 
             try
             {
@@ -243,10 +243,15 @@ namespace TAIF.Infrastructure.Repositories
                     query = query.Where(e => !e.IsDeleted);
                 
                 query = query.Where(predicate);
-                foreach (var include in includes)
+                
+                if (includes != null && includes.Length > 0)
                 {
-                    query = query.Include(include);
+                    foreach (var include in includes)
+                    {
+                        query = query.Include(include);
+                    }
                 }
+                
                 if (orderBy != null)
                 {
                     query = orderByDescending ? query.OrderByDescending(orderBy) : query.OrderBy(orderBy);

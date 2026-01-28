@@ -11,5 +11,9 @@ namespace TAIF.Application.Interfaces.Services
     {
         Task<List<Course>> GetUserCoursesAsync(Guid userId);
         Task<List<User>> GetCourseUsersAsync(Guid courseId);
+        Task<List<Course>> GetUserFavouriteCourses(Guid userId);
+        Task<bool> ToggleCourseFavourite(Guid userId, Guid courseId);
+
+        
     }
 }

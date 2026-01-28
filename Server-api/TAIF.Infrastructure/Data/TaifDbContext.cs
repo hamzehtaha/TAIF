@@ -14,7 +14,7 @@ namespace TAIF.Infrastructure.Data
             : base(options)
         {
         }
-        public DbSet<User> Users => Set<User>();
+        public DbSet<User> Users { get; set; }
         public DbSet<Category> Categories { get; set; }
         public DbSet<Course> Courses { get; set; }
         public DbSet<Lesson> lessons { get; set; }
@@ -23,18 +23,11 @@ namespace TAIF.Infrastructure.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Enrollment>()
-                .HasKey(e => new { e.UserId, e.CourseId });
-
-            modelBuilder.Entity<Enrollment>()
-                .HasOne(e => e.User)
-                .WithMany(u => u.Enrollments)
-                .HasForeignKey(e => e.UserId);
-
-            modelBuilder.Entity<Enrollment>()
-                .HasOne(e => e.Course)
-                .WithMany(c => c.Enrollments)
-                .HasForeignKey(e => e.CourseId);
+            modelBuilder.Entity<Enrollment>(entity =>
+            {
+                entity.HasIndex(e => new { e.UserId, e.CourseId })
+                      .IsUnique();
+            });
         }
 
     }

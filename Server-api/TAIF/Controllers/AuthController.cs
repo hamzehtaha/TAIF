@@ -10,7 +10,7 @@ namespace TAIF.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AuthController : ControllerBase
+    public class AuthController : TaifControllerBase
     {
         private readonly IAuthService _authService;
         private readonly ILogger<AuthController> _logger;

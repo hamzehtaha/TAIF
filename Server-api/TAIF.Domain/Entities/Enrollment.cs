@@ -13,5 +13,6 @@ namespace TAIF.Domain.Entities
         public Guid CourseId { get; set; }
         public Course Course { get; set; } = null!;
         public DateTime EnrolledAt { get; set; } = DateTime.UtcNow;
+        public bool IsFavourite { get; set; } = false;
     }
 }

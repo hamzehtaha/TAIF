@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using TAIF.API.Controllers;
 using TAIF.Application.DTOs;
 using TAIF.Application.Interfaces.Services;
 using TAIF.Domain.Entities;
@@ -6,7 +7,7 @@ namespace TAIF.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class CourseController : ControllerBase
+    public class CourseController : TaifControllerBase
     {
         private readonly ICourseService _courseService;
         public CourseController(ICourseService courseService)

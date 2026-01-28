@@ -12,7 +12,7 @@ namespace TAIF.API.Controllers
     [ApiController]
     [Route("api/enrollments")]
     [Authorize]
-    public class EnrollmentController : ControllerBase
+    public class EnrollmentController : TaifControllerBase
     {
         private readonly IEnrollmentService _service;
         public EnrollmentController(IEnrollmentService service)
@@ -20,46 +20,47 @@ namespace TAIF.API.Controllers
             _service = service;
         }
         [HttpPost]
-        public async Task<IActionResult> Enroll(Guid courseId)
+        public async Task<IActionResult> Enroll([FromBody] EnrollRequest dto)
         {
-            var userId = GetUserId();
             var enrollment = await _service.CreateAsync(
                 new Enrollment
                 {
-                    UserId = userId,
-                    CourseId = courseId,
+                    UserId = this.UserId,
+                    CourseId = dto.CourseId,
                     EnrolledAt = DateTime.UtcNow,
                 }
             );
 
             return Ok(ApiResponse<Enrollment>.SuccessResponse(enrollment));
         }
+        
         [HttpGet("user")]
         public async Task<IActionResult> GetUserCourses()
         {
-            var userId = GetUserId();
-            var courses = await _service.GetUserCoursesAsync(userId);
-            return Ok(courses);
+            var courses = await _service.GetUserCoursesAsync(this.UserId);
+            return Ok(ApiResponse<List<Course>>.SuccessResponse(courses));
         }
+        
         [HttpGet("course/{courseId}")]
-        public async Task<IActionResult> GetCourseUsers(Guid courseId)
+        public async Task<IActionResult> GetCourseUsers([FromRoute] Guid courseId)
         {
             var users = await _service.GetCourseUsersAsync(courseId);
-            return Ok(users);
+            return Ok(ApiResponse<List<User>>.SuccessResponse(users));
         }
-        private Guid GetUserId()
+
+        [HttpGet("favourite/course")]
+        public async Task<IActionResult> GetUserFavouriteCourses()
         {
-            var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            if (string.IsNullOrEmpty(userIdValue))
-                throw new UnauthorizedAccessException("UserId claim missing");
-
-            if (!Guid.TryParse(userIdValue, out var userId))
-                throw new UnauthorizedAccessException("Invalid UserId claim");
-
-            return userId;
+            var courses = await _service.GetUserFavouriteCourses(this.UserId);
+            return Ok(ApiResponse<List<Course>>.SuccessResponse(courses));
         }
 
+        [HttpPut("toggleFavourite")]
+        public async Task<IActionResult> ToggleCourseFavourite(ToggleFavouriteRequest dto)
+        {
+            var result = await _service.ToggleCourseFavourite(this.UserId, dto.CourseId);
+            return Ok(ApiResponse<bool>.SuccessResponse(result));
+        }
     }
 
 }
