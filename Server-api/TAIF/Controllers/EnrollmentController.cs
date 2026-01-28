@@ -15,10 +15,12 @@ namespace TAIF.API.Controllers
     public class EnrollmentController : TaifControllerBase
     {
         private readonly IEnrollmentService _service;
+
         public EnrollmentController(IEnrollmentService service)
         {
             _service = service;
         }
+
         [HttpPost]
         public async Task<IActionResult> Enroll([FromBody] EnrollRequest dto)
         {
