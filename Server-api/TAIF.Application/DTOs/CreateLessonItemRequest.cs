@@ -15,5 +15,7 @@ namespace TAIF.Application.DTOs
         public LessonItemType Type { get; set; }
         [Required]
         public Guid LessonId { get; set; }
+        [Required]
+        public double durationInSeconds { get; set; } = 0;
     }
 }

@@ -39,7 +39,7 @@ namespace TAIF.Controllers
             {
                 Title = request.Title,
                 CourseId = request.CourseId,
-                Photo = request.Photo
+                Photo = request.Photo,
             };
             var created_lesson = await _lessonService.CreateAsync(lesson);
             return Ok(ApiResponse<Lesson>.SuccessResponse(created_lesson));
