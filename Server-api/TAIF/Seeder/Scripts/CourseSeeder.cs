@@ -95,7 +95,8 @@ namespace TAIF.API.Seeder.Scripts
                                                 URL = itemData.URL,
                                                 Content = itemData.Content,
                                                 Type = itemData.Type,
-                                                LessonId = newLesson.Id
+                                                LessonId = newLesson.Id,
+                                                DurationInSeconds = itemData.DurationInSeconds,
                                             };
                                             _context.LessonItems.Add(newLessonItem);
                                         }
@@ -145,6 +146,7 @@ namespace TAIF.API.Seeder.Scripts
             public string URL { get; set; } = null!;
             public string Content { get; set; } = null!;
             public LessonItemType Type { get; set; }
+            public double DurationInSeconds { get; set; }
         }
     }
 }

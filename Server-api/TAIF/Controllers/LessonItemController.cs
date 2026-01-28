@@ -42,7 +42,7 @@ namespace TAIF.Controllers
                 Content = request.Content,
                 Type = request.Type,
                 LessonId = request.LessonId,
-                durationInSeconds = request.durationInSeconds
+                DurationInSeconds = request.durationInSeconds
             };
             var created_lessonItem = await _lessonItemService.CreateAsync(lessonItem);
             return Ok(ApiResponse<LessonItem>.SuccessResponse(created_lessonItem));
