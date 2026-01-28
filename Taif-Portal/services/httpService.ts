@@ -12,6 +12,14 @@ interface ApiResponse<T> {
   statusText: string;
 }
 
+interface BackendApiResponse<T> {
+  isSuccess: boolean;
+  message: string;
+  data: T;
+  errors: string[];
+  errorCode?: any;
+}
+
 const PUBLIC_ENDPOINTS = [
   "/api/auth/login",
   "/api/auth/register",
@@ -27,9 +35,9 @@ class HttpService {
     if (baseURL) {
       this.baseURL = baseURL;
     } else if (typeof window !== "undefined") {
-      this.baseURL = (window as any).ENV?.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+      this.baseURL = (window as any).ENV?.NEXT_PUBLIC_API_URL || "https://localhost:7277";
     } else {
-      this.baseURL = "http://localhost:5000";
+      this.baseURL = "https://localhost:7277";
     }
   }
 
@@ -217,9 +225,23 @@ class HttpService {
 
       if (response.ok) {
         try {
-          data = await response.json();
-        } catch {
-          data = {} as T;
+          const jsonResponse = await response.json();
+          // Check if response is wrapped in BackendApiResponse
+          if (jsonResponse && typeof jsonResponse === 'object' && 'isSuccess' in jsonResponse && 'data' in jsonResponse) {
+            const backendResponse = jsonResponse as BackendApiResponse<T>;
+            if (!backendResponse.isSuccess) {
+              throw new Error(backendResponse.message || 'Request failed');
+            }
+            data = backendResponse.data;
+          } else {
+            data = jsonResponse as T;
+          }
+        } catch (error) {
+          if (error instanceof Error && error.message !== 'Request failed') {
+            data = {} as T;
+          } else {
+            throw error;
+          }
         }
       } else {
         const errorText = await response.text();

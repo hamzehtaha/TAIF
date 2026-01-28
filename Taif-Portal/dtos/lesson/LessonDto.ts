@@ -1,12 +1,27 @@
 /**
- * Backend DTO - Minimal fields from API
- * Only what backend actually provides
+ * Backend DTO - Matches backend Lesson entity
  */
 export interface LessonDto {
   id: string;
-  name: string;
+  title: string;
+  photo?: string;
+  courseId: string;
+  createdAt?: string;
+  updatedAt?: string;
+  isDeleted?: boolean;
 }
 
 export interface LessonsResponseDto {
   lessons: LessonDto[];
+}
+
+export interface CreateLessonRequest {
+  title: string;
+  photo?: string;
+  courseId: string;
+}
+
+export interface UpdateLessonRequest {
+  title?: string;
+  photo?: string;
 }

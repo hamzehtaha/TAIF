@@ -42,6 +42,41 @@ export class DataProvider {
   }
 
   /**
+   * Put data to either mock (simulated) or real API
+   */
+  static async put<T>(
+    endpoint: string,
+    data: any,
+    apiFetcher: () => Promise<T>
+  ): Promise<T> {
+    if (API_CONFIG.useMockData) {
+      // Simulate API response
+      console.log(`[MOCK] PUT ${endpoint}`, data);
+      return { success: true } as T;
+    } else {
+      // Call real API
+      return await apiFetcher();
+    }
+  }
+
+  /**
+   * Delete data from either mock (simulated) or real API
+   */
+  static async delete<T>(
+    endpoint: string,
+    apiFetcher: () => Promise<T>
+  ): Promise<T> {
+    if (API_CONFIG.useMockData) {
+      // Simulate API response
+      console.log(`[MOCK] DELETE ${endpoint}`);
+      return true as T;
+    } else {
+      // Call real API
+      return await apiFetcher();
+    }
+  }
+
+  /**
    * Get mock data based on endpoint pattern
    * Returns DTO structure (id, name only) to match backend
    */

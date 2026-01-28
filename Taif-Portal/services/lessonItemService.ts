@@ -1,6 +1,6 @@
 import { httpService } from "./httpService";
 import { DataProvider } from "@/lib/dataProvider";
-import { LessonItemDto } from "@/dtos/lessonItem/LessonItemDto";
+import { LessonItemDto, CreateLessonItemRequest, UpdateLessonItemRequest } from "@/dtos/lessonItem/LessonItemDto";
 import { LessonItemMapper } from "@/mappers/lessonItemMapper";
 
 export type LessonItemType = "video" | "reading" | "quiz" | "assignment";
@@ -29,31 +29,57 @@ class LessonItemService {
   /**
    * Get all items for a specific lesson
    */
-  async getItemsByLesson(courseId: string, lessonId: string): Promise<LessonItem[]> {
+  async getItemsByLesson(lessonId: string): Promise<LessonItem[]> {
     const dtos = await DataProvider.get<LessonItemDto[]>(
-      `/courses/${courseId}/lessons/${lessonId}/items`,
-      () => httpService.get<LessonItemDto[]>(
-        `/api/courses/${courseId}/lessons/${lessonId}/items`
-      )
+      `/lessonItems/lesson/${lessonId}`,
+      () => httpService.get<LessonItemDto[]>(`/api/LessonItem/lesson/${lessonId}`)
     );
-    return LessonItemMapper.toUiModelList(dtos, lessonId, courseId);
+    return LessonItemMapper.toUiModelList(dtos, lessonId);
   }
 
   /**
    * Get a specific lesson item
    */
-  async getItemById(
-    courseId: string,
-    lessonId: string,
-    itemId: string
-  ): Promise<LessonItem> {
+  async getItemById(itemId: string): Promise<LessonItem> {
     const dto = await DataProvider.get<LessonItemDto>(
-      `/courses/${courseId}/lessons/${lessonId}/items/${itemId}`,
-      () => httpService.get<LessonItemDto>(
-        `/api/courses/${courseId}/lessons/${lessonId}/items/${itemId}`
-      )
+      `/lessonItems/${itemId}`,
+      () => httpService.get<LessonItemDto>(`/api/LessonItem/${itemId}`)
     );
-    return LessonItemMapper.toUiModel(dto, lessonId, courseId);
+    return LessonItemMapper.toUiModel(dto);
+  }
+
+  /**
+   * Create a new lesson item
+   */
+  async createLessonItem(request: CreateLessonItemRequest): Promise<LessonItem> {
+    const dto = await DataProvider.post<LessonItemDto>(
+      '/lessonItems',
+      request,
+      () => httpService.post<LessonItemDto>('/api/LessonItem', request)
+    );
+    return LessonItemMapper.toUiModel(dto);
+  }
+
+  /**
+   * Update an existing lesson item
+   */
+  async updateLessonItem(id: string, request: UpdateLessonItemRequest): Promise<LessonItem> {
+    const dto = await DataProvider.put<LessonItemDto>(
+      `/lessonItems/${id}`,
+      request,
+      () => httpService.put<LessonItemDto>(`/api/LessonItem/${id}`, request)
+    );
+    return LessonItemMapper.toUiModel(dto);
+  }
+
+  /**
+   * Delete a lesson item
+   */
+  async deleteLessonItem(id: string): Promise<boolean> {
+    return DataProvider.delete<boolean>(
+      `/lessonItems/${id}`,
+      () => httpService.delete<boolean>(`/api/LessonItem/${id}`)
+    );
   }
 
   /**
