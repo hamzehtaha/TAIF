@@ -1,6 +1,6 @@
 ﻿using TAIF.Domain.Entities;
 using TAIF.Infrastructure.Data;
-using TAIF.Application.Interfaces;
+using TAIF.Application.Interfaces.Repositories;
 
 namespace TAIF.Infrastructure.Repositories
 {

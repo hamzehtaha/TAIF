@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using TAIF.Application.DTOs;
-using TAIF.Application.Interfaces;
+using TAIF.Application.Interfaces.Services;
 using TAIF.Domain.Entities;
 
 namespace TAIF.Controllers

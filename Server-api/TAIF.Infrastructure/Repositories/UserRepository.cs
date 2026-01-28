@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using TAIF.Application.Interfaces;
+using TAIF.Application.Interfaces.Repositories;
 using TAIF.Domain.Entities;
 using TAIF.Infrastructure.Data;
 
@@ -18,16 +18,6 @@ public class UserRepository : RepositoryBase<User>, IUserRepository
     {
         return await _context.Users
             .FirstOrDefaultAsync(x => x.Email == email);
-    }
-
-    public async Task AddAsync(User user)
-    {
-        await _context.Users.AddAsync(user);
-    }
-
-    public async Task SaveChangesAsync()
-    {
-        await _context.SaveChangesAsync();
     }
     public async Task<User?> GetByRefreshTokenAsync(string refreshToken)
     {

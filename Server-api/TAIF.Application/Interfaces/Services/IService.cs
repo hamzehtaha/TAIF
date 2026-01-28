@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using TAIF.Domain.Entities;
 
-namespace TAIF.Application.Interfaces
+namespace TAIF.Application.Interfaces.Services
 {
     public interface IService<T> where T : Base
     {

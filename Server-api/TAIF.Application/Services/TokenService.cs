@@ -4,7 +4,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using TAIF.Application.Interfaces;
+using TAIF.Application.Interfaces.Services;
 using TAIF.Domain.Entities;
 
 namespace TAIF.Application.Services

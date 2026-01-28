@@ -1,6 +1,6 @@
 ﻿using TAIF.Application.DTOs;
 
-namespace TAIF.Application.Interfaces;
+namespace TAIF.Application.Interfaces.Services;
 
 public interface IAuthService
 {

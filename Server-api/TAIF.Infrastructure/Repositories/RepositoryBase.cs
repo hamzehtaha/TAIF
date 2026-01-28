@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
-using TAIF.Application.Interfaces;
+using TAIF.Application.Interfaces.Repositories;
 using TAIF.Domain.Entities;
 
 namespace TAIF.Infrastructure.Repositories
@@ -266,7 +266,6 @@ namespace TAIF.Infrastructure.Repositories
             try
             {
                 entity.CreatedAt = DateTime.UtcNow;
-                entity.UpdatedAt = DateTime.UtcNow;
                 await _dbSet.AddAsync(entity);
             }
             catch (Exception ex)

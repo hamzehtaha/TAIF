@@ -1,6 +1,6 @@
 using TAIF.Domain.Entities;
 
-namespace TAIF.Application.Interfaces
+namespace TAIF.Application.Interfaces.Services
 {
     public interface ILessonItemService : IService<LessonItem>
     {

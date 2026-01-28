@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using TAIF.Application.DTOs;
-using TAIF.Application.Interfaces;
+using TAIF.Application.Interfaces.Services;
 using TAIF.Domain.Entities;
 
 namespace TAIF.Controllers
@@ -17,7 +17,7 @@ namespace TAIF.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Lesson>> Get([FromRoute] Guid id)
+        public async Task<IActionResult> Get([FromRoute] Guid id)
         {
             var lesson = await _lessonService.GetByIdAsync(id);
             if (lesson is null) return NotFound();
@@ -25,7 +25,7 @@ namespace TAIF.Controllers
         }
 
         [HttpGet("course/{courseId}")]
-        public async Task<ActionResult<List<Lesson>>> GetByCourseId([FromRoute] Guid courseId)
+        public async Task<IActionResult> GetByCourseId([FromRoute] Guid courseId)
         {
             var lessons = await _lessonService.GetByCourseIdAsync(courseId);
             if (lessons is null) return NotFound();

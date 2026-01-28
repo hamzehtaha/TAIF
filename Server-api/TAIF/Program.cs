@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using TAIF.API.Middleware;
-using TAIF.Application.Interfaces;
 using TAIF.Application.Services;
 using TAIF.Infrastructure.Data;
 using TAIF.Infrastructure.Repositories;
@@ -10,6 +9,8 @@ using Serilog;
 using TAIF.API.Seeder;
 using System.Reflection;
 using Microsoft.AspNetCore.Cors.Infrastructure;
+using TAIF.Application.Interfaces.Services;
+using TAIF.Application.Interfaces.Repositories;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -33,14 +34,11 @@ builder.Services.AddDbContext<TaifDbContext>(options =>
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
-
 builder.Services.AddScoped<ITokenService, TokenService>();
-
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<ICourseRepository, CourseRepository>();
 builder.Services.AddScoped<ILessonRepository, LessonRepository>();
 builder.Services.AddScoped<ILessonItemRepository, LessonItemRepository>();
-
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<ICourseService, CourseService>();
 builder.Services.AddScoped<ILessonService, LessonService>();
@@ -125,7 +123,19 @@ using (var scope = app.Services.CreateScope())
 
 app.UseCors("AllowAll");
 app.UseSwagger();
-app.UseSwaggerUI();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Pulse API v1");
+});
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path == "/")
+    {
+        context.Response.Redirect("/swagger");
+        return;
+    }
+    await next();
+});
 app.UseMiddleware<ExceptionMiddleware>();
 
 app.UseAuthentication();

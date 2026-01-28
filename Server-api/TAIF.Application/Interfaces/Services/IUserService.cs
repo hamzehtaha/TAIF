@@ -5,10 +5,10 @@ using System.Text;
 using System.Threading.Tasks;
 using TAIF.Domain.Entities;
 
-namespace TAIF.Application.Interfaces
+namespace TAIF.Application.Interfaces.Services
 {
-    public interface ICourseService : IService<Course>
+    public interface IUserService : IService<User>
     {
-        Task<List<Course>> GetByCategoryIdAsync(Guid categoryId);
+
     }
 }

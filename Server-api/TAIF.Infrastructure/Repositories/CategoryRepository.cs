@@ -1,4 +1,4 @@
-using TAIF.Application.Interfaces;
+using TAIF.Application.Interfaces.Repositories;
 using TAIF.Domain.Entities;
 using TAIF.Infrastructure.Data;
 

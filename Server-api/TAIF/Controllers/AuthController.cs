@@ -1,7 +1,10 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using TAIF.Application.Interfaces;
+using System.Security.Claims;
 using TAIF.Application.DTOs;
+using TAIF.Application.Interfaces.Services;
+using TAIF.Domain.Entities;
 
 namespace TAIF.API.Controllers
 {
@@ -11,11 +14,14 @@ namespace TAIF.API.Controllers
     {
         private readonly IAuthService _authService;
         private readonly ILogger<AuthController> _logger;
+        private readonly IUserService _userService;
         public AuthController(IAuthService authService,
-            ILogger<AuthController> logger)
+            ILogger<AuthController> logger,
+            IUserService userService)
         {
             _authService = authService;
             _logger = logger;
+            _userService = userService;
         }
 
         [HttpPost("register")]
@@ -30,7 +36,6 @@ namespace TAIF.API.Controllers
 
             return Ok(result);
         }
-
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginRequest request)
         {
@@ -50,7 +55,31 @@ namespace TAIF.API.Controllers
 
             return Ok(result);
         }
+        [HttpGet("me")]
+        [Authorize]
+        public async Task<IActionResult> Me()
+        {
+            // 1️ Read GUID from claims
+            var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
+            if (string.IsNullOrEmpty(userIdValue))
+            {
+                return Unauthorized("UserId claim not found");
+            }
+            if (!Guid.TryParse(userIdValue, out var userId))
+            {
+                return Unauthorized("Invalid UserId format");
+            }
+            // 2️ Load user
+            var user = await _userService.GetByIdAsync(userId);
+
+            if (user == null)
+            {
+                return NotFound("User not found");
+            }
+            // 3️ Return user (DTO recommended)
+            return Ok(ApiResponse<User>.SuccessResponse(user));
+        }
 
     }
 }

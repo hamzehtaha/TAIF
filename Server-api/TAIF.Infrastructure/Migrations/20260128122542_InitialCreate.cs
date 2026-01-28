@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace TAIF.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class FirstCommit : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -76,6 +76,36 @@ namespace TAIF.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Enrollments",
+                columns: table => new
+                {
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CourseId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    EnrolledAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Enrollments", x => new { x.UserId, x.CourseId });
+                    table.ForeignKey(
+                        name: "FK_Enrollments_Courses_CourseId",
+                        column: x => x.CourseId,
+                        principalTable: "Courses",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Enrollments_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "lessons",
                 columns: table => new
                 {
@@ -132,6 +162,11 @@ namespace TAIF.Infrastructure.Migrations
                 column: "CategoryId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Enrollments_CourseId",
+                table: "Enrollments",
+                column: "CourseId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_LessonItems_LessonId",
                 table: "LessonItems",
                 column: "LessonId");
@@ -145,6 +180,9 @@ namespace TAIF.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "Enrollments");
+
             migrationBuilder.DropTable(
                 name: "LessonItems");
 

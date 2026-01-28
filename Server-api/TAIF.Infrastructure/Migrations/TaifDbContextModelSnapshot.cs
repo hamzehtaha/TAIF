@@ -86,6 +86,39 @@ namespace TAIF.Infrastructure.Migrations
                     b.ToTable("Courses");
                 });
 
+            modelBuilder.Entity("TAIF.Domain.Entities.Enrollment", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CourseId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("EnrolledAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("UserId", "CourseId");
+
+                    b.HasIndex("CourseId");
+
+                    b.ToTable("Enrollments");
+                });
+
             modelBuilder.Entity("TAIF.Domain.Entities.Lesson", b =>
                 {
                     b.Property<Guid>("Id")
@@ -229,6 +262,25 @@ namespace TAIF.Infrastructure.Migrations
                     b.Navigation("Category");
                 });
 
+            modelBuilder.Entity("TAIF.Domain.Entities.Enrollment", b =>
+                {
+                    b.HasOne("TAIF.Domain.Entities.Course", "Course")
+                        .WithMany("Enrollments")
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TAIF.Domain.Entities.User", "User")
+                        .WithMany("Enrollments")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("TAIF.Domain.Entities.Lesson", b =>
                 {
                     b.HasOne("TAIF.Domain.Entities.Course", "Course")
@@ -249,6 +301,16 @@ namespace TAIF.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Lesson");
+                });
+
+            modelBuilder.Entity("TAIF.Domain.Entities.Course", b =>
+                {
+                    b.Navigation("Enrollments");
+                });
+
+            modelBuilder.Entity("TAIF.Domain.Entities.User", b =>
+                {
+                    b.Navigation("Enrollments");
                 });
 #pragma warning restore 612, 618
         }
