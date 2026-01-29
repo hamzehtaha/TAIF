@@ -20,12 +20,24 @@ namespace TAIF.Infrastructure.Data
         public DbSet<Lesson> lessons { get; set; }
         public DbSet<LessonItem> LessonItems { get; set; }
         public DbSet<Enrollment> Enrollments { get; set; }
+        public DbSet<LessonItemProgress> LessonItemProgress { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Enrollment>(entity =>
             {
                 entity.HasIndex(e => new { e.UserId, e.CourseId })
+                      .IsUnique();
+
+                entity.HasOne(e => e.LastLessonItem)
+                       .WithMany(li => li.Enrollments)
+                       .HasForeignKey(e => e.LastLessonItemId)
+                       .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<LessonItemProgress>(entity =>
+            {
+                entity.HasIndex(e => new { e.UserId, e.LessonItemId })
                       .IsUnique();
             });
         }

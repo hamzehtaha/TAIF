@@ -79,7 +79,8 @@ namespace TAIF.API.Seeder.Scripts
                                     {
                                         Title = lessonData.Title,
                                         CourseId = newCourse.Id,
-                                        Photo = lessonData.Photo
+                                        Photo = lessonData.Photo,
+                                        Order = lessonData.Order,
                                     };
                                     _context.lessons.Add(newLesson);
                                     await _context.SaveChangesAsync();
@@ -97,6 +98,7 @@ namespace TAIF.API.Seeder.Scripts
                                                 Type = itemData.Type,
                                                 LessonId = newLesson.Id,
                                                 DurationInSeconds = itemData.DurationInSeconds,
+                                                Order = itemData.Order,
                                             };
                                             _context.LessonItems.Add(newLessonItem);
                                         }
@@ -138,6 +140,7 @@ namespace TAIF.API.Seeder.Scripts
             public string Title { get; set; } = null!;
             public string? Photo { get; set; }
             public List<LessonItemJson>? LessonItems { get; set; }
+            public int Order { get; set; }
         }
 
         private class LessonItemJson
@@ -147,6 +150,7 @@ namespace TAIF.API.Seeder.Scripts
             public string Content { get; set; } = null!;
             public LessonItemType Type { get; set; }
             public double DurationInSeconds { get; set; }
+            public int Order { get; set; }
         }
     }
 }

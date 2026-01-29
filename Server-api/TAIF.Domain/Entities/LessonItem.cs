@@ -12,5 +12,7 @@ namespace TAIF.Domain.Entities
         public Guid LessonId { get; set; }
         public Lesson Lesson { get; set; } = null!;
         public double DurationInSeconds { get; set; } = 0;
+        public int Order { get; set; }
+        public ICollection<Enrollment> Enrollments { get; set; }
     }
 }

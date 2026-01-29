@@ -22,7 +22,7 @@ namespace TAIF.API.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Enroll([FromBody] EnrollRequest dto)
+        public async Task<IActionResult> Enroll(EnrollRequest dto)
         {
             var enrollment = await _service.CreateAsync(
                 new Enrollment

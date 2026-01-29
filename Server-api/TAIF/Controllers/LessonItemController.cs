@@ -25,6 +25,14 @@ namespace TAIF.Controllers
             return Ok(ApiResponse<LessonItem>.SuccessResponse(lessonItem));
         }
 
+        [HttpGet("lessonProgress/{lessonId}")]
+        public async Task<IActionResult> GetLessonItemsProgressAsync([FromRoute] Guid lessonId)
+        {
+            var lessonItems = await _lessonItemService.GetLessonItemsProgressAsync(this.UserId, lessonId);
+            if (lessonItems is null) return NotFound();
+            return Ok(ApiResponse<List<LessonItemResponse>>.SuccessResponse(lessonItems));
+        }
+
         [HttpGet("lesson/{lessonId}")]
         public async Task<IActionResult> GetByLessonId([FromRoute] Guid lessonId)
         {
