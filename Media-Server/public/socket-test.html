@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socket.IO Test - TAIF Media Management System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #00d4ff;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .status-box {
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid #00d4ff;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .status-indicator.connected {
+            background: #00ff00;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.disconnected {
+            background: #ff0000;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .test-section {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .test-section h2 {
+            color: #00d4ff;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #00d4ff;
+            border-radius: 5px;
+            color: #e0e0e0;
+            margin-bottom: 10px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 212, 255, 0.3);
+        }
+
+        button.danger {
+            background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+            color: #fff;
+        }
+
+        .log-container {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 5px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+
+        .log-entry {
+            margin-bottom: 8px;
+            padding: 5px;
+            border-left: 3px solid #00d4ff;
+            padding-left: 10px;
+        }
+
+        .log-entry.error {
+            border-left-color: #ff4444;
+            color: #ff8888;
+        }
+
+        .log-entry.success {
+            border-left-color: #00ff00;
+            color: #88ff88;
+        }
+
+        .log-timestamp {
+            color: #666;
+            font-size: 10px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-card {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid #00d4ff;
+            border-radius: 5px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #00d4ff;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #a0a0a0;
+        }
+    </style>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>🔌 Socket.IO Connection Test</h1>
+        
+        <div class="status-box">
+            <h2>Connection Status</h2>
+            <p>
+                <span class="status-indicator disconnected" id="statusIndicator"></span>
+                <strong id="statusText">Disconnected</strong>
+            </p>
+            <p style="margin-top: 10px; color: #a0a0a0; font-size: 12px;">
+                Socket ID: <span id="socketId">N/A</span>
+            </p>
+        </div>
+
+        <div class="test-section">
+            <h2>📤 Upload Progress Subscription</h2>
+            <p style="color: #a0a0a0; margin-bottom: 10px;">Enter a video ID to subscribe to upload progress events:</p>
+            <input type="text" id="videoIdInput" placeholder="Enter Video ID (e.g., abc-123-def)">
+            <button onclick="subscribeToUpload()">Subscribe</button>
+            <button onclick="unsubscribeFromUpload()" class="danger">Unsubscribe</button>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 Real-Time Statistics</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="statTotalVideos">0</div>
+                    <div class="stat-label">Total Videos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statActiveUploads">0</div>
+                    <div class="stat-label">Active Uploads</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statActiveStreams">0</div>
+                    <div class="stat-label">Active Streams</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statDiskUsage">0 MB</div>
+                    <div class="stat-label">Disk Usage</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>📝 Event Log</h2>
+            <button onclick="clearLog()">Clear Log</button>
+            <div class="log-container" id="logContainer">
+                <div class="log-entry">
+                    <div class="log-timestamp">[Waiting for events...]</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let socket;
+        let currentVideoId = null;
+
+        // Initialize Socket.IO connection
+        function initSocket() {
+            socket = io(window.location.origin);
+
+            socket.on('connect', () => {
+                updateConnectionStatus(true);
+                addLog('Connected to server', 'success');
+                document.getElementById('socketId').textContent = socket.id;
+            });
+
+            socket.on('disconnect', () => {
+                updateConnectionStatus(false);
+                addLog('Disconnected from server', 'error');
+                document.getElementById('socketId').textContent = 'N/A';
+            });
+
+            socket.on('upload-progress', (progress) => {
+                addLog(`Upload Progress: ${JSON.stringify(progress, null, 2)}`, 'info');
+                console.log('Upload Progress:', progress);
+            });
+
+            socket.on('stats-update', (stats) => {
+                updateStats(stats);
+                addLog(`Stats Update: ${JSON.stringify(stats, null, 2)}`, 'info');
+            });
+
+            socket.on('system-notification', (notification) => {
+                addLog(`System Notification: ${notification.message} (${notification.type})`, 'info');
+            });
+
+            socket.on('error', (error) => {
+                addLog(`Socket Error: ${error}`, 'error');
+            });
+        }
+
+        function updateConnectionStatus(connected) {
+            const indicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            
+            if (connected) {
+                indicator.className = 'status-indicator connected';
+                statusText.textContent = 'Connected';
+                statusText.style.color = '#00ff00';
+            } else {
+                indicator.className = 'status-indicator disconnected';
+                statusText.textContent = 'Disconnected';
+                statusText.style.color = '#ff4444';
+            }
+        }
+
+        function subscribeToUpload() {
+            const videoId = document.getElementById('videoIdInput').value.trim();
+            
+            if (!videoId) {
+                addLog('Please enter a video ID', 'error');
+                return;
+            }
+
+            if (!socket || !socket.connected) {
+                addLog('Socket not connected', 'error');
+                return;
+            }
+
+            currentVideoId = videoId;
+            socket.emit('upload:subscribe', videoId);
+            addLog(`Subscribed to upload: ${videoId}`, 'success');
+        }
+
+        function unsubscribeFromUpload() {
+            if (!currentVideoId) {
+                addLog('No active subscription', 'error');
+                return;
+            }
+
+            if (!socket || !socket.connected) {
+                addLog('Socket not connected', 'error');
+                return;
+            }
+
+            socket.emit('upload:unsubscribe', currentVideoId);
+            addLog(`Unsubscribed from upload: ${currentVideoId}`, 'success');
+            currentVideoId = null;
+        }
+
+        function updateStats(stats) {
+            if (stats.totalVideos !== undefined) {
+                document.getElementById('statTotalVideos').textContent = stats.totalVideos;
+            }
+            if (stats.activeUploads !== undefined) {
+                document.getElementById('statActiveUploads').textContent = stats.activeUploads;
+            }
+            if (stats.activeStreams !== undefined) {
+                document.getElementById('statActiveStreams').textContent = stats.activeStreams;
+            }
+            if (stats.diskUsage !== undefined) {
+                const mb = (stats.diskUsage / (1024 * 1024)).toFixed(2);
+                document.getElementById('statDiskUsage').textContent = `${mb} MB`;
+            }
+        }
+
+        function addLog(message, type = 'info') {
+            const logContainer = document.getElementById('logContainer');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.innerHTML = `
+                <div class="log-timestamp">[${timestamp}]</div>
+                <div>${message}</div>
+            `;
+            
+            logContainer.insertBefore(entry, logContainer.firstChild);
+            
+            // Keep only last 50 entries
+            while (logContainer.children.length > 50) {
+                logContainer.removeChild(logContainer.lastChild);
+            }
+        }
+
+        function clearLog() {
+            document.getElementById('logContainer').innerHTML = '';
+            addLog('Log cleared');
+        }
+
+        // Initialize on page load
+        window.addEventListener('load', () => {
+            initSocket();
+            addLog('Page loaded, initializing Socket.IO...', 'info');
+        });
+    </script>
+</body>
+</html>

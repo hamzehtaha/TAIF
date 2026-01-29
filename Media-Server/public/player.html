@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Standalone Video Player - Direct MP4 Streaming</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .video-container {
+            margin-top: 20px;
+            display: none;
+        }
+
+        .video-container.active {
+            display: block;
+        }
+
+        video {
+            width: 100%;
+            background: #000;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .video-info {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .video-info div {
+            margin-bottom: 8px;
+        }
+
+        .video-info strong {
+            color: #667eea;
+        }
+
+        .status {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            display: none;
+            font-size: 14px;
+        }
+
+        .status.active {
+            display: block;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .examples {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .examples h3 {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .examples code {
+            background: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #667eea;
+            display: block;
+            margin: 5px 0;
+            word-break: break-all;
+        }
+
+        .quality-selector {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .quality-btn {
+            padding: 8px 16px;
+            background: #f0f0f0;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .quality-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .quality-btn:hover {
+            border-color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 Standalone Video Player</h1>
+            <p>Test MP4 video streams with quality selection</p>
+        </div>
+
+        <div class="content">
+            <div class="status" id="status"></div>
+
+            <div class="input-group">
+                <label for="videoId">Video ID</label>
+                <input 
+                    type="text" 
+                    id="videoId" 
+                    placeholder="Enter video ID (e.g., f9848757-6d1a-41ec-9e2e-f9a006038ea7)"
+                    autofocus
+                >
+            </div>
+
+            <div class="input-group">
+                <label>Quality Selection</label>
+                <div class="quality-selector">
+                    <button class="quality-btn active" data-quality="360p">360p</button>
+                    <button class="quality-btn" data-quality="480p">480p</button>
+                    <button class="quality-btn" data-quality="720p">720p</button>
+                    <button class="quality-btn" data-quality="1080p">1080p</button>
+                </div>
+            </div>
+
+            <button id="loadBtn">Load Video</button>
+            <button id="clearBtn" style="background: #666; margin-left: 10px;">Clear</button>
+
+            <div class="video-container" id="videoContainer">
+                <video id="videoPlayer" controls preload="metadata"></video>
+                <div class="video-info" id="videoInfo">
+                    <div><strong>URL:</strong> <span id="infoUrl">-</span></div>
+                    <div><strong>Quality:</strong> <span id="infoQuality">-</span></div>
+                    <div><strong>Status:</strong> <span id="infoStatus">-</span></div>
+                    <div><strong>Duration:</strong> <span id="infoDuration">-</span></div>
+                </div>
+            </div>
+
+            <div class="examples">
+                <h3>Example URLs:</h3>
+                <code>http://localhost:3000/stream/YOUR_VIDEO_ID/720p.mp4</code>
+                <code>http://localhost:3000/stream/YOUR_VIDEO_ID/1080p.mp4</code>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const videoIdInput = document.getElementById('videoId');
+        const loadBtn = document.getElementById('loadBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const videoContainer = document.getElementById('videoContainer');
+        const video = document.getElementById('videoPlayer');
+        const status = document.getElementById('status');
+        const infoUrl = document.getElementById('infoUrl');
+        const infoQuality = document.getElementById('infoQuality');
+        const infoStatus = document.getElementById('infoStatus');
+        const infoDuration = document.getElementById('infoDuration');
+        const qualityBtns = document.querySelectorAll('.quality-btn');
+
+        let currentQuality = '360p';
+        let currentVideoId = '';
+
+        // Quality button handlers
+        qualityBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                qualityBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentQuality = btn.dataset.quality;
+                
+                // If video is loaded, switch quality
+                if (currentVideoId) {
+                    const currentTime = video.currentTime;
+                    loadStream(currentTime);
+                }
+            });
+        });
+
+        function showStatus(message, type) {
+            status.textContent = message;
+            status.className = `status active ${type}`;
+            setTimeout(() => {
+                status.classList.remove('active');
+            }, 5000);
+        }
+
+        function loadStream(startTime = 0) {
+            let videoId = videoIdInput.value.trim();
+            
+            if (!videoId) {
+                showStatus('Please enter a video ID', 'error');
+                return;
+            }
+            
+            // Extract video ID if a full URL was pasted
+            if (videoId.includes('/stream/')) {
+                const match = videoId.match(/\/stream\/([a-f0-9-]+)\//i);
+                if (match) {
+                    videoId = match[1];
+                    videoIdInput.value = videoId;
+                }
+            }
+            // Also handle if just the ID part of a URL was pasted
+            if (videoId.includes('http')) {
+                const match = videoId.match(/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i);
+                if (match) {
+                    videoId = match[1];
+                    videoIdInput.value = videoId;
+                }
+            }
+
+            currentVideoId = videoId;
+            const serverUrl = window.location.origin;
+            const url = `${serverUrl}/stream/${videoId}/${currentQuality}.mp4`;
+
+            showStatus('Loading video...', 'info');
+            
+            // Update info
+            infoUrl.textContent = url;
+            infoQuality.textContent = currentQuality;
+            infoStatus.textContent = 'Loading...';
+            infoDuration.textContent = '-';
+
+            // Set video source
+            video.src = url;
+            
+            // Event handlers
+            video.addEventListener('loadedmetadata', () => {
+                showStatus('Video loaded successfully!', 'success');
+                infoStatus.textContent = 'Ready to play';
+                videoContainer.classList.add('active');
+                if (video.duration && video.duration !== Infinity) {
+                    infoDuration.textContent = formatDuration(video.duration);
+                }
+                
+                // Resume from previous time if switching quality
+                if (startTime > 0) {
+                    video.currentTime = startTime;
+                }
+                
+                video.play().catch(err => {
+                    console.warn('Autoplay prevented:', err);
+                    showStatus('Click play to start video', 'info');
+                });
+            }, { once: true });
+
+            video.addEventListener('error', (e) => {
+                console.error('Video Error:', e);
+                let errorMsg = 'Error loading video';
+                
+                if (video.error) {
+                    switch (video.error.code) {
+                        case 1:
+                            errorMsg = 'Video loading aborted';
+                            break;
+                        case 2:
+                            errorMsg = 'Network error';
+                            break;
+                        case 3:
+                            errorMsg = 'Video decoding failed';
+                            break;
+                        case 4:
+                            errorMsg = 'Video format not supported';
+                            break;
+                    }
+                }
+                
+                showStatus(errorMsg, 'error');
+                infoStatus.textContent = 'Error';
+            }, { once: true });
+
+            video.addEventListener('canplay', () => {
+                infoStatus.textContent = 'Ready';
+            }, { once: true });
+        }
+
+        function clearStream() {
+            video.pause();
+            video.src = '';
+            videoIdInput.value = '';
+            currentVideoId = '';
+            videoContainer.classList.remove('active');
+            infoUrl.textContent = '-';
+            infoQuality.textContent = '-';
+            infoStatus.textContent = '-';
+            infoDuration.textContent = '-';
+            showStatus('Stream cleared', 'info');
+        }
+
+        function formatDuration(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        loadBtn.addEventListener('click', () => loadStream());
+        clearBtn.addEventListener('click', clearStream);
+        videoIdInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                loadStream();
+            }
+        });
+
+        // Load from URL parameter if present
+        const urlParams = new URLSearchParams(window.location.search);
+        const idParam = urlParams.get('id');
+        const qualityParam = urlParams.get('quality');
+        
+        if (idParam) {
+            videoIdInput.value = idParam;
+            if (qualityParam && ['360p', '480p', '720p', '1080p'].includes(qualityParam)) {
+                currentQuality = qualityParam;
+                qualityBtns.forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.quality === qualityParam);
+                });
+            }
+            loadStream();
+        }
+    </script>
+</body>
+</html>
