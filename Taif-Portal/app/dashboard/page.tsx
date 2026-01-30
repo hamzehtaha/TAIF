@@ -5,20 +5,22 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslation } from "@/hooks/useTranslation";
 import { authService } from "@/services/authService";
+import { enrollmentService } from "@/services/enrollmentService";
 import { courseService, Course } from "@/services/courseService";
 import { CourseCard } from "@/components/CourseCard";
 import { PuzzleLoader } from "@/components/PuzzleLoader";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BookOpen, Award, Clock, TrendingUp } from "lucide-react";
+import { BookOpen, Award, Clock, TrendingUp, AlertCircle } from "lucide-react";
 
 export default function DashboardHome() {
   const t = useTranslation();
   const router = useRouter();
   const user = authService.getUser();
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Check authentication
@@ -27,45 +29,59 @@ export default function DashboardHome() {
       return;
     }
 
-    // Load enrolled courses
-    const loadCourses = async () => {
+    // Load enrolled courses from API
+    const loadData = async () => {
       try {
-        const data = await courseService.getEnrolledCourses();
-        setCourses(data.slice(0, 3));
-      } catch (error) {
-        // Silently use mock data - backend courses endpoint not implemented yet
-        console.log("Using mock course data (backend endpoint not available)");
+        setError(null);
+        const courseDtos = await enrollmentService.getUserCourses();
+        // Map DTOs to Course model
+        const courses: Course[] = courseDtos.map(dto => ({
+          id: dto.id,
+          title: dto.name,
+          description: dto.description || "",
+          thumbnail: dto.photo || "/placeholder-course.jpg",
+          imageUrl: dto.photo || "/placeholder-course.jpg",
+          categoryId: dto.categoryId,
+          isEnrolled: true,
+        }));
+        setEnrolledCourses(courses.slice(0, 3));
+      } catch (err) {
+        console.error("Failed to load enrolled courses:", err);
+        setError("Failed to load your courses. Please try again.");
       } finally {
         setLoading(false);
       }
     };
 
-    loadCourses();
+    loadData();
   }, [router]);
 
   const stats = [
     {
       icon: BookOpen,
       label: t.dashboard.coursesEnrolled,
-      value: "12",
+      value: enrolledCourses.length.toString(),
       color: "bg-primary",
     },
     {
       icon: Clock,
       label: t.dashboard.hoursLearned,
-      value: "48",
+      value: "—",
+      subtitle: "Not implemented yet",
       color: "bg-accent",
     },
     {
       icon: Award,
       label: t.dashboard.certificates,
-      value: "3",
+      value: "—",
+      subtitle: "Not implemented yet",
       color: "bg-success",
     },
     {
       icon: TrendingUp,
       label: t.dashboard.completionRate,
-      value: "85%",
+      value: "—",
+      subtitle: "Not implemented yet",
       color: "bg-warning",
     },
   ];
@@ -100,6 +116,11 @@ export default function DashboardHome() {
                         {stat.label}
                       </p>
                       <p className="text-3xl font-bold">{stat.value}</p>
+                      {"subtitle" in stat && stat.subtitle && (
+                        <p className="text-xs text-muted-foreground/70 mt-1">
+                          {stat.subtitle}
+                        </p>
+                      )}
                     </div>
                     <div
                       className={`${stat.color} p-3 rounded-lg text-white`}
@@ -137,9 +158,9 @@ export default function DashboardHome() {
                 <div key={i} className="bg-muted rounded-lg h-96 animate-pulse" />
               ))}
             </div>
-          ) : courses.length > 0 ? (
+          ) : enrolledCourses.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {courses.map((course) => (
+              {enrolledCourses.map((course) => (
                 <CourseCard key={course.id} course={course} />
               ))}
             </div>

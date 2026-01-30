@@ -1,190 +1,112 @@
 import { httpService } from "./httpService";
-import { DataProvider } from "@/lib/dataProvider";
 import { CourseDto, CreateCourseRequest, UpdateCourseRequest } from "@/dtos/course/CourseDto";
-import { CourseMapper } from "@/mappers/courseMapper";
+import { CategoryDto } from "@/dtos/category/CategoryDto";
+
+export interface Lesson {
+  id: string;
+  title: string;
+  description?: string;
+  duration: number;
+  order: number;
+  isCompleted?: boolean;
+  photo?: string;
+}
 
 export interface Course {
   id: string;
   title: string;
   description: string;
-  instructor: string;
-  duration: string;
-  level: string;
   thumbnail: string;
   imageUrl?: string;
-  enrolledStudents: number;
-  rating: number;
-  price: number;
-  category: string;
-  difficulty?: string;
-  reviewCount?: number;
-  enrollmentCount?: number;
+  categoryId: string;
+  categoryName?: string;
   isEnrolled?: boolean;
-  progress?: number;
-  totalLessons?: number;
-  completedLessons?: number;
-  lessons?: Array<{ 
-    id: string; 
-    title: string; 
-    duration: string; 
-    order: number;
-    description?: string;
-    isCompleted?: boolean;
-  }>;
-}
-
-export interface CourseProgress {
-  courseId: string;
-  progress: number;
-  completedLessons: string[];
-  lastAccessedAt: string;
+  isFavourite?: boolean;
+  lessons?: Lesson[];
 }
 
 class CourseService {
   /**
    * Get all courses
+   * GET /api/Course
    */
-  async getCourses(filter?: {
-    category?: string;
-    search?: string;
-  }): Promise<Course[]> {
-    // Get DTOs from backend or mock
-    const dtos = await DataProvider.get<CourseDto[]>(
-      '/courses',
-      () => httpService.get<CourseDto[]>('/api/Course')
-    );
-    
-    // Map DTOs to UI models
-    let courses = CourseMapper.toUiModelList(dtos);
-    
-    // Apply filters
-    if (filter?.category) {
-      courses = courses.filter((c) => c.category === filter.category);
-    }
-    if (filter?.search) {
-      const search = filter.search.toLowerCase();
-      courses = courses.filter(
-        (c) =>
-          c.title.toLowerCase().includes(search) ||
-          c.description.toLowerCase().includes(search)
-      );
-    }
-
-    return courses;
+  async getCourses(): Promise<Course[]> {
+    const dtos = await httpService.get<CourseDto[]>("/api/Course");
+    return dtos.map(this.mapDtoToModel);
   }
 
   /**
    * Get a specific course by ID
+   * GET /api/Course/{id}
    */
   async getCourseById(id: string): Promise<Course> {
-    const dto = await DataProvider.get<CourseDto>(
-      `/courses/${id}`,
-      () => httpService.get<CourseDto>(`/api/Course/${id}`)
-    );
-    return CourseMapper.toUiModel(dto);
+    const dto = await httpService.get<CourseDto>(`/api/Course/${id}`);
+    return this.mapDtoToModel(dto);
   }
 
   /**
    * Get courses by category ID
+   * GET /api/Course/category/{categoryId}
    */
   async getCoursesByCategory(categoryId: string): Promise<Course[]> {
-    const dtos = await DataProvider.get<CourseDto[]>(
-      `/courses/category/${categoryId}`,
-      () => httpService.get<CourseDto[]>(`/api/Course/category/${categoryId}`)
-    );
-    return CourseMapper.toUiModelList(dtos);
+    const dtos = await httpService.get<CourseDto[]>(`/api/Course/category/${categoryId}`);
+    return dtos.map(this.mapDtoToModel);
   }
 
   /**
    * Create a new course
+   * POST /api/Course
    */
   async createCourse(request: CreateCourseRequest): Promise<Course> {
-    const dto = await DataProvider.post<CourseDto>(
-      '/courses',
-      request,
-      () => httpService.post<CourseDto>('/api/Course', request)
-    );
-    return CourseMapper.toUiModel(dto);
+    const dto = await httpService.post<CourseDto>("/api/Course", request);
+    return this.mapDtoToModel(dto);
   }
 
   /**
    * Update an existing course
+   * PUT /api/Course/{id}
    */
   async updateCourse(id: string, request: UpdateCourseRequest): Promise<Course> {
-    const dto = await DataProvider.put<CourseDto>(
-      `/courses/${id}`,
-      request,
-      () => httpService.put<CourseDto>(`/api/Course/${id}`, request)
-    );
-    return CourseMapper.toUiModel(dto);
+    const dto = await httpService.put<CourseDto>(`/api/Course/${id}`, request);
+    return this.mapDtoToModel(dto);
   }
 
   /**
    * Delete a course
+   * DELETE /api/Course/{id}
    */
   async deleteCourse(id: string): Promise<boolean> {
-    return DataProvider.delete<boolean>(
-      `/courses/${id}`,
-      () => httpService.delete<boolean>(`/api/Course/${id}`)
-    );
+    return httpService.delete<boolean>(`/api/Course/${id}`);
   }
 
-  async enrollInCourse(courseId: string): Promise<{ success: boolean }> {
-    return DataProvider.post<{ success: boolean }>(
-      `/courses/${courseId}/enroll`,
-      {},
-      () => httpService.post<{ success: boolean }>(
-        `/api/courses/${courseId}/enroll`,
-        {}
-      )
-    );
+  /**
+   * Map backend DTO to frontend model
+   */
+  private mapDtoToModel(dto: CourseDto): Course {
+    return {
+      id: dto.id,
+      title: dto.name,
+      description: dto.description || "",
+      thumbnail: dto.photo || "/placeholder-course.jpg",
+      imageUrl: dto.photo || "/placeholder-course.jpg",
+      categoryId: dto.categoryId,
+      isEnrolled: false,
+      isFavourite: false,
+      lessons: [],
+    };
   }
 
-  async getCourseProgress(courseId: string): Promise<CourseProgress> {
-    return DataProvider.get<CourseProgress>(
-      `/courses/${courseId}/progress`,
-      () => httpService.get<CourseProgress>(`/api/courses/${courseId}/progress`)
-    );
-  }
-
-  async updateLessonProgress(
-    courseId: string,
-    lessonId: string
-  ): Promise<{ success: boolean }> {
-    return DataProvider.post<{ success: boolean }>(
-      `/courses/${courseId}/lessons/${lessonId}/complete`,
-      {},
-      () => httpService.post<{ success: boolean }>(
-        `/api/courses/${courseId}/lessons/${lessonId}/complete`,
-        {}
-      )
-    );
-  }
-
-  async rateCourse(
-    courseId: string,
-    rating: number,
-    review?: string
-  ): Promise<{ success: boolean }> {
-    return DataProvider.post<{ success: boolean }>(
-      `/courses/${courseId}/rate`,
-      { rating, review },
-      () => httpService.post<{ success: boolean }>(
-        `/api/courses/${courseId}/rate`,
-        { rating, review }
-      )
-    );
-  }
-
-  async getEnrolledCourses(): Promise<Course[]> {
-    const dtos = await DataProvider.get<CourseDto[]>(
-      '/courses/enrolled',
-      () => httpService.get<CourseDto[]>('/api/courses/enrolled')
-    );
-    return CourseMapper.toUiModelList(dtos).map(course => ({
+  /**
+   * Enrich courses with category names
+   */
+  async enrichCoursesWithCategories(
+    courses: Course[], 
+    categories: CategoryDto[]
+  ): Promise<Course[]> {
+    const categoryMap = new Map(categories.map(c => [c.id, c.name]));
+    return courses.map(course => ({
       ...course,
-      isEnrolled: true,
-      progress: Math.floor(Math.random() * 100), // Mock progress for now
+      categoryName: categoryMap.get(course.categoryId) || "Unknown",
     }));
   }
 }

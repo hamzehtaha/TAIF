@@ -146,7 +146,17 @@
     "resumeCourse": "استئناف الدورة",
     "students": "طالب",
     "hours": "ساعات",
-    "courseNotFound": "لم يتم العثور على الدورة"
+    "courseNotFound": "لم يتم العثور على الدورة",
+    "courseInfo": "معلومات الدورة",
+    "category": "الفئة",
+    "enrolledStudents": "المسجلين",
+    "addToFavorites": "إضافة للمفضلة",
+    "removeFromFavorites": "إزالة من المفضلة",
+    "reviewsCount": "تقييم",
+    "writeReview": "اكتب تقييماً",
+    "yourRating": "تقييمك",
+    "reviewPlaceholder": "شارك تجربتك مع هذه الدورة...",
+    "submitReview": "إرسال التقييم"
   },
   "settings": {
     "title": "الإعدادات",
@@ -235,5 +245,30 @@
     "gainSkills": "اكتساب مهارات ذات صلة بالصناعة",
     "earnCertificate": "احصل على شهادة عند الإكمال",
     "startLesson": "ابدأ الدرس"
+  },
+  "learning": {
+    "startLearning": "ابدأ التعلم",
+    "continueLearning": "متابعة التعلم",
+    "backToCourse": "العودة للدورة",
+    "exit": "خروج",
+    "progress": "التقدم",
+    "itemsCompleted": "{completed} من {total} مكتمل",
+    "items": "عناصر",
+    "noItems": "لا توجد عناصر في هذا الدرس",
+    "noContent": "لا يوجد محتوى",
+    "noContentDesc": "لا توجد عناصر في هذا الدرس بعد.",
+    "lessonNotFound": "الدرس غير موجود",
+    "videoContent": "محتوى فيديو",
+    "textContent": "محتوى نصي",
+    "questionContent": "محتوى اختبار",
+    "itemOf": "العنصر {current} من {total}",
+    "inLesson": "في",
+    "video": "فيديو",
+    "text": "نص",
+    "question": "اختبار",
+    "allCategories": "جميع الفئات",
+    "favoriteCourses": "الدورات المفضلة",
+    "noFavorites": "لا توجد دورات مفضلة بعد",
+    "addFavorites": "سجل في الدورات وأضفها إلى المفضلة"
   }
 }

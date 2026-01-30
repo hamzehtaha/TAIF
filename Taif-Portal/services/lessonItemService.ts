@@ -1,192 +1,122 @@
 import { httpService } from "./httpService";
-import { DataProvider } from "@/lib/dataProvider";
 import { LessonItemDto, CreateLessonItemRequest, UpdateLessonItemRequest } from "@/dtos/lessonItem/LessonItemDto";
-import { LessonItemMapper } from "@/mappers/lessonItemMapper";
+import { LessonItemWithProgressDto } from "@/dtos/lessonItemProgress/LessonItemProgressDto";
 
-export type LessonItemType = "video" | "reading" | "quiz" | "assignment";
+export type LessonItemType = "video" | "text" | "question";
 
 export interface LessonItem {
   id: string;
   lessonId: string;
-  courseId: string;
-  title: string;
-  type: LessonItemType;
+  name: string;
+  url: string;
   content: string;
-  duration: string;
+  type: LessonItemType;
+  durationInSeconds: number;
   order: number;
   isCompleted: boolean;
-  questions?: QuizQuestion[];
-}
-
-export interface QuizQuestion {
-  id: string;
-  question: string;
-  options: string[];
-  correctAnswer: number;
 }
 
 class LessonItemService {
   /**
-   * Get all items for a specific lesson
+   * Get all items for a specific lesson (without progress)
+   * GET /api/LessonItem/lesson/{lessonId}
    */
   async getItemsByLesson(lessonId: string): Promise<LessonItem[]> {
-    const dtos = await DataProvider.get<LessonItemDto[]>(
-      `/lessonItems/lesson/${lessonId}`,
-      () => httpService.get<LessonItemDto[]>(`/api/LessonItem/lesson/${lessonId}`)
+    const dtos = await httpService.get<LessonItemDto[]>(`/api/LessonItem/lesson/${lessonId}`);
+    return dtos.map(dto => this.mapDtoToModel(dto, lessonId));
+  }
+
+  /**
+   * Get lesson items with user progress
+   * GET /api/LessonItem/lessonProgress/{lessonId}
+   */
+  async getItemsWithProgress(lessonId: string): Promise<LessonItem[]> {
+    const dtos = await httpService.get<LessonItemWithProgressDto[]>(
+      `/api/LessonItem/lessonProgress/${lessonId}`
     );
-    return LessonItemMapper.toUiModelList(dtos, lessonId);
+    return dtos.map(dto => this.mapProgressDtoToModel(dto, lessonId));
   }
 
   /**
    * Get a specific lesson item
+   * GET /api/LessonItem/{id}
    */
   async getItemById(itemId: string): Promise<LessonItem> {
-    const dto = await DataProvider.get<LessonItemDto>(
-      `/lessonItems/${itemId}`,
-      () => httpService.get<LessonItemDto>(`/api/LessonItem/${itemId}`)
-    );
-    return LessonItemMapper.toUiModel(dto);
+    const dto = await httpService.get<LessonItemDto>(`/api/LessonItem/${itemId}`);
+    return this.mapDtoToModel(dto);
   }
 
   /**
    * Create a new lesson item
+   * POST /api/LessonItem
    */
   async createLessonItem(request: CreateLessonItemRequest): Promise<LessonItem> {
-    const dto = await DataProvider.post<LessonItemDto>(
-      '/lessonItems',
-      request,
-      () => httpService.post<LessonItemDto>('/api/LessonItem', request)
-    );
-    return LessonItemMapper.toUiModel(dto);
+    const dto = await httpService.post<LessonItemDto>("/api/LessonItem", request);
+    return this.mapDtoToModel(dto);
   }
 
   /**
    * Update an existing lesson item
+   * PUT /api/LessonItem/{id}
    */
   async updateLessonItem(id: string, request: UpdateLessonItemRequest): Promise<LessonItem> {
-    const dto = await DataProvider.put<LessonItemDto>(
-      `/lessonItems/${id}`,
-      request,
-      () => httpService.put<LessonItemDto>(`/api/LessonItem/${id}`, request)
-    );
-    return LessonItemMapper.toUiModel(dto);
+    const dto = await httpService.put<LessonItemDto>(`/api/LessonItem/${id}`, request);
+    return this.mapDtoToModel(dto);
   }
 
   /**
    * Delete a lesson item
+   * DELETE /api/LessonItem/{id}
    */
   async deleteLessonItem(id: string): Promise<boolean> {
-    return DataProvider.delete<boolean>(
-      `/lessonItems/${id}`,
-      () => httpService.delete<boolean>(`/api/LessonItem/${id}`)
-    );
+    return httpService.delete<boolean>(`/api/LessonItem/${id}`);
   }
 
   /**
-   * Mark lesson item as completed
+   * Map backend type enum to frontend type string
+   * Backend: 0 = Video, 1 = Text, 2 = Question
    */
-  async markItemComplete(
-    courseId: string,
-    lessonId: string,
-    itemId: string
-  ): Promise<{ success: boolean }> {
-    return DataProvider.post<{ success: boolean }>(
-      `/courses/${courseId}/lessons/${lessonId}/items/${itemId}/complete`,
-      { completed: true },
-      () => httpService.post<{ success: boolean }>(
-        `/api/courses/${courseId}/lessons/${lessonId}/items/${itemId}/complete`,
-        { completed: true }
-      )
-    );
-  }
-
-  /**
-   * Submit quiz answers
-   */
-  async submitQuiz(
-    courseId: string,
-    lessonId: string,
-    itemId: string,
-    answers: Record<string, number>
-  ): Promise<{
-    score: number;
-    totalQuestions: number;
-    passed: boolean;
-  }> {
-    return DataProvider.post<{
-      score: number;
-      totalQuestions: number;
-      passed: boolean;
-    }>(
-      `/courses/${courseId}/lessons/${lessonId}/items/${itemId}/submit`,
-      { answers },
-      () => httpService.post<{
-        score: number;
-        totalQuestions: number;
-        passed: boolean;
-      }>(
-        `/api/courses/${courseId}/lessons/${lessonId}/items/${itemId}/submit`,
-        { answers }
-      )
-    );
-  }
-
-  /**
-   * Submit assignment
-   */
-  async submitAssignment(
-    courseId: string,
-    lessonId: string,
-    itemId: string,
-    submission: {
-      content: string;
-      files?: File[];
+  private mapBackendType(type: number): LessonItemType {
+    switch (type) {
+      case 0: return "video";
+      case 1: return "text";
+      case 2: return "question";
+      default: return "video";
     }
-  ): Promise<{ success: boolean; submissionId: string }> {
-    return DataProvider.post<{ success: boolean; submissionId: string }>(
-      `/courses/${courseId}/lessons/${lessonId}/items/${itemId}/assignment`,
-      submission,
-      () => httpService.post<{ success: boolean; submissionId: string }>(
-        `/api/courses/${courseId}/lessons/${lessonId}/items/${itemId}/assignment`,
-        submission
-      )
-    );
   }
 
   /**
-   * Get next item in the lesson
+   * Map backend DTO to frontend model
    */
-  async getNextItem(
-    courseId: string,
-    lessonId: string,
-    currentItemId: string
-  ): Promise<LessonItem | null> {
-    const items = await this.getItemsByLesson(courseId, lessonId);
-    const currentIndex = items.findIndex((item) => item.id === currentItemId);
-    
-    if (currentIndex === -1 || currentIndex === items.length - 1) {
-      return null;
-    }
-    
-    return items[currentIndex + 1];
+  private mapDtoToModel(dto: LessonItemDto, lessonId?: string): LessonItem {
+    return {
+      id: dto.id,
+      lessonId: dto.lessonId || lessonId || "",
+      name: dto.name,
+      url: dto.url,
+      content: dto.content,
+      type: this.mapBackendType(dto.type),
+      durationInSeconds: 0,
+      order: 0,
+      isCompleted: false,
+    };
   }
 
   /**
-   * Get previous item in the lesson
+   * Map progress DTO to frontend model
    */
-  async getPreviousItem(
-    courseId: string,
-    lessonId: string,
-    currentItemId: string
-  ): Promise<LessonItem | null> {
-    const items = await this.getItemsByLesson(courseId, lessonId);
-    const currentIndex = items.findIndex((item) => item.id === currentItemId);
-    
-    if (currentIndex <= 0) {
-      return null;
-    }
-    
-    return items[currentIndex - 1];
+  private mapProgressDtoToModel(dto: LessonItemWithProgressDto, lessonId: string): LessonItem {
+    return {
+      id: dto.id,
+      lessonId: lessonId,
+      name: dto.name,
+      url: dto.url,
+      content: dto.content,
+      type: this.mapBackendType(dto.type),
+      durationInSeconds: dto.durationInSeconds,
+      order: dto.order,
+      isCompleted: dto.isCompleted,
+    };
   }
 }
 

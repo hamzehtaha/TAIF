@@ -146,7 +146,17 @@
     "resumeCourse": "Resume Course",
     "students": "students",
     "hours": "hours",
-    "courseNotFound": "Course not found"
+    "courseNotFound": "Course not found",
+    "courseInfo": "Course Info",
+    "category": "Category",
+    "enrolledStudents": "Enrolled",
+    "addToFavorites": "Add to Favorites",
+    "removeFromFavorites": "Remove from Favorites",
+    "reviewsCount": "reviews",
+    "writeReview": "Write a Review",
+    "yourRating": "Your Rating",
+    "reviewPlaceholder": "Share your experience with this course...",
+    "submitReview": "Submit Review"
   },
   "settings": {
     "title": "Settings",
@@ -235,5 +245,30 @@
     "gainSkills": "Gain industry-relevant skills",
     "earnCertificate": "Earn a certificate upon completion",
     "startLesson": "Start Lesson"
+  },
+  "learning": {
+    "startLearning": "Start Learning",
+    "continueLearning": "Continue Learning",
+    "backToCourse": "Back to Course",
+    "exit": "Exit",
+    "progress": "Progress",
+    "itemsCompleted": "{completed} of {total} completed",
+    "items": "items",
+    "noItems": "No items in this lesson",
+    "noContent": "No Content Available",
+    "noContentDesc": "This lesson has no items yet.",
+    "lessonNotFound": "Lesson not found",
+    "videoContent": "Video content",
+    "textContent": "Text content",
+    "questionContent": "Quiz content",
+    "itemOf": "Item {current} of {total}",
+    "inLesson": "in",
+    "video": "Video",
+    "text": "Text",
+    "question": "Quiz",
+    "allCategories": "All Categories",
+    "favoriteCourses": "Favorite Courses",
+    "noFavorites": "No favorite courses yet",
+    "addFavorites": "Enroll in courses and add them to favorites"
   }
 }

@@ -35,7 +35,14 @@ namespace TAIF.API.Controllers
 
             return Ok(ApiResponse<Enrollment>.SuccessResponse(enrollment));
         }
-        
+
+        [HttpGet("details/{courseId}")]
+        public async Task<IActionResult> GetEnrollmentDetails([FromRoute] Guid courseId)
+        {
+            var enrollment = await _service.GetEnrollmentDetails(this.UserId, courseId);
+            return Ok(ApiResponse<Enrollment>.SuccessResponse(enrollment));
+        }
+
         [HttpGet("user")]
         public async Task<IActionResult> GetUserCourses()
         {
