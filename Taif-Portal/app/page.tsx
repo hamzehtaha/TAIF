@@ -194,8 +194,8 @@ export default function Index() {
       </section>
 
       {/* Favourite Courses Section - Only for authenticated users */}
-      {isAuthenticated && (
-        <section className="py-20 bg-muted/30">
+      {isAuthenticated && favouriteCourses.length > 0 && (
+        <section className={"py-20 " + (loadingFavourites ? "bg-muted/30" : "")}>
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between mb-12">
               <div>
