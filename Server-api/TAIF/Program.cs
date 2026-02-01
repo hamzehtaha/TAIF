@@ -1,16 +1,19 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
+using Microsoft.OpenApi.Models;
+using Serilog;
+using System.Reflection;
 using System.Text;
 using TAIF.API.Middleware;
+using TAIF.API.Seeder;
+using TAIF.Application.Interfaces.Repositories;
+using TAIF.Application.Interfaces.Services;
 using TAIF.Application.Services;
 using TAIF.Infrastructure.Data;
 using TAIF.Infrastructure.Repositories;
-using Serilog;
-using TAIF.API.Seeder;
-using System.Reflection;
-using Microsoft.AspNetCore.Cors.Infrastructure;
-using TAIF.Application.Interfaces.Services;
-using TAIF.Application.Interfaces.Repositories;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,8 +31,25 @@ builder.Host.UseSerilog();
 
 builder.Services.AddControllers();
 
+var provider = builder.Configuration["Database:Provider"];
+
 builder.Services.AddDbContext<TaifDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    switch (provider)
+    {
+        case "Postgres":
+            options.UseNpgsql(
+                builder.Configuration.GetConnectionString("Postgres"));
+            break;
+
+        case "SqlServer":
+        default:
+            options.UseSqlServer(
+                builder.Configuration.GetConnectionString("SqlServer"));
+            break;
+    }
+});
+
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -52,7 +72,34 @@ builder.Services.AddScoped<ILessonItemProgressService, LessonItemProgressService
 
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition(JwtBearerDefaults.AuthenticationScheme,
+        new OpenApiSecurityScheme
+        {
+            Name = "Authorization",
+            Description = "Paste ONLY the JWT token (without 'Bearer ')",
+            In = ParameterLocation.Header,
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT"
+        });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = JwtBearerDefaults.AuthenticationScheme
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>
     {

@@ -1,4 +1,5 @@
 ﻿using System.Linq.Expressions;
+using TAIF.Application.DTOs;
 using TAIF.Domain.Entities;
 
 namespace TAIF.Application.Interfaces.Repositories;
@@ -8,6 +9,7 @@ public interface IRepository<T> where T : Base
     Task<T?> GetByIdAsync(Guid id, bool withDeleted = false);
     Task<T?> GetByIdNoTrackingAsync(Guid id, bool withDeleted = false);
     Task<List<T>> GetAllAsync(bool withDeleted = false, Expression<Func<T, object>>? orderBy = null, bool orderByDescending = false);
+    Task<PagedResult<T>> GetPagedAsync(int page, int pageSize, Expression<Func<T, bool>>? filter = null, Expression<Func<T, object>>? orderBy = null, bool orderByDescending = false, bool withDeleted = false, bool asNoTracking = true, params Expression<Func<T, object>>[] includes);
     Task<List<T>> GetAllNoTrackingAsync(bool withDeleted = false, Expression<Func<T, object>>? orderBy = null, bool orderByDescending = false);
     Task<T> FindOneAsync(Expression<Func<T, bool>> predicate, bool withDeleted = false);
     Task<T> FindOneNoTrackingAsync(Expression<Func<T, bool>> predicate, bool withDeleted = false);

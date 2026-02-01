@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
+using TAIF.Application.DTOs;
 using TAIF.Application.Interfaces.Repositories;
 using TAIF.Domain.Entities;
 
@@ -68,6 +69,57 @@ namespace TAIF.Infrastructure.Repositories
             catch (Exception ex)
             {
                 throw new RepositoryException($"Error fetching all entities of type {typeof(T).Name}.", ex);
+            }
+        }
+        public virtual async Task<PagedResult<T>> GetPagedAsync(int page,int pageSize,Expression<Func<T, bool>>? filter = null,Expression<Func<T, object>>? orderBy = null,bool orderByDescending = false,bool withDeleted = false,bool asNoTracking = true,params Expression<Func<T, object>>[] includes)
+        {
+            if (page <= 0)
+                throw new ArgumentException("Page must be greater than zero.", nameof(page));
+
+            if (pageSize <= 0)
+                throw new ArgumentException("PageSize must be greater than zero.", nameof(pageSize));
+
+            try
+            {
+                IQueryable<T> query = asNoTracking
+                    ? _dbSet.AsNoTracking()
+                    : _dbSet.AsQueryable();
+                if (!withDeleted)
+                    query = query.Where(e => !e.IsDeleted);
+                if (filter != null)
+                    query = query.Where(filter);
+                if (includes != null && includes.Length > 0)
+                {
+                    foreach (var include in includes)
+                        query = query.Include(include);
+                }
+                var totalCount = await query.CountAsync();
+                if (orderBy != null)
+                {
+                    query = orderByDescending
+                        ? query.OrderByDescending(orderBy)
+                        : query.OrderBy(orderBy);
+                }
+                else
+                {
+                    query = query.OrderByDescending(e => e.CreatedAt);
+                }
+                var items = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return new PagedResult<T>
+                {
+                    Items = items,
+                    Page = page,
+                    PageSize = pageSize,
+                    TotalCount = totalCount
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new RepositoryException($"Error fetching paged entities of type {typeof(T).Name}.",ex);
             }
         }
         public virtual async Task<List<T>> GetAllNoTrackingWithIncludeAsync(bool withDeleted = false, Expression<Func<T, object>>? orderBy = null, bool orderByDescending = false, params Expression<Func<T, object>>[] includes)

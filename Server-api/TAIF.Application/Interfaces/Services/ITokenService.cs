@@ -5,5 +5,5 @@ namespace TAIF.Application.Interfaces.Services;
 public interface ITokenService
 {
     string GenerateAccessToken(User user);
-    string GenerateRefreshToken();
+    string GenerateRefreshToken(User user);
 }

@@ -1,4 +1,5 @@
-﻿using System.Security.Cryptography;
+﻿using Microsoft.Extensions.Configuration;
+using System.Security.Cryptography;
 using System.Text;
 using TAIF.Application.DTOs;
 using TAIF.Application.Interfaces.Repositories;
@@ -11,19 +12,14 @@ public class AuthService : IAuthService
 {
     private readonly IUserRepository _userRepository;
     private readonly ITokenService _tokenService;
-    public AuthService(
-        IUserRepository userRepository,
-        ITokenService tokenService
-    )
+    private readonly IConfiguration _configuration;
+    public AuthService(IUserRepository userRepository,ITokenService tokenService,IConfiguration configuration)
     {
         _userRepository = userRepository;
         _tokenService = tokenService;
+        _configuration = configuration;
     }
-    public async Task<AuthResponse> RegisterAsync(
-            string firstName,
-            string lastName,
-            string email,
-            string password)
+    public async Task<AuthResponse> RegisterAsync(string firstName,string lastName,string email,string password)
     {
         var existing = await _userRepository.GetByEmailAsync(email);
         if (existing != null)
@@ -40,17 +36,18 @@ public class AuthService : IAuthService
         };
 
         var accessToken = _tokenService.GenerateAccessToken(user);
-        var refreshToken = _tokenService.GenerateRefreshToken();
+        var refreshToken = _tokenService.GenerateRefreshToken(user);
+        var times = GetTokenExpires();
+
 
         user.RefreshToken = refreshToken;
-        user.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(30);
-
+        user.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(times.Item1);
         await _userRepository.AddAsync(user);
         await _userRepository.SaveChangesAsync();
 
         return new AuthResponse(
             accessToken,
-            DateTime.UtcNow.AddMinutes(15),
+            DateTime.UtcNow.AddMinutes(times.Item2),
             refreshToken,
             user.RefreshTokenExpiresAt.Value
         );
@@ -65,18 +62,39 @@ public class AuthService : IAuthService
             return null;
 
         var accessToken = _tokenService.GenerateAccessToken(user);
-        var refreshToken = _tokenService.GenerateRefreshToken();
-
+        var refreshToken = _tokenService.GenerateRefreshToken(user);
+        var times = GetTokenExpires();
         user.RefreshToken = refreshToken;
-        user.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(30);
+        user.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(times.Item1);
         user.UpdatedAt = DateTime.UtcNow;
 
         await _userRepository.SaveChangesAsync();
 
         return new AuthResponse(
             accessToken,
-            DateTime.UtcNow.AddMinutes(15),
+            DateTime.UtcNow.AddMinutes(times.Item2),
             refreshToken,
+            user.RefreshTokenExpiresAt.Value
+        );
+    }
+    public async Task<AuthResponse?> RefreshTokenAsync(string refreshToken)
+    {
+        var user = await _userRepository.GetByRefreshTokenAsync(refreshToken);
+
+        if (user == null)
+        {
+            return null;
+        }
+        if (user.RefreshTokenExpiresAt == null || user.RefreshTokenExpiresAt < DateTime.UtcNow)
+        {
+            return null;
+        }
+        var newAccessToken = _tokenService.GenerateAccessToken(user);
+        var times = GetTokenExpires();
+        return new AuthResponse(
+            newAccessToken,
+            DateTime.UtcNow.AddMinutes(times.Item2),
+            user.RefreshToken ?? "",
             user.RefreshTokenExpiresAt.Value
         );
     }
@@ -86,31 +104,28 @@ public class AuthService : IAuthService
         var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(password));
         return Convert.ToBase64String(bytes);
     }
-    public async Task<AuthResponse?> RefreshTokenAsync(string refreshToken)
+    private (int,int) GetTokenExpires()
     {
-        var user = await _userRepository.GetByRefreshTokenAsync(refreshToken);
+        try
+        {
+            int numberOfDaysForRefresh = 30;
+            int numberOfMinForAccessToken = 15;
+            var jwt = _configuration.GetSection("Jwt");
+            if (jwt is not null && !String.IsNullOrEmpty(jwt["RefreshTokenDays"]))
+            {
+                int.TryParse(jwt["RefreshTokenDays"], out numberOfDaysForRefresh);
+            }
+            if (jwt is not null && !String.IsNullOrEmpty(jwt["AccessTokenMinutes"]))
+            {
+                int.TryParse(jwt["AccessTokenMinutes"], out numberOfMinForAccessToken);
+            }
 
-        if (user == null)
-            return null;
+            return (numberOfDaysForRefresh,numberOfMinForAccessToken);
+        }
+        catch (Exception ex)
+        {
 
-        if (user.RefreshTokenExpiresAt == null ||
-            user.RefreshTokenExpiresAt < DateTime.UtcNow)
-            return null;
-        var newAccessToken = _tokenService.GenerateAccessToken(user);
-        var newRefreshToken = _tokenService.GenerateRefreshToken();
-
-        user.RefreshToken = newRefreshToken;
-        user.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(30);
-        user.UpdatedAt = DateTime.UtcNow;
-
-        await _userRepository.SaveChangesAsync();
-
-        return new AuthResponse(
-            newAccessToken,
-            DateTime.UtcNow.AddMinutes(15),
-            newRefreshToken,
-            user.RefreshTokenExpiresAt.Value
-        );
+            throw new Exception("Error while GetTokenExpires");
+        }
     }
-
 }

@@ -15,15 +15,12 @@ namespace TAIF.API.Controllers
         private readonly IAuthService _authService;
         private readonly ILogger<AuthController> _logger;
         private readonly IUserService _userService;
-        public AuthController(IAuthService authService,
-            ILogger<AuthController> logger,
-            IUserService userService)
+        public AuthController(IAuthService authService,ILogger<AuthController> logger,IUserService userService)
         {
             _authService = authService;
             _logger = logger;
             _userService = userService;
         }
-
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterRequest request)
         {
@@ -51,8 +48,9 @@ namespace TAIF.API.Controllers
             var result = await _authService.RefreshTokenAsync(request.RefreshToken);
 
             if (result == null)
+            {
                 return Unauthorized();
-
+            }
             return Ok(result);
         }
         [HttpGet("me")]
@@ -80,6 +78,5 @@ namespace TAIF.API.Controllers
             // 3️ Return user (DTO recommended)
             return Ok(ApiResponse<User>.SuccessResponse(user));
         }
-
     }
 }

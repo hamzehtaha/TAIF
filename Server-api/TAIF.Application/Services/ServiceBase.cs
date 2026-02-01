@@ -1,4 +1,6 @@
 ﻿using System.Linq.Expressions;
+using TAIF.Application.DTOs;
+using TAIF.Application.DTOs.Filters;
 using TAIF.Application.Interfaces.Repositories;
 using TAIF.Application.Interfaces.Services;
 using TAIF.Domain.Entities;
@@ -15,6 +17,24 @@ namespace TAIF.Application.Services
         public virtual async Task<List<T>> GetAllAsync(bool withDeleted = false)
         {
             return await _repository.GetAllAsync(withDeleted);
+        }
+        public virtual async Task<PagedResult<T>> GetPagedAsync(BaseFilter filter,Expression<Func<T, bool>>? predicate = null,Expression<Func<T, object>>? orderBy = null,bool orderByDescending = true,bool withDeleted = false,params Expression<Func<T, object>>[] includes)
+        {
+            if (filter.Page <= 0)
+                throw new ArgumentException("Page must be greater than zero");
+
+            if (filter.PageSize <= 0)
+                throw new ArgumentException("PageSize must be greater than zero");
+
+            return await _repository.GetPagedAsync(
+                page: filter.Page,
+                pageSize: filter.PageSize,
+                filter: predicate,
+                orderBy: orderBy,
+                orderByDescending: orderByDescending,
+                withDeleted: withDeleted,
+                includes: includes
+            );
         }
         public virtual async Task<T?> GetByIdAsync(Guid id, bool withDeleted = false)
         {
