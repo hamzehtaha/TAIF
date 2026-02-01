@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 using TAIF.API.Controllers;
 using TAIF.Application.DTOs;
 using TAIF.Application.Interfaces.Services;
 using TAIF.Domain.Entities;
+using static TAIF.Domain.Entities.Enums;
 
 namespace TAIF.Controllers
 {
@@ -47,7 +49,7 @@ namespace TAIF.Controllers
             var lessonItem = new LessonItem
             {
                 Name = request.Name,
-                URL = request.URL,
+                //URL = request.URL,
                 Content = request.Content,
                 Type = request.Type,
                 LessonId = request.LessonId,
@@ -71,5 +73,33 @@ namespace TAIF.Controllers
             if (!result) return NotFound();
             return Ok(ApiResponse<bool>.SuccessResponse(result));
         }
+
+        private void ValidateLessonItem(LessonItemType type, string content, double duration)
+        {
+            using var doc = JsonDocument.Parse(content);
+
+            switch (type)
+            {
+                case LessonItemType.Video:
+                    if (!doc.RootElement.TryGetProperty("url", out _))
+                        throw new Exception("Video content must contain 'url'");
+
+                    if (duration <= 0)
+                        throw new Exception("Video duration is required");
+                    break;
+
+                case LessonItemType.RichText:
+                    if (!doc.RootElement.TryGetProperty("html", out _) &&
+                        !doc.RootElement.TryGetProperty("markdown", out _))
+                        throw new Exception("Text content must contain 'html' or 'markdown'");
+                    break;
+
+                case LessonItemType.Question:
+                    if (!doc.RootElement.TryGetProperty("questions", out _))
+                        throw new Exception("Quiz content must contain questions");
+                    break;
+            }
+        }
+
     }
 }

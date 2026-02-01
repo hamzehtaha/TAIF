@@ -15,59 +15,83 @@
               "LessonItems": [
                 {
                   "Name": "A-E Finger Spelling",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Learn the first five letters of the sign language alphabet with proper hand positioning and movement.",
-                  "Type": 0,
+                  "Type": "Video",
                   "DurationInSeconds": 300,
-                  "Order": 1
+                  "Order": 1,
+                  "Content": {
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                    "description": "Learn the first five letters of the sign language alphabet with proper hand positioning and movement."
+                  }
                 },
                 {
                   "Name": "F-J Finger Spelling",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Master letters F through J with practice exercises and visual demonstrations.",
-                  "Type": 0,
+                  "Type": "Video",
                   "DurationInSeconds": 300,
-                  "Order": 2
+                  "Order": 2,
+                  "Content": {
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                    "description": "Master letters F through J with practice exercises and visual demonstrations."
+                  }
                 },
                 {
                   "Name": "K-O Finger Spelling",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Continue building your alphabet knowledge with letters K through O.",
-                  "Type": 0,
+                  "Type": "Video",
                   "DurationInSeconds": 300,
-                  "Order": 3
-                },
-                {
-                  "Name": "P-T Finger Spelling",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Learn letters P through T with detailed hand shape explanations.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 4
+                  "Order": 3,
+                  "Content": {
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                    "description": "Continue building your alphabet knowledge with letters K through O."
+                  }
                 },
                 {
                   "Name": "U-Z Finger Spelling",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Complete the alphabet with letters U through Z and practice full words.",
-                  "Type": 0,
+                  "Type": "Video",
                   "DurationInSeconds": 300,
-                  "Order": 5
+                  "Order": 5,
+                  "Content": {
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                    "description": "Complete the alphabet with letters U through Z and practice full words."
+                  }
                 },
                 {
                   "Name": "Alphabet Practice Quiz",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Test your knowledge with interactive alphabet recognition exercises.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 6
+                  "Type": "Question",
+                  "Order": 6,
+                  "Content": {
+                    "questions": [
+                      {
+                        "id": "q1",
+                        "text": "Which hand shape represents the letter A?",
+                        "options": [ "Closed fist", "Open palm", "Two fingers" ],
+                        "correctIndex": 0
+                      }
+                    ],
+                    "passingScore": 70
+                  }
                 },
                 {
                   "Name": "Common Name Spelling",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Practice spelling common names using the complete alphabet.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 7
+                  "Type": "RichText",
+                  "Order": 7,
+                  "Content": {
+                    "text": "Practice spelling common names using the complete alphabet."
+                  }
+                },
+                {
+                  "Name": "Common Name Spelling",
+                  "Type": "Question",
+                  "Order": 6,
+                  "Content": {
+                    "questions": [
+                      {
+                        "id": "q2",
+                        "text": "Which hand shape represents the letter A?",
+                        "options": [ "Closed fist", "Open palm", "Two fingers" ],
+                        "correctIndex": 1
+                      }
+                    ],
+                    "passingScore": 70
+                  }
                 }
               ]
             },
@@ -191,6 +215,7 @@
             }
           ]
         },
+
         {
           "Name": "Braille Reading and Writing",
           "Description": "Complete Braille literacy program for visually impaired individuals. Master the Braille alphabet, numbers, punctuation, and develop fluent reading and writing skills.",
@@ -203,59 +228,63 @@
               "LessonItems": [
                 {
                   "Name": "Understanding the Braille Cell",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Learn the six-dot Braille cell structure and numbering system.",
-                  "Type": 0,
+                  "Type": "Video",
                   "DurationInSeconds": 300,
-                  "Order": 1
+                  "Order": 1,
+                  "Content": {
+                    "videoId": "dQw4w9WgXcQ",
+                    "provider": "youtube",
+                    "description": "Learn the six-dot Braille cell structure and numbering system."
+                  }
                 },
                 {
-                  "Name": "Letters A-J (First Ten)",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Master the first ten letters using dots 1-4.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 2
+                  "Name": "Braille Cell Structure (Reading)",
+                  "Type": "RichText",
+                  "Order": 2,
+                  "Content": {
+                    "html": "<p>The Braille cell consists of six dots arranged in two columns of three dots. Each letter is formed by a unique combination of raised dots.</p>"
+                  }
                 },
                 {
-                  "Name": "Letters K-T (Second Ten)",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Learn letters K through T with dot 3 added.",
-                  "Type": 0,
+                  "Name": "Letters A–J (First Ten)",
+                  "Type": "Video",
                   "DurationInSeconds": 300,
-                  "Order": 3
+                  "Order": 3,
+                  "Content": {
+                    "videoId": "dQw4w9WgXcQ",
+                    "provider": "youtube",
+                    "description": "Master the first ten letters using dots 1-4."
+                  }
                 },
                 {
-                  "Name": "Letters U-Z (Final Letters)",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Complete the alphabet with letters U through Z.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 4
+                  "Name": "Alphabet Recognition Quiz",
+                  "Type": "Question",
+                  "Order": 4,
+                  "Content": {
+                    "questions": [
+                      {
+                        "question": "How many dots are in a standard Braille cell?",
+                        "options": [ "4", "5", "6", "8" ],
+                        "correctAnswerIndex": 2
+                      },
+                      {
+                        "question": "Which dots are used to represent the letter A?",
+                        "options": [ "Dot 1", "Dots 1-2", "Dots 1-4", "Dots 2-3" ],
+                        "correctAnswerIndex": 0
+                      }
+                    ]
+                  }
                 },
                 {
-                  "Name": "Capital Letter Indicator",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Learn how to indicate uppercase letters in Braille.",
-                  "Type": 0,
+                  "Name": "Letters K–T (Second Ten)",
+                  "Type": "Video",
                   "DurationInSeconds": 300,
-                  "Order": 5
-                },
-                {
-                  "Name": "Alphabet Recognition Practice",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Touch-based exercises to identify letters quickly.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 6
-                },
-                {
-                  "Name": "Simple Word Reading",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Practice reading basic three and four-letter words.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 7
+                  "Order": 5,
+                  "Content": {
+                    "videoId": "dQw4w9WgXcQ",
+                    "provider": "youtube",
+                    "description": "Learn letters K through T with dot 3 added."
+                  }
                 }
               ]
             },
@@ -266,181 +295,58 @@
               "LessonItems": [
                 {
                   "Name": "Number Sign Indicator",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Understand the number indicator and its usage.",
-                  "Type": 0,
+                  "Type": "Video",
                   "DurationInSeconds": 300,
-                  "Order": 1
+                  "Order": 1,
+                  "Content": {
+                    "videoId": "dQw4w9WgXcQ",
+                    "provider": "youtube",
+                    "description": "Understand the number indicator and its usage."
+                  }
                 },
                 {
-                  "Name": "Numbers 0-9",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Learn Braille number representations.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 2
+                  "Name": "Braille Numbers Explained",
+                  "Type": "RichText",
+                  "Order": 2,
+                  "Content": {
+                    "html": "<p>Braille numbers are formed using the letters A–J preceded by a number sign. This allows numbers 0–9 to be represented efficiently.</p>"
+                  }
                 },
                 {
-                  "Name": "Multi-digit Numbers",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Read and write numbers with multiple digits.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 3
+                  "Name": "Numbers 0–9 Practice Quiz",
+                  "Type": "Question",
+                  "Order": 3,
+                  "Content": {
+                    "questions": [
+                      {
+                        "question": "Which letters represent numbers in Braille?",
+                        "options": [ "A–J", "K–T", "U–Z", "All letters" ],
+                        "correctAnswerIndex": 0
+                      },
+                      {
+                        "question": "What symbol must appear before Braille numbers?",
+                        "options": [ "Capital sign", "Number sign", "Period", "Comma" ],
+                        "correctAnswerIndex": 1
+                      }
+                    ]
+                  }
                 },
                 {
-                  "Name": "Math Symbols",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Master plus, minus, multiply, divide, and equals signs.",
-                  "Type": 0,
+                  "Name": "Simple Addition (Video)",
+                  "Type": "Video",
                   "DurationInSeconds": 300,
-                  "Order": 4
-                },
-                {
-                  "Name": "Simple Addition",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Practice basic addition problems in Braille.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 5
-                },
-                {
-                  "Name": "Subtraction Practice",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Work through subtraction exercises.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 6
-                },
-                {
-                  "Name": "Math Problem Solving",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Complete mixed math problems independently.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 7
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "Name": "Mobility and Orientation Training",
-          "Description": "Essential skills for independent navigation and movement for individuals with visual impairments. Learn cane techniques, spatial awareness, and safe travel strategies.",
-          "Photo": "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800",
-          "Lessons": [
-            {
-              "Title": "Introduction to White Cane",
-              "Photo": "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800",
-              "Order": 1,
-              "LessonItems": [
-                {
-                  "Name": "Cane Parts and Assembly",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Learn about cane components and how to assemble your mobility cane.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 1
-                },
-                {
-                  "Name": "Proper Cane Length",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Determine the correct cane length for your height.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 2
-                },
-                {
-                  "Name": "Grip and Hand Position",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Master the proper way to hold your white cane.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 3
-                },
-                {
-                  "Name": "Basic Cane Sweep",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Learn the fundamental two-point touch technique.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 4
-                },
-                {
-                  "Name": "Rhythm and Timing",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Coordinate cane movement with your walking pace.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 5
-                },
-                {
-                  "Name": "Indoor Practice",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Practice basic cane techniques in controlled environment.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 6
-                }
-              ]
-            },
-            {
-              "Title": "Indoor Navigation Skills",
-              "Photo": "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800",
-              "Order": 2,
-              "LessonItems": [
-                {
-                  "Name": "Trailing Technique",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Use walls and surfaces to navigate indoors safely.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 1
-                },
-                {
-                  "Name": "Doorway Detection",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Locate and navigate through doorways confidently.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 2
-                },
-                {
-                  "Name": "Stairway Safety",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Safely ascend and descend stairs using proper techniques.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 3
-                },
-                {
-                  "Name": "Furniture Awareness",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Detect and navigate around indoor obstacles.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 4
-                },
-                {
-                  "Name": "Room Familiarization",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Create mental maps of indoor spaces.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 5
-                },
-                {
-                  "Name": "Hallway Navigation",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Travel through corridors maintaining proper alignment.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 6
+                  "Order": 4,
+                  "Content": {
+                    "videoId": "dQw4w9WgXcQ",
+                    "provider": "youtube",
+                    "description": "Practice basic addition problems in Braille."
+                  }
                 }
               ]
             }
           ]
         }
+
       ]
     },
     {
@@ -458,51 +364,59 @@
               "LessonItems": [
                 {
                   "Name": "Introduction to JAWS",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Learn the fundamentals of JAWS screen reader software.",
-                  "Type": 0,
+                  "Type": "Video",
                   "DurationInSeconds": 300,
-                  "Order": 1
+                  "Order": 1,
+                  "Content": {
+                    "videoId": "dQw4w9WgXcQ",
+                    "provider": "youtube",
+                    "description": "Learn the fundamentals of JAWS screen reader software."
+                  }
+                },
+                {
+                  "Name": "Screen Reader Overview",
+                  "Type": "RichText",
+                  "Order": 2,
+                  "Content": {
+                    "html": "<p>Screen readers convert on-screen text into speech or Braille output. They allow visually impaired users to navigate operating systems, applications, and websites independently.</p>"
+                  }
                 },
                 {
                   "Name": "NVDA Setup and Configuration",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Install and configure the free NVDA screen reader.",
-                  "Type": 0,
+                  "Type": "Video",
                   "DurationInSeconds": 300,
-                  "Order": 2
+                  "Order": 3,
+                  "Content": {
+                    "videoId": "dQw4w9WgXcQ",
+                    "provider": "youtube",
+                    "description": "Install and configure the free NVDA screen reader."
+                  }
                 },
                 {
-                  "Name": "VoiceOver for Mac/iOS",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Master Apple's built-in screen reader.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 3
+                  "Name": "Question",
+                  "Type": "Question",
+                  "Order": 4,
+                  "Content": {
+                    "question": "What is the primary function of a screen reader?",
+                    "options": [
+                      "Enhance screen brightness",
+                      "Convert text into speech or Braille",
+                      "Translate languages",
+                      "Increase font size only"
+                    ],
+                    "correctAnswerIndex": 1
+                  }
                 },
                 {
                   "Name": "Basic Navigation Commands",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Learn essential keyboard shortcuts for screen readers.",
-                  "Type": 0,
+                  "Type": "Video",
                   "DurationInSeconds": 300,
-                  "Order": 4
-                },
-                {
-                  "Name": "Reading Text",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Navigate and read documents efficiently.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 5
-                },
-                {
-                  "Name": "Web Browsing",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Access websites using screen reader techniques.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 6
+                  "Order": 5,
+                  "Content": {
+                    "videoId": "dQw4w9WgXcQ",
+                    "provider": "youtube",
+                    "description": "Learn essential keyboard shortcuts for screen readers."
+                  }
                 }
               ]
             },
@@ -513,51 +427,48 @@
               "LessonItems": [
                 {
                   "Name": "Dragon NaturallySpeaking Setup",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Install and train professional dictation software.",
-                  "Type": 0,
+                  "Type": "Video",
                   "DurationInSeconds": 300,
-                  "Order": 1
+                  "Order": 1,
+                  "Content": {
+                    "videoId": "dQw4w9WgXcQ",
+                    "provider": "youtube",
+                    "description": "Install and train professional dictation software."
+                  }
                 },
                 {
-                  "Name": "Voice Profile Training",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Create accurate voice recognition profiles.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 2
+                  "Name": "Voice Dictation Explained",
+                  "Type": "RichText",
+                  "Order": 2,
+                  "Content": {
+                    "html": "<p>Voice dictation software allows users to convert spoken words into written text, improving accessibility and productivity for users with mobility or vision impairments.</p>"
+                  }
                 },
                 {
                   "Name": "Basic Dictation",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Compose text using voice commands.",
-                  "Type": 0,
+                  "Type": "Video",
                   "DurationInSeconds": 300,
-                  "Order": 3
+                  "Order": 3,
+                  "Content": {
+                    "videoId": "dQw4w9WgXcQ",
+                    "provider": "youtube",
+                    "description": "Compose text using voice commands."
+                  }
                 },
                 {
-                  "Name": "Punctuation and Formatting",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Add punctuation and format documents by voice.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 4
-                },
-                {
-                  "Name": "Editing Commands",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Correct and modify text using voice control.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 5
-                },
-                {
-                  "Name": "Dictation Practice",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Complete writing tasks using voice dictation.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 6
+                  "Name": "Question",
+                  "Type": "Question",
+                  "Order": 4,
+                  "Content": {
+                    "question": "Which task is best suited for voice dictation software?",
+                    "options": [
+                      "Photo editing",
+                      "Typing long documents",
+                      "Gaming",
+                      "Video rendering"
+                    ],
+                    "correctAnswerIndex": 1
+                  }
                 }
               ]
             }
@@ -575,43 +486,48 @@
               "LessonItems": [
                 {
                   "Name": "The Seven Senses",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Learn about the five basic senses plus vestibular and proprioceptive systems.",
-                  "Type": 0,
+                  "Type": "Video",
                   "DurationInSeconds": 300,
-                  "Order": 1
+                  "Order": 1,
+                  "Content": {
+                    "videoId": "dQw4w9WgXcQ",
+                    "provider": "youtube",
+                    "description": "Learn about the five basic senses plus vestibular and proprioceptive systems."
+                  }
+                },
+                {
+                  "Name": "What Is Sensory Processing?",
+                  "Type": "RichText",
+                  "Order": 2,
+                  "Content": {
+                    "html": "<p>Sensory processing refers to how the nervous system receives messages from the senses and turns them into appropriate motor and behavioral responses.</p>"
+                  }
                 },
                 {
                   "Name": "Sensory Overload Recognition",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Identify signs of sensory overwhelm in yourself or others.",
-                  "Type": 0,
+                  "Type": "Video",
                   "DurationInSeconds": 300,
-                  "Order": 2
+                  "Order": 3,
+                  "Content": {
+                    "videoId": "dQw4w9WgXcQ",
+                    "provider": "youtube",
+                    "description": "Identify signs of sensory overwhelm in yourself or others."
+                  }
                 },
                 {
-                  "Name": "Sensory Seeking vs Avoiding",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Understand different sensory processing patterns.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 3
-                },
-                {
-                  "Name": "Personal Sensory Profile",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Create your individual sensory preference chart.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 4
-                },
-                {
-                  "Name": "Triggers and Patterns",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Track what sensory inputs cause difficulties.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 5
+                  "Name": "Question",
+                  "Type": "Question",
+                  "Order": 4,
+                  "Content": {
+                    "question": "Which of the following is a common sign of sensory overload?",
+                    "options": [
+                      "Increased focus",
+                      "Calm behavior",
+                      "Covering ears or avoiding stimuli",
+                      "Improved attention"
+                    ],
+                    "correctAnswerIndex": 2
+                  }
                 }
               ]
             },
@@ -622,51 +538,48 @@
               "LessonItems": [
                 {
                   "Name": "Benefits of Deep Pressure",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Understand how deep pressure calms the nervous system.",
-                  "Type": 0,
+                  "Type": "Video",
                   "DurationInSeconds": 300,
-                  "Order": 1
+                  "Order": 1,
+                  "Content": {
+                    "videoId": "dQw4w9WgXcQ",
+                    "provider": "youtube",
+                    "description": "Understand how deep pressure calms the nervous system."
+                  }
+                },
+                {
+                  "Name": "How Deep Pressure Works",
+                  "Type": "RichText",
+                  "Order": 2,
+                  "Content": {
+                    "html": "<p>Deep pressure stimulation activates the parasympathetic nervous system, helping individuals feel calmer and more grounded.</p>"
+                  }
                 },
                 {
                   "Name": "Weighted Blanket Use",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Safely use weighted blankets for regulation.",
-                  "Type": 0,
+                  "Type": "Video",
                   "DurationInSeconds": 300,
-                  "Order": 2
+                  "Order": 3,
+                  "Content": {
+                    "videoId": "dQw4w9WgXcQ",
+                    "provider": "youtube",
+                    "description": "Safely use weighted blankets for regulation."
+                  }
                 },
                 {
-                  "Name": "Compression Clothing",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Wear compression vests and garments effectively.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 3
-                },
-                {
-                  "Name": "Self-Hugging Techniques",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Apply deep pressure to yourself for calming.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 4
-                },
-                {
-                  "Name": "Heavy Work Activities",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Engage in pushing, pulling, and carrying exercises.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 5
-                },
-                {
-                  "Name": "Wall Pushes and Chair Pushups",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Quick proprioceptive exercises for focus.",
-                  "Type": 0,
-                  "DurationInSeconds": 300,
-                  "Order": 6
+                  "Name": "Question",
+                  "Type": "Question",
+                  "Order": 4,
+                  "Content": {
+                    "question": "What is the main benefit of deep pressure therapy?",
+                    "options": [
+                      "Increased muscle strength",
+                      "Improved vision",
+                      "Calming the nervous system",
+                      "Faster reaction time"
+                    ],
+                    "correctAnswerIndex": 2
+                  }
                 }
               ]
             }

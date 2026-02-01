@@ -29,7 +29,7 @@ namespace TAIF.Application.Services
                 {
                     Id = li.Id,
                     Name = li.Name,
-                    URL = li.URL,
+                    //URL = li.URL,
                     Content = li.Content,
                     Type = li.Type,
                     DurationInSeconds = li.DurationInSeconds,

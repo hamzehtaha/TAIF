@@ -12,7 +12,7 @@ using TAIF.Infrastructure.Data;
 namespace TAIF.Infrastructure.Migrations
 {
     [DbContext(typeof(TaifDbContext))]
-    [Migration("20260201092143_InitialCreate")]
+    [Migration("20260201133638_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -206,10 +206,6 @@ namespace TAIF.Infrastructure.Migrations
 
                     b.Property<int>("Type")
                         .HasColumnType("integer");
-
-                    b.Property<string>("URL")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
