@@ -10,5 +10,6 @@ namespace TAIF.Domain.Entities
         public Guid CategoryId { get; set; }
         public Category Category { get; set; } = null!;
         ICollection<Lesson> Lessons { get; set; } = new List<Lesson>();
+        public ICollection<Guid> Tags { get; set; } = new List<Guid>();
     }
 }

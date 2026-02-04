@@ -12,7 +12,6 @@ using Microsoft.AspNetCore.Cors.Infrastructure;
 using TAIF.Application.Interfaces.Services;
 using TAIF.Application.Interfaces.Repositories;
 
-
 var builder = WebApplication.CreateBuilder(args);
 
 Log.Logger = new LoggerConfiguration()
@@ -50,6 +49,17 @@ builder.Services.AddScoped<ILessonItemService, LessonItemService>();
 builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
 builder.Services.AddScoped<ILessonItemProgressService, LessonItemProgressService>();
 
+// Recommendation engine repositories
+builder.Services.AddScoped<IInterestRepository, InterestRepository>();
+builder.Services.AddScoped<ITagRepository, TagRepository>();
+builder.Services.AddScoped<IInterestTagMappingRepository, InterestTagMappingRepository>();
+builder.Services.AddScoped<IUserCourseBehaviorRepository, UserCourseBehaviorRepository>();
+
+// Recommendation engine services
+builder.Services.AddScoped<IInterestService, InterestService>();
+builder.Services.AddScoped<ITagService, TagService>();
+builder.Services.AddScoped<IInterestTagMappingService, InterestTagMappingService>();
+builder.Services.AddScoped<IRecommendationService, RecommendationService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

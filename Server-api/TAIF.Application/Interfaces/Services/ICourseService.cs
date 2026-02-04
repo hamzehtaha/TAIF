@@ -10,5 +10,6 @@ namespace TAIF.Application.Interfaces.Services
     public interface ICourseService : IService<Course>
     {
         Task<List<Course>> GetByCategoryIdAsync(Guid categoryId);
+        Task<List<Course>> GetRecommendedCoursesAsync(Guid userId, int count = 10);
     }
 }

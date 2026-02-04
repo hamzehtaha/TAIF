@@ -17,5 +17,6 @@ namespace TAIF.Domain.Entities
         public bool IsActive { get; set; } = true;
         public string? RefreshToken { get; set; }
         public DateTime? RefreshTokenExpiresAt { get; set; }
+        public ICollection<Guid> Interests { get; set; } = new List<Guid>();
     }
 }

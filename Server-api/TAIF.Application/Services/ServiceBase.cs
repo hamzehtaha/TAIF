@@ -115,5 +115,10 @@ namespace TAIF.Application.Services
             }
             throw new Exception("No entity Updated");
         }
+
+        public async Task<List<T>> FindNoTrackingAsync(Expression<Func<T, bool>> predicate, bool withDeleted = false, Expression<Func<T, object>>? orderBy = null, bool orderByDescending = false)
+        {
+            return await _repository.FindNoTrackingAsync(predicate, withDeleted, orderBy, orderByDescending);
+        }
     }
 }

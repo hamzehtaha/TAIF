@@ -7,15 +7,22 @@ namespace TAIF.Application.Services
     public class CourseService : ServiceBase<Course> , ICourseService
     {
         private readonly ICourseRepository _courseRepository;
+        private readonly IRecommendationService _recommendationService;
 
-        public CourseService(ICourseRepository repository):base(repository)
+        public CourseService(ICourseRepository repository, IRecommendationService recommendationService) : base(repository)
         {
             _courseRepository = repository;
+            _recommendationService = recommendationService;
         }
 
         public async Task<List<Course>> GetByCategoryIdAsync(Guid categoryId)
         {
             return await _courseRepository.GetByCategoryIdAsync(categoryId);
+        }
+
+        public Task<List<Course>> GetRecommendedCoursesAsync(Guid userId, int limit = 10)
+        {
+            return _recommendationService.GetRecommendedCoursesAsync(userId, limit);
         }
     }
 }
