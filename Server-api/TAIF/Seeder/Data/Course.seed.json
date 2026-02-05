@@ -64,9 +64,20 @@
                         "text": "Which hand shape represents the letter A?",
                         "options": [ "Closed fist", "Open palm", "Two fingers" ],
                         "correctIndex": 0
+                      },
+                      {
+                        "id": "q2",
+                        "text": "Which hand shape represents the letter A?",
+                        "options": [ "Closed fist", "Open palm", "Two fingers" ],
+                        "correctIndex": 0
+                      },
+                      {
+                        "id": "q3",
+                        "text": "Which hand shape represents the letter A?",
+                        "options": [ "Closed fist", "Open palm", "Two fingers" ],
+                        "correctIndex": 0
                       }
-                    ],
-                    "passingScore": 70
+                    ]
                   }
                 },
                 {
@@ -89,8 +100,7 @@
                         "options": [ "Closed fist", "Open palm", "Two fingers" ],
                         "correctIndex": 1
                       }
-                    ],
-                    "passingScore": 70
+                    ]
                   }
                 }
               ]
