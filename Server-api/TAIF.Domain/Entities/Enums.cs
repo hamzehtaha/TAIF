@@ -5,7 +5,7 @@
         public enum LessonItemType
         {
             Video = 0,
-            Text = 1,
+            RichText = 1,
             Question = 2,
         }
     }

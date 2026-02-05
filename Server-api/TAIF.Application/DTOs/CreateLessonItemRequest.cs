@@ -8,8 +8,6 @@ namespace TAIF.Application.DTOs
         [Required]
         public string Name { get; set; } = null!;
         [Required]
-        public string URL { get; set; } = null!;
-        [Required]
         public string Content { get; set; } = null!;
         [Required]
         public LessonItemType Type { get; set; }
