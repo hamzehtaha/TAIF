@@ -1,0 +1,85 @@
+{
+  "interests": [
+    "Web Development",
+    "Mobile Development",
+    "Data Science",
+    "Cloud Computing",
+    "DevOps",
+    "Cybersecurity",
+    "Game Development",
+    "AI & Machine Learning"
+  ],
+  "tags": [
+    "JavaScript",
+    "TypeScript",
+    "React",
+    "Angular",
+    "Vue",
+    "Node.js",
+    "Python",
+    "Java",
+    "C#",
+    "Swift",
+    "Kotlin",
+    "Flutter",
+    "React Native",
+    "SQL",
+    "MongoDB",
+    "AWS",
+    "Azure",
+    "Docker",
+    "Kubernetes",
+    "Git",
+    "CI/CD",
+    "TensorFlow",
+    "PyTorch",
+    "Unity",
+    "Unreal Engine"
+  ],
+  "mappings": [
+    { "interest": "Web Development", "tag": "JavaScript", "weight": 0.95 },
+    { "interest": "Web Development", "tag": "TypeScript", "weight": 0.9 },
+    { "interest": "Web Development", "tag": "React", "weight": 0.9 },
+    { "interest": "Web Development", "tag": "Angular", "weight": 0.85 },
+    { "interest": "Web Development", "tag": "Vue", "weight": 0.85 },
+    { "interest": "Web Development", "tag": "Node.js", "weight": 0.8 },
+    { "interest": "Web Development", "tag": "SQL", "weight": 0.6 },
+    { "interest": "Web Development", "tag": "MongoDB", "weight": 0.6 },
+    
+    { "interest": "Mobile Development", "tag": "Swift", "weight": 0.95 },
+    { "interest": "Mobile Development", "tag": "Kotlin", "weight": 0.95 },
+    { "interest": "Mobile Development", "tag": "Flutter", "weight": 0.9 },
+    { "interest": "Mobile Development", "tag": "React Native", "weight": 0.9 },
+    { "interest": "Mobile Development", "tag": "JavaScript", "weight": 0.5 },
+    { "interest": "Mobile Development", "tag": "TypeScript", "weight": 0.5 },
+    
+    { "interest": "Data Science", "tag": "Python", "weight": 0.95 },
+    { "interest": "Data Science", "tag": "SQL", "weight": 0.85 },
+    { "interest": "Data Science", "tag": "TensorFlow", "weight": 0.7 },
+    { "interest": "Data Science", "tag": "PyTorch", "weight": 0.7 },
+    
+    { "interest": "Cloud Computing", "tag": "AWS", "weight": 0.95 },
+    { "interest": "Cloud Computing", "tag": "Azure", "weight": 0.95 },
+    { "interest": "Cloud Computing", "tag": "Docker", "weight": 0.8 },
+    { "interest": "Cloud Computing", "tag": "Kubernetes", "weight": 0.85 },
+    
+    { "interest": "DevOps", "tag": "Docker", "weight": 0.95 },
+    { "interest": "DevOps", "tag": "Kubernetes", "weight": 0.9 },
+    { "interest": "DevOps", "tag": "Git", "weight": 0.85 },
+    { "interest": "DevOps", "tag": "CI/CD", "weight": 0.95 },
+    { "interest": "DevOps", "tag": "AWS", "weight": 0.7 },
+    { "interest": "DevOps", "tag": "Azure", "weight": 0.7 },
+    
+    { "interest": "Cybersecurity", "tag": "Python", "weight": 0.7 },
+    { "interest": "Cybersecurity", "tag": "AWS", "weight": 0.5 },
+    { "interest": "Cybersecurity", "tag": "Azure", "weight": 0.5 },
+    
+    { "interest": "Game Development", "tag": "Unity", "weight": 0.95 },
+    { "interest": "Game Development", "tag": "Unreal Engine", "weight": 0.95 },
+    { "interest": "Game Development", "tag": "C#", "weight": 0.8 },
+    
+    { "interest": "AI & Machine Learning", "tag": "Python", "weight": 0.95 },
+    { "interest": "AI & Machine Learning", "tag": "TensorFlow", "weight": 0.95 },
+    { "interest": "AI & Machine Learning", "tag": "PyTorch", "weight": 0.95 }
+  ]
+}

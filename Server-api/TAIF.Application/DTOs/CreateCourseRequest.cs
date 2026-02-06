@@ -11,5 +11,8 @@ namespace TAIF.Application.DTOs
         public string? Photo { get; set; }
         [Required]
         public Guid CategoryId { get; set; }
+
+        [Required]
+        public List<Guid> Tags { get; set; }
     }
 }

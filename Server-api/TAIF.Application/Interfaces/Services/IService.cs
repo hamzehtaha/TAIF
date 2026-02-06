@@ -20,5 +20,7 @@ namespace TAIF.Application.Interfaces.Services
         public Task<bool> DeleteAsync(Guid id);
         public Task<bool> PermanentDeleteAsync(Guid id);
         public Task<bool> RestoreAsync(Guid id);
+        Task<List<T>> FindNoTrackingAsync(Expression<Func<T, bool>> predicate, bool withDeleted = false, Expression<Func<T, object>>? orderBy = null, bool orderByDescending = false);
+
     }
 }

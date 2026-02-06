@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Azure.Core;
+using Microsoft.AspNetCore.Mvc;
 using System.Linq.Expressions;
 using TAIF.API.Controllers;
 using TAIF.Application.DTOs;
 using TAIF.Application.DTOs.Filters;
 using TAIF.Application.Interfaces.Services;
+using TAIF.Application.Services;
 using TAIF.Domain.Entities;
 namespace TAIF.Controllers
 {
@@ -12,9 +14,11 @@ namespace TAIF.Controllers
     public class CourseController : TaifControllerBase
     {
         private readonly ICourseService _courseService;
-        public CourseController(ICourseService courseService)
+        private readonly ITagService _tagService;
+        public CourseController(ICourseService courseService, ITagService tagService)
         {
             _courseService = courseService;
+            _tagService = tagService;
         }
 
         [HttpGet("")]
@@ -60,25 +64,38 @@ namespace TAIF.Controllers
             return Ok(ApiResponse<List<Course>>.SuccessResponse(courses));
         }
 
+        [HttpGet("recommended")]
+        public async Task<IActionResult> GetRecommendedCourses([FromQuery] int limit = 10)
+        {
+            var courses = await _courseService.GetRecommendedCoursesAsync(this.UserId, limit);
+            if (courses is null || courses.Count == 0) return NotFound();
+            return Ok(ApiResponse<List<Course>>.SuccessResponse(courses));
+        }
+
         [HttpPost("")]
         public async Task<IActionResult> Create([FromBody] CreateCourseRequest request)
         {
+            await _tagService.TagsValidationGuard(request.Tags);
             var course = new Course
             {
                 Name = request.Name,
                 Description = request.Description,
                 Photo = request.Photo,
-                CategoryId = request.CategoryId
+                CategoryId = request.CategoryId,
+                Tags = request.Tags,
             };
             var created_course = await _courseService.CreateAsync(course);
             return Ok(ApiResponse<Course>.SuccessResponse(created_course));
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateCourseRequest course)
+        public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateCourseRequest request)
         {
-            var Course = await _courseService.UpdateAsync(id, course);
-            return Ok(ApiResponse<Course>.SuccessResponse(Course));
+            if(request.Tags is not null && request.Tags.Any())
+                await _tagService.TagsValidationGuard(request.Tags);
+
+            var course = await _courseService.UpdateAsync(id, request);
+            return Ok(ApiResponse<Course>.SuccessResponse(course));
         }
 
         [HttpDelete("{id}")]
