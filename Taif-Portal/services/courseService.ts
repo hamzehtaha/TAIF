@@ -23,6 +23,8 @@ export interface Course {
   isEnrolled?: boolean;
   isFavourite?: boolean;
   lessons?: Lesson[];
+  rating?: number;
+  reviewCount?: number;
 }
 
 class CourseService {
@@ -93,6 +95,8 @@ class CourseService {
       isEnrolled: false,
       isFavourite: false,
       lessons: [],
+      rating: dto.rating || 5,
+      reviewCount: dto.reviewCount || 10,
     };
   }
 
