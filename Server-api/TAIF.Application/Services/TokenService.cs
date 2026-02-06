@@ -11,16 +11,14 @@ namespace TAIF.Application.Services
 {
     public class TokenService : ITokenService
     {
-        private readonly IConfiguration _config;
-
+        private readonly IConfiguration _configuration;
         public TokenService(IConfiguration config)
         {
-            _config = config;
+            _configuration = config;
         }
-
         public string GenerateAccessToken(User user)
         {
-            var jwt = _config.GetSection("Jwt");
+            var jwt = _configuration.GetSection("Jwt");
 
             var claims = new[]
             {
@@ -48,12 +46,26 @@ namespace TAIF.Application.Services
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
-
-        public string GenerateRefreshToken()
+        public string GenerateRefreshToken(User user)
         {
-            var bytes = RandomNumberGenerator.GetBytes(64);
-            return Convert.ToBase64String(bytes);
+            var jwt = _configuration.GetSection("Jwt");
+
+            var key = new SymmetricSecurityKey(
+                 Encoding.UTF8.GetBytes(jwt["Key"]!)
+             );
+
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+                issuer: jwt["Issuer"],
+                audience: jwt["Audience"],
+                expires: DateTime.UtcNow.AddDays(
+                    int.Parse(jwt["RefreshTokenDays"]!)
+                ),
+                signingCredentials: creds
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }
-
 }

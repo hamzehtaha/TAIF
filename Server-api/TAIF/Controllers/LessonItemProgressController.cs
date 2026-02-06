@@ -15,7 +15,6 @@ namespace TAIF.API.Controllers
         {
             _lessonItemProgressService = lessonItemProgressService;
         }
-
         [HttpPost]
         public async Task<IActionResult> SetLessonItemAsCompleted([FromBody] SetLessonItemAsCompletedRequest request)
         {

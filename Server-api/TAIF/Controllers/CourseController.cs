@@ -1,7 +1,9 @@
-﻿using Azure.Core;
+using Azure.Core;
 using Microsoft.AspNetCore.Mvc;
+using System.Linq.Expressions;
 using TAIF.API.Controllers;
 using TAIF.Application.DTOs;
+using TAIF.Application.DTOs.Filters;
 using TAIF.Application.Interfaces.Services;
 using TAIF.Application.Services;
 using TAIF.Domain.Entities;
@@ -26,7 +28,26 @@ namespace TAIF.Controllers
             if (courses is null) return NotFound();
             return Ok(ApiResponse<List<Course>>.SuccessResponse(courses));
         }
+        [HttpGet("paged")]
+        public async Task<IActionResult> GetPaged([FromQuery] CourseFilter filter)
+        {
+            Expression<Func<Course, bool>> predicate = c =>
+                (string.IsNullOrWhiteSpace(filter.Search)
+                    || c.Name!.Contains(filter.Search)
+                    || c.Description!.Contains(filter.Search))
+                && (!filter.CategoryId.HasValue
+                    || c.CategoryId == filter.CategoryId);
 
+            var result = await _courseService.GetPagedAsync(
+                filter: filter,
+                predicate: predicate,
+                orderBy: c => c.CreatedAt,
+                orderByDescending: true,
+                includes: c => c.Category
+            );
+
+            return Ok(ApiResponse<PagedResult<Course>>.SuccessResponse(result));
+        }
         [HttpGet("{id}")]
         public async Task<IActionResult> Get([FromRoute] Guid id)
         {

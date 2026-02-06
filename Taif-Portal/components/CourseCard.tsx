@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Course } from "@/services/courseService";
 import { useTranslation } from "@/hooks/useTranslation";
-import { BookOpen, Heart, CheckCircle } from "lucide-react";
+import { BookOpen, Heart, CheckCircle, Star } from "lucide-react";
 
 interface CourseCardProps {
   course: Course;
@@ -50,6 +50,15 @@ export function CourseCard({ course, onEnroll, onToggleFavourite }: CourseCardPr
               {course.categoryName}
             </Badge>
           )}
+          {/* Rating and Review Count Badge */}
+          {(course.rating !== undefined && course.rating > 0) || (course.reviewCount !== undefined && course.reviewCount > 0) ? (
+            <div className="absolute bottom-3 left-3 flex items-center gap-1 bg-black/70 text-white px-2 py-1 rounded-full text-xs">
+              <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+              <span className="font-medium">{course.rating?.toFixed(1) || '0.0'}</span>
+              <span className="text-white/80">({course.reviewCount || 0})</span>
+            </div>
+          ) : null}
+          
           {course.isEnrolled && (
             <div className="absolute top-3 right-3 flex items-center gap-1 bg-success text-white px-2 py-1 rounded-full text-xs">
               <CheckCircle className="w-3 h-3" />

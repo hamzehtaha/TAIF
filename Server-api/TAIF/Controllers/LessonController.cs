@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.Linq.Expressions;
 using TAIF.API.Controllers;
 using TAIF.Application.DTOs;
+using TAIF.Application.DTOs.Filters;
 using TAIF.Application.Interfaces.Services;
 using TAIF.Domain.Entities;
 
@@ -23,6 +25,29 @@ namespace TAIF.Controllers
             var lesson = await _lessonService.GetByIdAsync(id);
             if (lesson is null) return NotFound();
             return Ok(ApiResponse<Lesson>.SuccessResponse(lesson));
+        }
+        [HttpGet("paged")]
+        public async Task<IActionResult> GetPaged([FromQuery] LessonFilter filter)
+        {
+            Expression<Func<Lesson, bool>> predicate = l =>
+                (string.IsNullOrWhiteSpace(filter.Search)
+                    || l.Title.Contains(filter.Search))
+                && (!filter.CourseId.HasValue
+                    || l.CourseId == filter.CourseId)
+                && (!filter.MinOrder.HasValue
+                    || l.Order >= filter.MinOrder)
+                && (!filter.MaxOrder.HasValue
+                    || l.Order <= filter.MaxOrder);
+
+            var result = await _lessonService.GetPagedAsync(
+                filter: filter,
+                predicate: predicate,
+                orderBy: l => l.Order,
+                orderByDescending: false,
+                includes: l => l.Course
+            );
+
+            return Ok(ApiResponse<PagedResult<Lesson>>.SuccessResponse(result));
         }
 
         [HttpGet("course/{courseId}")]

@@ -23,7 +23,7 @@ namespace TAIF.Infrastructure.Data
         public DbSet<LessonItem> LessonItems { get; set; }
         public DbSet<Enrollment> Enrollments { get; set; }
         public DbSet<LessonItemProgress> LessonItemProgress { get; set; }
-
+        public DbSet<Review> Reviews { get; set; }
         public DbSet<Interest> Interests { get; set; }
         public DbSet<Tag> Tags { get; set; }
         public DbSet<InterestTagMapping> InterestTagMappings { get; set; }
@@ -46,6 +46,28 @@ namespace TAIF.Infrastructure.Data
             {
                 entity.HasIndex(e => new { e.UserId, e.LessonItemId })
                       .IsUnique();
+            });
+
+            modelBuilder.Entity<Review>(entity =>
+            {
+                entity.HasIndex(e => new { e.UserId, e.CourseId })
+                      .IsUnique();
+
+                entity.HasOne(r => r.User)
+                      .WithMany()
+                      .HasForeignKey(r => r.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(r => r.Course)
+                      .WithMany()
+                      .HasForeignKey(r => r.CourseId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.Property(r => r.Rating)
+                      .IsRequired();
+
+                entity.Property(r => r.Comment)
+                      .HasMaxLength(2000);
             });
 
             var guidCollectionConverter = new ValueConverter<ICollection<Guid>, string>(

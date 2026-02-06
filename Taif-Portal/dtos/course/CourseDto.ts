@@ -10,6 +10,8 @@ export interface CourseDto {
   createdAt?: string;
   updatedAt?: string;
   isDeleted?: boolean;
+  rating?: number;
+  reviewCount?: number;
 }
 
 export interface CoursesResponseDto {

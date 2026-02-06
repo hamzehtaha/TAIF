@@ -8,12 +8,13 @@ import { authService } from "@/services/authService";
 import { courseService, Course } from "@/services/courseService";
 import { categoryService, Category } from "@/services/categoryService";
 import { enrollmentService } from "@/services/enrollmentService";
+import { reviewService } from "@/services/reviewService";
 import { CourseCard } from "@/components/CourseCard";
 import { CategoryFilter } from "@/components/learning/CategoryFilter";
 import { PuzzleLoader } from "@/components/PuzzleLoader";
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search, Filter, AlertCircle } from "lucide-react";
+import { Search, Filter, AlertCircle, Star } from "lucide-react";
 
 export default function Courses() {
   const t = useTranslation();
@@ -21,11 +22,11 @@ export default function Courses() {
   const searchParams = useSearchParams();
   const [courses, setCourses] = useState<Course[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [enrolledCourseIds, setEnrolledCourseIds] = useState<Set<string>>(new Set());
+  const [, setEnrolledCourseIds] = useState<Set<string>>(new Set());
   const [favouriteCourseIds, setFavouriteCourseIds] = useState<Set<string>>(new Set());
   const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
 
@@ -135,35 +136,6 @@ export default function Courses() {
       setEnrolledCourseIds(prev => new Set([...prev, courseId]));
     } catch (err) {
       console.error("Failed to enroll:", err);
-    }
-  };
-
-  const handleToggleFavourite = async (courseId: string) => {
-    try {
-      await enrollmentService.toggleFavourite(courseId);
-      const isFavourite = favouriteCourseIds.has(courseId);
-      
-      // Update course list
-      setCourses((prev) =>
-        prev.map((course) =>
-          course.id === courseId
-            ? { ...course, isFavourite: !isFavourite }
-            : course
-        )
-      );
-      
-      // Update favourites set
-      if (isFavourite) {
-        setFavouriteCourseIds(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(courseId);
-          return newSet;
-        });
-      } else {
-        setFavouriteCourseIds(prev => new Set([...prev, courseId]));
-      }
-    } catch (err) {
-      console.error("Failed to toggle favourite:", err);
     }
   };
 

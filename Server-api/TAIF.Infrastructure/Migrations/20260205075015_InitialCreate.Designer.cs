@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using TAIF.Infrastructure.Data;
@@ -11,9 +12,11 @@ using TAIF.Infrastructure.Data;
 namespace TAIF.Infrastructure.Migrations
 {
     [DbContext(typeof(TaifDbContext))]
-    partial class TaifDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260205075015_InitialCreate")]
+    partial class InitialCreate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

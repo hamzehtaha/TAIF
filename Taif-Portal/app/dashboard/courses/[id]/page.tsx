@@ -10,6 +10,7 @@ import { lessonService, Lesson } from "@/services/lessonService";
 import { lessonItemService, LessonItem } from "@/services/lessonItemService";
 import { enrollmentService } from "@/services/enrollmentService";
 import { categoryService } from "@/services/categoryService";
+import { reviewService, Review, ReviewStatistics } from "@/services/reviewService";
 import { EnrollmentDto } from "@/dtos/enrollment/EnrollmentDto";
 import { LessonList } from "@/components/learning/LessonList";
 import { useEffect, useState } from "react";
@@ -32,56 +33,12 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-
-// Mock review data - easy to replace with actual API data later
-interface Review {
-  id: string;
-  userId: string;
-  userName: string;
-  rating: number;
-  comment: string;
-  createdAt: string;
-}
+import { CourseStatistics, statisticsService } from "@/services/statisitcsService";
 
 interface CourseRating {
-  averageRating: number;
-  totalReviews: number;
-  enrolledCount: number;
   reviews: Review[];
+  statistics: ReviewStatistics | null;
 }
-
-// Default mock data - will be replaced with API data
-const getDefaultRating = (): CourseRating => ({
-  averageRating: 4.5,
-  totalReviews: 24,
-  enrolledCount: 156,
-  reviews: [
-    {
-      id: "1",
-      userId: "u1",
-      userName: "Ahmed Hassan",
-      rating: 5,
-      comment: "Excellent course! Very comprehensive and well-structured content.",
-      createdAt: "2025-01-15",
-    },
-    {
-      id: "2",
-      userId: "u2",
-      userName: "Sara Ali",
-      rating: 4,
-      comment: "Great learning experience. The instructor explains concepts clearly.",
-      createdAt: "2025-01-10",
-    },
-    {
-      id: "3",
-      userId: "u3",
-      userName: "Mohammed Omar",
-      rating: 5,
-      comment: "Highly recommended for beginners and intermediate learners.",
-      createdAt: "2025-01-05",
-    },
-  ],
-});
 
 interface LessonWithItems extends Lesson {
   items: LessonItem[];
@@ -91,6 +48,8 @@ interface CourseDetails extends Omit<Course, 'lessons'> {
   lessons: LessonWithItems[];
   enrollment?: EnrollmentDto | null;
 }
+
+
 
 export default function CourseDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const t = useTranslation();
@@ -102,9 +61,16 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
   const [enrolling, setEnrolling] = useState(false);
   const [togglingFavourite, setTogglingFavourite] = useState(false);
   const [expandedLesson, setExpandedLesson] = useState<string | null>(null);
-  const [courseRating, setCourseRating] = useState<CourseRating>(getDefaultRating());
+  const [courseRating, setCourseRating] = useState<CourseRating>({
+    reviews: [],
+    statistics: null,
+  });
+  const [courseStatistics, setCourseStatistics] = useState<CourseStatistics>({
+    enrolledStudents: 0,
+  });
   const [newReview, setNewReview] = useState({ rating: 5, comment: "" });
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [hasReviewed, setHasReviewed] = useState(false);
 
   useEffect(() => {
     const initParams = async () => {
@@ -125,15 +91,19 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
     const loadCourseData = async () => {
       try {
         setError(null);
-        
+
         // Load course, lessons, and enrollment status in parallel
-        const [courseData, lessonsData, enrolledCourses, favouriteCourses, categories, enrollment] = await Promise.all([
+        const [courseData, lessonsData, enrolledCourses, favouriteCourses, categories, enrollment, reviews, hasReviewedCourse, reviewStatistics, courseStatistics] = await Promise.all([
           courseService.getCourseById(id),
           lessonService.getLessonsByCourse(id).catch(() => []),
           enrollmentService.getUserCourses().catch(() => []),
           enrollmentService.getUserFavouriteCourses().catch(() => []),
           categoryService.getCategories().catch(() => []),
           enrollmentService.getEnrollmentByCourse(id),
+          reviewService.getCourseReviews(id).catch(() => []),
+          reviewService.hasUserReviewedCourse(id).catch(() => false),
+          reviewService.getCourseReviewStatistics(id).catch(() => null),
+          statisticsService.getCourseStatistics(id).catch(() => null),
         ]);
 
         // Check enrollment and favourite status
@@ -146,10 +116,10 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
           lessonsData.map(async (lesson) => {
             try {
               // Use progress endpoint if user is enrolled to get completion status
-              const items = isEnrolled 
-                ? await lessonItemService.getItemsWithProgress(lesson.id).catch(() => 
-                    lessonItemService.getItemsByLesson(lesson.id)
-                  )
+              const items = isEnrolled
+                ? await lessonItemService.getItemsWithProgress(lesson.id).catch(() =>
+                  lessonItemService.getItemsByLesson(lesson.id)
+                )
                 : await lessonItemService.getItemsByLesson(lesson.id);
               return { ...lesson, items };
             } catch {
@@ -166,6 +136,15 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
           lessons: lessonsWithItems,
           enrollment,
         });
+
+        // Set review data
+        setCourseRating({
+          reviews: reviews,
+          statistics: reviewStatistics,
+        });
+        setHasReviewed(hasReviewedCourse);
+        setCourseStatistics(courseStatistics);
+
       } catch (err) {
         console.error("Failed to load course:", err);
         setError("Failed to load course details. Please try again.");
@@ -214,7 +193,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
     if (!course || course.lessons.length === 0) return "#";
 
     const lastItemId = course.enrollment?.lastLessonItemId;
-    
+
     // If we have a lastLessonItemId, find which lesson it belongs to
     if (lastItemId) {
       for (const lesson of course.lessons) {
@@ -230,43 +209,40 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
     if (firstLesson.items.length > 0) {
       return `/dashboard/courses/${course.id}/lesson/${firstLesson.id}?item=${firstLesson.items[0].id}`;
     }
-    
+
     return `/dashboard/courses/${course.id}/lesson/${firstLesson.id}`;
   };
 
   // Check if user has any progress (any completed items)
   const hasAnyProgress = (): boolean => {
     if (!course) return false;
-    return course.lessons.some(lesson => 
+    return course.lessons.some(lesson =>
       lesson.items.some(item => item.isCompleted)
     );
   };
 
-  // Handle review submission - ready for backend integration
   const handleSubmitReview = async () => {
-    if (!newReview.comment.trim()) return;
+    if (!newReview.comment.trim() || !course) return;
     setSubmittingReview(true);
 
     try {
-      // TODO: Replace with actual API call when backend is ready
-      // await reviewService.submitReview(course.id, newReview.rating, newReview.comment);
-      
-      // For now, add to local state (mock behavior)
-      const mockNewReview: Review = {
-        id: `temp-${Date.now()}`,
-        userId: "current-user",
-        userName: "You",
-        rating: newReview.rating,
-        comment: newReview.comment,
-        createdAt: new Date().toISOString().split("T")[0],
-      };
+      await reviewService.submitReview(
+        course.id,
+        newReview.rating,
+        newReview.comment
+      );
 
-      setCourseRating(prev => ({
-        ...prev,
-        totalReviews: prev.totalReviews + 1,
-        averageRating: ((prev.averageRating * prev.totalReviews) + newReview.rating) / (prev.totalReviews + 1),
-        reviews: [mockNewReview, ...prev.reviews],
-      }));
+      // Reload review data
+      const [reviews, hasReviewedCourse, statistics] = await Promise.all([
+        reviewService.getCourseReviews(course.id),
+        reviewService.hasUserReviewedCourse(course.id),
+        reviewService.getCourseReviewStatistics(course.id),
+      ]);
+      setCourseRating({
+        reviews: reviews,
+        statistics: statistics,
+      });
+      setHasReviewed(hasReviewedCourse);
 
       setNewReview({ rating: 5, comment: "" });
     } catch (err) {
@@ -289,14 +265,60 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
             className={`${interactive ? "cursor-pointer hover:scale-110" : "cursor-default"} transition`}
           >
             <Star
-              className={`w-5 h-5 ${
-                star <= rating
+              className={`w-5 h-5 ${star <= rating
                   ? "fill-yellow-400 text-yellow-400"
                   : "text-muted-foreground"
-              }`}
+                }`}
             />
           </button>
         ))}
+      </div>
+    );
+  };
+
+  // Render star rating with partial stars for decimal ratings
+  const renderStarsWithPartial = (rating: number) => {
+    const fullStars = Math.floor(rating);
+    const partialStar = rating - fullStars;
+    const emptyStars = 5 - Math.ceil(rating);
+
+    return (
+      <div className="flex gap-1 items-center">
+        {/* Full stars */}
+        {[...Array(fullStars)].map((_, i) => (
+          <Star
+            key={`full-${i}`}
+            className="w-5 h-5 fill-yellow-400 text-yellow-400"
+          />
+        ))}
+
+        {/* Partial star */}
+        {partialStar > 0 && (
+          <div key="partial" className="relative w-5 h-5">
+            {/* Background empty star */}
+            <Star className="w-5 h-5 text-muted-foreground absolute top-0 left-0" />
+            {/* Foreground filled star with clip */}
+            <div
+              className="absolute top-0 left-0 overflow-hidden"
+              style={{ width: `${partialStar * 100}%` }}
+            >
+              <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+            </div>
+          </div>
+        )}
+
+        {/* Empty stars */}
+        {[...Array(emptyStars)].map((_, i) => (
+          <Star
+            key={`empty-${i}`}
+            className="w-5 h-5 text-muted-foreground"
+          />
+        ))}
+
+        {/* Display numeric rating */}
+        <span className="text-sm font-medium ml-1">
+          {rating.toFixed(1)}
+        </span>
       </div>
     );
   };
@@ -475,19 +497,36 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground flex items-center gap-1">
                     <Users className="w-4 h-4" />
-                    {t.courses?.enrolledStudents || "Enrolled"}
+                    {t.courses?.enrolledStudents || "Enrolled Students"}
                   </span>
-                  <span className="font-medium">{courseRating.enrolledCount}</span>
+                  <span className="font-medium">
+                    {courseStatistics?.enrolledStudents || 0}
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    <MessageSquare className="w-4 h-4" />
+                    {t.courses?.reviews || "Reviews"}
+                  </span>
+                  <span className="font-medium">
+                    {courseRating.statistics?.totalReviews || 0}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm items-center">
                   <span className="text-muted-foreground flex items-center gap-1">
                     <Star className="w-4 h-4" />
                     {t.courses?.rating || "Rating"}
                   </span>
-                  <span className="font-medium flex items-center gap-1">
-                    {courseRating.averageRating.toFixed(1)}
-                    <span className="text-muted-foreground">({courseRating.totalReviews})</span>
-                  </span>
+                  <div className="flex items-center gap-1">
+                    {courseRating.statistics && courseRating.statistics.totalReviews > 0 ? (
+                      <>
+                        <span className="font-medium">{courseRating.statistics.averageRating.toFixed(1)}</span>
+                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                      </>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">No ratings yet</span>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -518,60 +557,62 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Rating Summary */}
-                <div className="flex items-center gap-4 p-4 bg-muted/30 rounded-lg">
-                  <div className="text-center">
-                    <div className="text-3xl font-bold">{courseRating.averageRating.toFixed(1)}</div>
-                    <div className="flex justify-center mt-1">
-                      {renderStars(Math.round(courseRating.averageRating))}
+                {/* Add Review Form (for enrolled users who haven't reviewed yet) */}
+                {course.isEnrolled && !hasReviewed && (
+                  <div className="space-y-3 pb-4 border-b">
+                    <h4 className="font-medium">{t.courses?.writeReview || "Write a Review"}</h4>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">{t.courses?.yourRating || "Your Rating"}:</span>
+                      {renderStars(newReview.rating, true, (r) => setNewReview(prev => ({ ...prev, rating: r })))}
                     </div>
-                    <div className="text-sm text-muted-foreground mt-1">
-                      {courseRating.totalReviews} {t.courses?.reviewsCount || "reviews"}
-                    </div>
+                    <Textarea
+                      placeholder={t.courses?.reviewPlaceholder || "Share your experience with this course..."}
+                      value={newReview.comment}
+                      onChange={(e) => setNewReview(prev => ({ ...prev, comment: e.target.value }))}
+                      rows={3}
+                    />
+                    <Button
+                      onClick={handleSubmitReview}
+                      disabled={submittingReview || !newReview.comment.trim()}
+                      className="w-full gap-2"
+                    >
+                      <Send className="w-4 h-4" />
+                      {submittingReview ? t.common.loading : t.courses?.submitReview || "Submit Review"}
+                    </Button>
                   </div>
-                </div>
+                )}
 
-                {/* Add Review Form (for enrolled users) */}
-                {course.isEnrolled && (
-                  <div className="border-t pt-4">
-                    <h4 className="font-medium mb-3">{t.courses?.writeReview || "Write a Review"}</h4>
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">{t.courses?.yourRating || "Your Rating"}:</span>
-                        {renderStars(newReview.rating, true, (r) => setNewReview(prev => ({ ...prev, rating: r })))}
-                      </div>
-                      <Textarea
-                        placeholder={t.courses?.reviewPlaceholder || "Share your experience with this course..."}
-                        value={newReview.comment}
-                        onChange={(e) => setNewReview(prev => ({ ...prev, comment: e.target.value }))}
-                        rows={3}
-                      />
-                      <Button
-                        onClick={handleSubmitReview}
-                        disabled={submittingReview || !newReview.comment.trim()}
-                        className="w-full gap-2"
-                      >
-                        <Send className="w-4 h-4" />
-                        {submittingReview ? t.common.loading : t.courses?.submitReview || "Submit Review"}
-                      </Button>
-                    </div>
+                {/* Message for users who already reviewed */}
+                {course.isEnrolled && hasReviewed && (
+                  <div className="p-4 bg-muted/30 rounded-lg border-l-4 border-primary">
+                    <p className="text-sm text-muted-foreground">
+                      ✓ You have already submitted a review for this course. Thank you for your feedback!
+                    </p>
                   </div>
                 )}
 
                 {/* Reviews List */}
-                <div className="border-t pt-4 space-y-4">
-                  {courseRating.reviews.map((review) => (
-                    <div key={review.id} className="p-3 bg-muted/20 rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium">{review.userName}</span>
-                        <span className="text-xs text-muted-foreground">{review.createdAt}</span>
+                <div className="space-y-4">
+                  {courseRating.reviews.length > 0 ? (
+                    courseRating.reviews.map((review) => (
+                      <div key={review.id} className="p-3 bg-muted/20 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-medium">{review.userName || "Anonymous"}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(review.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 mb-2">
+                          {renderStars(review.rating)}
+                        </div>
+                        <p className="text-sm text-muted-foreground">{review.comment}</p>
                       </div>
-                      <div className="flex items-center gap-2 mb-2">
-                        {renderStars(review.rating)}
-                      </div>
-                      <p className="text-sm text-muted-foreground">{review.comment}</p>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <p className="text-center text-muted-foreground py-4">
+                      No reviews yet. Be the first to review this course!
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>
