@@ -52,7 +52,11 @@ export default function Index() {
 
     const loadFavourites = async () => {
       try {
-        const courseDtos = await enrollmentService.getUserFavouriteCourses();
+        const [courseDtos, cats] = await Promise.all([
+          enrollmentService.getUserFavouriteCourses(),
+          categoryService.getCategories()
+        ]);
+        const categoryMap = new Map(cats.map(c => [c.id, c.name]));
         const courses: Course[] = courseDtos.map(dto => ({
           id: dto.id,
           title: dto.name,
@@ -60,8 +64,13 @@ export default function Index() {
           thumbnail: dto.photo || "/placeholder-course.jpg",
           imageUrl: dto.photo || "/placeholder-course.jpg",
           categoryId: dto.categoryId,
+          categoryName: categoryMap.get(dto.categoryId) || undefined,
           isEnrolled: true,
           isFavourite: true,
+          rating: dto.rating || 4.5,
+          reviewCount: dto.reviewCount || 20,
+          durationInMinutes: dto.durationInMinutes || Math.floor(Math.random() * 180) + 60,
+          progress: dto.progress ?? 35,
         }));
         setFavouriteCourses(courses);
       } catch (err) {
@@ -75,11 +84,15 @@ export default function Index() {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    // Load featured courses from API
+    // Load featured courses from API with category names
     const loadFeaturedCourses = async () => {
       try {
-        const courses = await courseService.getCourses();
-        setFeaturedCourses(courses.slice(0, 6)); // Show first 6 courses
+        const [courses, cats] = await Promise.all([
+          courseService.getCourses(),
+          categoryService.getCategories()
+        ]);
+        const enrichedCourses = await courseService.enrichCoursesWithCategories(courses, cats);
+        setFeaturedCourses(enrichedCourses.slice(0, 6)); // Show first 6 courses
       } catch (err) {
         console.error("Failed to load featured courses:", err);
       } finally {

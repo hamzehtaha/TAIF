@@ -12,6 +12,9 @@ export interface CourseDto {
   isDeleted?: boolean;
   rating?: number;
   reviewCount?: number;
+  durationInMinutes?: number;
+  isRecommended?: boolean;
+  progress?: number;
 }
 
 export interface CoursesResponseDto {

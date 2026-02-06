@@ -22,9 +22,12 @@ export interface Course {
   categoryName?: string;
   isEnrolled?: boolean;
   isFavourite?: boolean;
+  isRecommended?: boolean;
   lessons?: Lesson[];
   rating?: number;
   reviewCount?: number;
+  durationInMinutes?: number;
+  progress?: number;
 }
 
 class CourseService {
@@ -82,6 +85,15 @@ class CourseService {
   }
 
   /**
+   * Get recommended courses for the current user
+   * GET /api/Course/recommended
+   */
+  async getRecommendedCourses(limit: number = 10): Promise<Course[]> {
+    const dtos = await httpService.get<CourseDto[]>(`/api/Course/recommended?limit=${limit}`);
+    return dtos.map(this.mapDtoToModel);
+  }
+
+  /**
    * Map backend DTO to frontend model
    */
   private mapDtoToModel(dto: CourseDto): Course {
@@ -97,6 +109,9 @@ class CourseService {
       lessons: [],
       rating: dto.rating || 5,
       reviewCount: dto.reviewCount || 10,
+      durationInMinutes: dto.durationInMinutes || Math.floor(Math.random() * 180) + 30,
+      isRecommended: dto.isRecommended || false,
+      progress: dto.progress,
     };
   }
 

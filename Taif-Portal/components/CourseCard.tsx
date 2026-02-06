@@ -6,15 +6,23 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Course } from "@/services/courseService";
 import { useTranslation } from "@/hooks/useTranslation";
-import { BookOpen, Heart, CheckCircle, Star } from "lucide-react";
+import { BookOpen, Heart, CheckCircle, Star, Clock, Sparkles } from "lucide-react";
 
 interface CourseCardProps {
   course: Course;
   onEnroll?: () => void;
   onToggleFavourite?: () => void;
+  showRecommendedBadge?: boolean;
 }
 
-export function CourseCard({ course, onEnroll, onToggleFavourite }: CourseCardProps) {
+function formatDuration(minutes: number): string {
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+}
+
+export function CourseCard({ course, onEnroll, onToggleFavourite, showRecommendedBadge }: CourseCardProps) {
   const t = useTranslation();
 
   const handleEnroll = (e: React.MouseEvent) => {
@@ -50,21 +58,41 @@ export function CourseCard({ course, onEnroll, onToggleFavourite }: CourseCardPr
               {course.categoryName}
             </Badge>
           )}
-          {/* Rating and Review Count Badge */}
-          {(course.rating !== undefined && course.rating > 0) || (course.reviewCount !== undefined && course.reviewCount > 0) ? (
-            <div className="absolute bottom-3 left-3 flex items-center gap-1 bg-black/70 text-white px-2 py-1 rounded-full text-xs">
-              <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-              <span className="font-medium">{course.rating?.toFixed(1) || '0.0'}</span>
-              <span className="text-white/80">({course.reviewCount || 0})</span>
-            </div>
-          ) : null}
+          {/* Bottom badges row: Rating + Duration */}
+          <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+            {/* Rating Badge */}
+            {(course.rating !== undefined && course.rating > 0) ? (
+              <div className="flex items-center gap-1 bg-black/70 text-white px-2 py-1 rounded-full text-xs">
+                <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                <span className="font-medium">{course.rating?.toFixed(1)}</span>
+                <span className="text-white/80">({course.reviewCount || 0})</span>
+              </div>
+            ) : <div />}
+            
+            {/* Duration Badge */}
+            {course.durationInMinutes && course.durationInMinutes > 0 && (
+              <div className="flex items-center gap-1 bg-black/70 text-white px-2 py-1 rounded-full text-xs">
+                <Clock className="w-3 h-3" />
+                <span className="font-medium">{formatDuration(course.durationInMinutes)}</span>
+              </div>
+            )}
+          </div>
           
-          {course.isEnrolled && (
-            <div className="absolute top-3 right-3 flex items-center gap-1 bg-success text-white px-2 py-1 rounded-full text-xs">
-              <CheckCircle className="w-3 h-3" />
-              Enrolled
-            </div>
-          )}
+          {/* Top right badges: Enrolled or Recommended */}
+          <div className="absolute top-3 right-3 flex flex-col gap-1">
+            {course.isEnrolled && (
+              <div className="flex items-center gap-1 bg-success text-white px-2 py-1 rounded-full text-xs">
+                <CheckCircle className="w-3 h-3" />
+                Enrolled
+              </div>
+            )}
+            {(showRecommendedBadge || course.isRecommended) && !course.isEnrolled && (
+              <div className="flex items-center gap-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-2 py-1 rounded-full text-xs">
+                <Sparkles className="w-3 h-3" />
+                Recommended
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Card Content */}
@@ -75,9 +103,25 @@ export function CourseCard({ course, onEnroll, onToggleFavourite }: CourseCardPr
           </h3>
 
           {/* Description */}
-          <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
             {course.description || "No description available"}
           </p>
+
+          {/* Progress Bar for enrolled courses */}
+          {course.isEnrolled && course.progress !== undefined && (
+            <div className="mb-4">
+              <div className="flex justify-between text-xs mb-1">
+                <span className="text-muted-foreground">Progress</span>
+                <span className="font-medium text-primary">{course.progress}%</span>
+              </div>
+              <div className="w-full bg-muted rounded-full h-2">
+                <div
+                  className="bg-primary h-2 rounded-full transition-all"
+                  style={{ width: `${course.progress}%` }}
+                />
+              </div>
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex gap-2">

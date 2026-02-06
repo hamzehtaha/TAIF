@@ -24,6 +24,13 @@ namespace TAIF.Controllers
             return Ok(ApiResponse<List<Interest>>.SuccessResponse(interests));
         }
 
+        [HttpGet("user")]
+        public async Task<IActionResult> GetUserInterests()
+        {
+            var interests = await _interestService.GetUserInterestsAsync(this.UserId);
+            return Ok(ApiResponse<List<Interest>>.SuccessResponse(interests));
+        }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> Get([FromRoute] Guid id)
         {

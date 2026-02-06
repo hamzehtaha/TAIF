@@ -7,9 +7,22 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { useTheme, FontSize } from "@/hooks/useTheme";
 import { useLanguage } from "@/hooks/useLanguage";
 import { authService } from "@/services/authService";
+import { interestService, Interest } from "@/services/interestService";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, Lock, User, LogOut, Type, Moon, Sun, Globe } from "lucide-react";
+import { Bell, Lock, User, LogOut, Type, Moon, Sun, Globe, Sparkles, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const interestIcons: Record<string, string> = {
+  "Sign Language & Deaf Education": "👋",
+  "Visual Impairment & Braille": "📖",
+  "Assistive Technology": "💻",
+  "Sensory Processing & Autism": "🧩",
+  "Learning Disabilities": "📚",
+  "Physical & Motor Disabilities": "🏃",
+  "Speech & Communication": "💬",
+  "Cognitive Development": "🧠",
+};
 
 export default function Settings() {
   const t = useTranslation();
@@ -18,6 +31,10 @@ export default function Settings() {
   const { language, setLanguage } = useLanguage();
   const [mounted, setMounted] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [interests, setInterests] = useState<Interest[]>([]);
+  const [selectedInterests, setSelectedInterests] = useState<Set<string>>(new Set());
+  const [savingInterests, setSavingInterests] = useState(false);
+  const [interestsChanged, setInterestsChanged] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -25,7 +42,48 @@ export default function Settings() {
     if (!authService.isAuthenticated()) {
       router.push("/signin");
     }
+
+    const loadInterests = async () => {
+      try {
+        const [allInterests, userInterests] = await Promise.all([
+          interestService.getAllInterests(),
+          interestService.getUserInterests().catch(() => [])
+        ]);
+        setInterests(allInterests);
+        // Pre-select user's existing interests
+        const userInterestIds = new Set(userInterests.map(i => i.id));
+        setSelectedInterests(userInterestIds);
+      } catch (err) {
+        console.error("Failed to load interests:", err);
+      }
+    };
+    loadInterests();
   }, [router]);
+
+  const toggleInterest = (interestId: string) => {
+    setSelectedInterests((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(interestId)) {
+        newSet.delete(interestId);
+      } else {
+        newSet.add(interestId);
+      }
+      return newSet;
+    });
+    setInterestsChanged(true);
+  };
+
+  const handleSaveInterests = async () => {
+    setSavingInterests(true);
+    try {
+      await interestService.updateUserInterests(Array.from(selectedInterests));
+      setInterestsChanged(false);
+    } catch (err) {
+      console.error("Failed to save interests:", err);
+    } finally {
+      setSavingInterests(false);
+    }
+  };
 
   const handleLogout = () => {
     authService.logout();
@@ -73,6 +131,60 @@ export default function Settings() {
                   </div>
                   <Button variant="outline">{t.settings.editProfile}</Button>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Interests Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5" />
+                  {t.interests?.updateTitle || "Update Your Interests"}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {t.interests?.updateSubtitle || "Manage your learning interests to get better course recommendations"}
+                </p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                  {interests.map((interest) => {
+                    const isSelected = selectedInterests.has(interest.id);
+                    const icon = interestIcons[interest.name] || "📌";
+                    return (
+                      <button
+                        key={interest.id}
+                        onClick={() => toggleInterest(interest.id)}
+                        className={cn(
+                          "p-3 rounded-lg border-2 transition text-center min-h-[80px] flex flex-col items-center justify-center relative",
+                          isSelected
+                            ? "border-primary bg-primary/10"
+                            : "border-border hover:border-primary"
+                        )}
+                      >
+                        {isSelected && (
+                          <div className="absolute top-2 right-2">
+                            <div className="w-4 h-4 rounded-full bg-primary flex items-center justify-center">
+                              <Check className="w-3 h-3 text-primary-foreground" />
+                            </div>
+                          </div>
+                        )}
+                        <span className="text-2xl mb-1">{icon}</span>
+                        <span className="text-xs font-medium leading-tight">{interest.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {interestsChanged && (
+                  <Button 
+                    onClick={handleSaveInterests} 
+                    disabled={savingInterests}
+                    className="w-full sm:w-auto"
+                  >
+                    {savingInterests 
+                      ? (t.interests?.saving || "Saving...") 
+                      : (t.interests?.saveChanges || "Save Changes")}
+                  </Button>
+                )}
               </CardContent>
             </Card>
 

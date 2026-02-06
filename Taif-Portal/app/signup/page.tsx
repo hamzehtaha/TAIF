@@ -60,7 +60,8 @@ export default function SignUp() {
         email: formData.email,
         password: formData.password,
       });
-      router.push("/dashboard");
+      // Redirect new users to interests page to set their preferences
+      router.push("/dashboard/interests");
     } catch (err) {
       setError("Failed to create account. Please try again.");
       console.error("Sign up error:", err);

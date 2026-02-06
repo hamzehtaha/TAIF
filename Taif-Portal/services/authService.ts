@@ -13,6 +13,7 @@ export interface User {
   lastName: string;
   email: string;
   isActive?: boolean;
+  interests?: string[];
 }
 
 class AuthService {
@@ -119,10 +120,58 @@ class AuthService {
     const token = this.getAccessToken();
     if (!token) return false;
 
-    const expiresAt = localStorage.getItem("access_token_expires_at");
-    if (!expiresAt) return false;
+    // Check if access token is valid
+    const accessExpiresAt = localStorage.getItem("access_token_expires_at");
+    if (accessExpiresAt && new Date(accessExpiresAt) > new Date()) {
+      return true;
+    }
 
-    return new Date(expiresAt) > new Date();
+    // Access token expired - check if refresh token is still valid
+    const refreshToken = this.getRefreshToken();
+    if (!refreshToken) return false;
+
+    const refreshExpiresAt = localStorage.getItem("refresh_token_expires_at");
+    if (refreshExpiresAt && new Date(refreshExpiresAt) > new Date()) {
+      // Refresh token is still valid, user can be re-authenticated
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Check if access token is expired but refresh token is still valid
+   */
+  needsTokenRefresh(): boolean {
+    const accessExpiresAt = localStorage.getItem("access_token_expires_at");
+    const refreshExpiresAt = localStorage.getItem("refresh_token_expires_at");
+    
+    if (!accessExpiresAt || !refreshExpiresAt) return false;
+
+    const accessExpired = new Date(accessExpiresAt) <= new Date();
+    const refreshValid = new Date(refreshExpiresAt) > new Date();
+
+    return accessExpired && refreshValid;
+  }
+
+  /**
+   * Proactively refresh the token if it's expired or about to expire
+   */
+  async ensureValidToken(): Promise<boolean> {
+    if (!this.needsTokenRefresh()) {
+      return this.isAuthenticated();
+    }
+
+    const refreshToken = this.getRefreshToken();
+    if (!refreshToken) return false;
+
+    try {
+      await this.refreshToken(refreshToken);
+      return true;
+    } catch (error) {
+      console.error("Failed to refresh token:", error);
+      return false;
+    }
   }
 
   getUser(): User | null {
@@ -151,7 +200,16 @@ class AuthService {
       lastName: dto.lastName,
       email: dto.email,
       isActive: dto.isActive,
+      interests: dto.interests || [],
     };
+  }
+
+  /**
+   * Check if user has set their interests
+   */
+  hasInterests(): boolean {
+    const user = this.getUser();
+    return user?.interests != null && user.interests.length > 0;
   }
 }
 

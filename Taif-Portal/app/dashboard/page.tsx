@@ -7,19 +7,22 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { authService } from "@/services/authService";
 import { enrollmentService } from "@/services/enrollmentService";
 import { courseService, Course } from "@/services/courseService";
+import { categoryService } from "@/services/categoryService";
 import { CourseCard } from "@/components/CourseCard";
 import { PuzzleLoader } from "@/components/PuzzleLoader";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BookOpen, Award, Clock, TrendingUp, AlertCircle } from "lucide-react";
+import { BookOpen, Award, Clock, TrendingUp, AlertCircle, Sparkles } from "lucide-react";
 
 export default function DashboardHome() {
   const t = useTranslation();
   const router = useRouter();
   const user = authService.getUser();
   const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([]);
+  const [recommendedCourses, setRecommendedCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingRecommendations, setLoadingRecommendations] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -33,8 +36,15 @@ export default function DashboardHome() {
     const loadData = async () => {
       try {
         setError(null);
-        const courseDtos = await enrollmentService.getUserCourses();
-        // Map DTOs to Course model
+        const [courseDtos, categories] = await Promise.all([
+          enrollmentService.getUserCourses(),
+          categoryService.getCategories()
+        ]);
+        
+        // Create category map for quick lookup
+        const categoryMap = new Map(categories.map(c => [c.id, c.name]));
+        
+        // Map DTOs to Course model with category names
         const courses: Course[] = courseDtos.map(dto => ({
           id: dto.id,
           title: dto.name,
@@ -42,7 +52,12 @@ export default function DashboardHome() {
           thumbnail: dto.photo || "/placeholder-course.jpg",
           imageUrl: dto.photo || "/placeholder-course.jpg",
           categoryId: dto.categoryId,
+          categoryName: categoryMap.get(dto.categoryId) || undefined,
           isEnrolled: true,
+          rating: dto.rating || 4.5,
+          reviewCount: dto.reviewCount || 25,
+          durationInMinutes: dto.durationInMinutes || Math.floor(Math.random() * 180) + 60,
+          progress: dto.progress ?? 35,
         }));
         setEnrolledCourses(courses.slice(0, 3));
       } catch (err) {
@@ -53,7 +68,24 @@ export default function DashboardHome() {
       }
     };
 
+    // Load recommended courses with category names
+    const loadRecommendations = async () => {
+      try {
+        const [courses, categories] = await Promise.all([
+          courseService.getRecommendedCourses(6),
+          categoryService.getCategories()
+        ]);
+        const enrichedCourses = await courseService.enrichCoursesWithCategories(courses, categories);
+        setRecommendedCourses(enrichedCourses);
+      } catch (err) {
+        console.error("Failed to load recommendations:", err);
+      } finally {
+        setLoadingRecommendations(false);
+      }
+    };
+
     loadData();
+    loadRecommendations();
   }, [router]);
 
   const stats = [
@@ -177,6 +209,57 @@ export default function DashboardHome() {
                 <Link href="/dashboard/courses">
                   <Button>
                     {t.home.heroCta}
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Recommended Courses Section */}
+        <div className="mb-12">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
+                <Sparkles className="w-6 h-6 text-primary" />
+                {t.recommendations?.title || "Recommended for You"}
+              </h2>
+              <p className="text-muted-foreground">
+                {t.recommendations?.subtitle || "Courses based on your interests"}
+              </p>
+            </div>
+            <Link href="/dashboard/interests">
+              <Button variant="outline">
+                {t.recommendations?.explore || "Explore Interests"}
+              </Button>
+            </Link>
+          </div>
+
+          {loadingRecommendations ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-muted rounded-lg h-96 animate-pulse" />
+              ))}
+            </div>
+          ) : recommendedCourses.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {recommendedCourses.map((course) => (
+                <CourseCard key={course.id} course={course} showRecommendedBadge />
+              ))}
+            </div>
+          ) : (
+            <Card className="border-dashed bg-primary/5 border-primary/20">
+              <CardContent className="p-12 text-center">
+                <Sparkles className="w-16 h-16 mx-auto mb-4 text-primary/50" />
+                <h3 className="text-lg font-semibold mb-2">
+                  {t.recommendations?.noRecommendations || "No recommendations yet"}
+                </h3>
+                <p className="text-muted-foreground mb-6">
+                  {t.recommendations?.selectInterests || "Select your interests to get personalized recommendations"}
+                </p>
+                <Link href="/dashboard/interests">
+                  <Button>
+                    {t.recommendations?.explore || "Explore Interests"}
                   </Button>
                 </Link>
               </CardContent>

@@ -4,14 +4,23 @@ import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/hooks/useTranslation";
 import { authService } from "@/services/authService";
 import { lessonService, Lesson } from "@/services/lessonService";
-import { lessonItemService, LessonItem } from "@/services/lessonItemService";
+import { 
+  lessonItemService, 
+  LessonItem,
+  VideoContent,
+  QuestionContent,
+  RichTextContent as RichTextContentType
+} from "@/services/lessonItemService";
 import { lessonItemProgressService } from "@/services/lessonItemProgressService";
-import { useEffect, useState, useRef } from "react";
+import { VideoPlayer, QuizContent, RichTextContent } from "@/components/lesson";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   CheckCircle,
   Video,
   Menu,
@@ -22,6 +31,7 @@ import {
   HelpCircle,
   AlertCircle,
   BookOpen,
+  PlayCircle,
 } from "lucide-react";
 
 const getItemIcon = (type: string) => {
@@ -47,6 +57,8 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; l
   const [currentItemIndex, setCurrentItemIndex] = useState(0);
   const [allLessons, setAllLessons] = useState<Lesson[]>([]);
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
+  const [expandedLessons, setExpandedLessons] = useState<Set<string>>(new Set());
+  const [allLessonItems, setAllLessonItems] = useState<Record<string, LessonItem[]>>({});
   const markedCompleteRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
@@ -87,6 +99,12 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; l
         const lessonIdx = courseLessons.findIndex(l => l.id === lessonId);
         setCurrentLessonIndex(lessonIdx >= 0 ? lessonIdx : 0);
         
+        // Set current lesson as expanded by default
+        setExpandedLessons(new Set([lessonId]));
+        
+        // Store current lesson items
+        setAllLessonItems(prev => ({ ...prev, [lessonId]: itemsData }));
+        
         // Check for item query param (resume learning or navigation)
         const itemIdFromUrl = searchParams.get("item");
         if (itemIdFromUrl) {
@@ -118,13 +136,16 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; l
 
   const currentItem = lessonItems[currentItemIndex] || null;
 
-  // Auto-mark item as completed when it becomes current
+  // Auto-mark item as completed when it becomes current (except quiz items)
   useEffect(() => {
     if (!currentItem || !courseId) return;
     if (currentItem.isCompleted) return;
     if (markedCompleteRef.current.has(currentItem.id)) return;
+    
+    // Skip auto-completion for quiz items - they complete on submission
+    if (currentItem.type === "question") return;
 
-    // Mark as completed immediately when viewing
+    // Mark as completed immediately when viewing (video/text only)
     const markComplete = async () => {
       try {
         markedCompleteRef.current.add(currentItem.id);
@@ -264,59 +285,87 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; l
             {/* Content Display based on item type */}
             {currentItem ? (
               <>
-                {currentItem.type === "video" && (
-                  <div className="flex-shrink-0">
-                    <div className="relative bg-black overflow-hidden w-full aspect-video">
-                      {currentItem.url ? (
-                        <iframe
-                          src={currentItem.url}
-                          className="w-full h-full"
-                          allowFullScreen
-                        />
-                      ) : (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-primary/30 via-accent/20 to-black/50">
-                          <Video className="w-20 h-20 text-white/40 mb-4" />
-                          <p className="text-white/70 font-medium">{currentItem.name}</p>
-                          <p className="text-white/50 text-sm mt-2">Video content</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
+                {/* Video Content */}
+                {currentItem.type === "video" && (() => {
+                  const videoContent = lessonItemService.parseContent<VideoContent>(currentItem.content);
+                  const videoUrl = videoContent?.url || currentItem.url;
+                  return (
+                    <VideoPlayer 
+                      url={videoUrl} 
+                      title={currentItem.name}
+                      description={videoContent?.description}
+                    />
+                  );
+                })()}
 
-                {/* Item Details - Clean layout without scroll */}
-                <div className="px-6 md:px-8 py-6">
+                {/* Quiz Content */}
+                {currentItem.type === "question" && (() => {
+                  const quizContent = lessonItemService.parseContent<QuestionContent>(currentItem.content);
+                  
+                  // Check if content has questions
+                  const hasQuestions = quizContent && (
+                    (quizContent.questions && quizContent.questions.length > 0) ||
+                    (quizContent.question && quizContent.options)
+                  );
+                  
+                  if (!hasQuestions) {
+                    return (
+                      <div className="p-6 text-center">
+                        <HelpCircle className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                        <p className="text-muted-foreground">Quiz content not available.</p>
+                      </div>
+                    );
+                  }
+                  return (
+                    <QuizContent 
+                      lessonItemId={currentItem.id}
+                      content={quizContent}
+                      onComplete={async () => {
+                        try {
+                          markedCompleteRef.current.add(currentItem.id);
+                          setLessonItems(prev => prev.map((item, idx) => 
+                            idx === currentItemIndex ? { ...item, isCompleted: true } : item
+                          ));
+                        } catch (err) {
+                          console.error("Failed to mark quiz complete:", err);
+                        }
+                      }}
+                    />
+                  );
+                })()}
+
+                {/* Rich Text Content */}
+                {currentItem.type === "text" && (() => {
+                  const textContent = lessonItemService.parseContent<RichTextContentType>(currentItem.content);
+                  if (!textContent) {
+                    // Fallback: try to display content as string
+                    const fallbackText = typeof currentItem.content === "string" 
+                      ? currentItem.content 
+                      : "No content available.";
+                    return (
+                      <div className="p-6">
+                        <div className="prose prose-sm max-w-none">
+                          <p>{fallbackText}</p>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return (
+                    <RichTextContent 
+                      content={textContent}
+                      title={currentItem.name}
+                    />
+                  );
+                })()}
+
+                {/* Item Details Header */}
+                <div className="px-6 md:px-8 py-6 border-t">
                   <h1 className="text-2xl md:text-3xl font-bold mb-2">
                     {currentItem.name}
                   </h1>
                   <p className="text-sm text-muted-foreground mb-6">
                     {t.learning?.itemOf?.replace("{current}", String(currentItemIndex + 1)).replace("{total}", String(lessonItems.length)) || `Item ${currentItemIndex + 1} of ${lessonItems.length}`} {t.learning?.inLesson || "in"} "{lesson.title}"
                   </p>
-
-                  {/* Content */}
-                  {currentItem.content && (
-                    <div className="mb-6 p-4 bg-muted/20 rounded-lg">
-                      <div className="prose prose-sm max-w-none">
-                        {currentItem.content}
-                      </div>
-                    </div>
-                  )}
-
-                  {currentItem.type === "text" && !currentItem.content && (
-                    <div className="mb-6 p-4 bg-muted/20 rounded-lg">
-                      <p className="text-muted-foreground">
-                        {t.learning?.textContent || "Text content"}
-                      </p>
-                    </div>
-                  )}
-
-                  {currentItem.type === "question" && (
-                    <div className="mb-6 p-4 bg-muted/20 rounded-lg">
-                      <p className="text-muted-foreground">
-                        {t.learning?.questionContent || "Quiz content"} - Not implemented yet
-                      </p>
-                    </div>
-                  )}
 
                   {/* Navigation */}
                   <div className="flex gap-4 pt-4">
@@ -351,7 +400,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; l
             )}
           </div>
 
-          {/* Right Sidebar: Lesson Items */}
+          {/* Right Sidebar: All Lessons with Items */}
           <div
             className={`${
               sidebarOpen ? "translate-x-0" : "translate-x-full"
@@ -359,7 +408,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; l
           >
             <div className="p-4">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold">{lesson.title}</h3>
+                <h3 className="font-semibold text-sm">Course Content</h3>
                 <button
                   onClick={() => setSidebarOpen(false)}
                   className="p-1 hover:bg-muted rounded lg:hidden"
@@ -386,46 +435,118 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; l
                 </p>
               </div>
 
-              {/* Items List - Show green checkmark for completed items */}
-              <div className="space-y-1">
-                {lessonItems.map((item, index) => {
-                  const Icon = getItemIcon(item.type);
-                  const isActive = currentItemIndex === index;
+              {/* All Lessons List */}
+              <div className="space-y-2">
+                {allLessons.map((lessonItem, lessonIndex) => {
+                  const isCurrentLesson = lessonItem.id === lessonId;
+                  const isExpanded = expandedLessons.has(lessonItem.id);
+                  const items = isCurrentLesson ? lessonItems : (allLessonItems[lessonItem.id] || []);
+                  
+                  const toggleLesson = async (lid: string) => {
+                    setExpandedLessons(prev => {
+                      const newSet = new Set(prev);
+                      if (newSet.has(lid)) {
+                        newSet.delete(lid);
+                      } else {
+                        newSet.add(lid);
+                        // Load items if not already loaded
+                        if (!allLessonItems[lid]) {
+                          lessonItemService.getItemsWithProgress(lid)
+                            .catch(() => lessonItemService.getItemsByLesson(lid))
+                            .then(data => {
+                              setAllLessonItems(p => ({ ...p, [lid]: data }));
+                            });
+                        }
+                      }
+                      return newSet;
+                    });
+                  };
+                  
                   return (
-                    <button
-                      key={item.id}
-                      onClick={() => {
-                        setCurrentItemIndex(index);
-                        setSidebarOpen(false);
-                      }}
-                      className={`w-full text-left p-3 rounded-lg transition text-sm ${
-                        isActive
-                          ? "bg-primary text-white"
-                          : "hover:bg-muted"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                          isActive ? "bg-white/20" : "bg-muted"
+                    <div key={lessonItem.id} className="border border-border rounded-lg overflow-hidden">
+                      {/* Lesson Header */}
+                      <button
+                        onClick={() => toggleLesson(lessonItem.id)}
+                        className={`w-full text-left p-3 flex items-center gap-3 transition ${
+                          isCurrentLesson ? "bg-primary/10" : "hover:bg-muted"
+                        }`}
+                      >
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                          isCurrentLesson ? "bg-primary text-white" : "bg-muted"
                         }`}>
-                          <Icon className="w-4 h-4" />
+                          <span className="text-xs font-semibold">{lessonIndex + 1}</span>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{item.name}</p>
+                          <p className={`text-sm font-medium truncate ${isCurrentLesson ? "text-primary" : ""}`}>
+                            {lessonItem.title}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {items.length} {t.learning?.items || "items"}
+                          </p>
                         </div>
-                        {item.isCompleted && !isActive && (
-                          <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
+                        {isExpanded ? (
+                          <ChevronUp className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                         )}
-                      </div>
-                    </button>
+                      </button>
+                      
+                      {/* Lesson Items (when expanded) */}
+                      {isExpanded && items.length > 0 && (
+                        <div className="border-t border-border bg-muted/30">
+                          {items.map((item, itemIndex) => {
+                            const Icon = getItemIcon(item.type);
+                            const isActiveItem = isCurrentLesson && currentItemIndex === itemIndex;
+                            
+                            const handleItemClick = () => {
+                              if (isCurrentLesson) {
+                                setCurrentItemIndex(itemIndex);
+                              } else {
+                                router.push(`/dashboard/courses/${courseId}/lesson/${lessonItem.id}?item=${item.id}`);
+                              }
+                              setSidebarOpen(false);
+                            };
+                            
+                            return (
+                              <button
+                                key={item.id}
+                                onClick={handleItemClick}
+                                className={`w-full text-left px-3 py-2 flex items-center gap-2 transition text-sm border-b border-border/50 last:border-b-0 ${
+                                  isActiveItem
+                                    ? "bg-primary text-white"
+                                    : "hover:bg-muted"
+                                }`}
+                              >
+                                <div className={`w-6 h-6 rounded flex items-center justify-center flex-shrink-0 ${
+                                  isActiveItem ? "bg-white/20" : "bg-background"
+                                }`}>
+                                  <Icon className="w-3 h-3" />
+                                </div>
+                                <span className="flex-1 truncate text-xs">{item.name}</span>
+                                {item.isCompleted && !isActiveItem && (
+                                  <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                      
+                      {/* Loading state for items */}
+                      {isExpanded && !isCurrentLesson && !allLessonItems[lessonItem.id] && (
+                        <div className="border-t border-border p-3 text-center">
+                          <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
               </div>
 
-              {lessonItems.length === 0 && (
+              {allLessons.length === 0 && (
                 <div className="text-center py-8">
                   <BookOpen className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">{t.learning?.noItems || "No items in this lesson"}</p>
+                  <p className="text-sm text-muted-foreground">No lessons available</p>
                 </div>
               )}
             </div>

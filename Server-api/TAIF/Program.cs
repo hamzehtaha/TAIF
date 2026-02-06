@@ -150,10 +150,20 @@ if (args.Length >= 2 && args[0].Equals("seed", StringComparison.OrdinalIgnoreCas
 {
     var entityName = args[1].ToLower();
     using var scope = app.Services.CreateScope();
-    var allSeeders = scope.ServiceProvider.GetServices<IEntitySeeder>();
+    var allSeeders = scope.ServiceProvider.GetServices<IEntitySeeder>().ToList();
     if (entityName == "all")
     {
-        foreach (var s in allSeeders) await s.SeedAsync();
+        // Order seeders: RecommendationSeeder must run before CourseSeeder (tags need to exist first)
+        var orderedSeeders = allSeeders
+            .OrderBy(s => s.GetType().Name switch
+            {
+                "RecommendationSeeder" => 0,  // First: seeds Interests and Tags
+                "CourseSeeder" => 1,          // Second: uses Tags for courses
+                _ => 2                         // Other seeders last
+            })
+            .ToList();
+        
+        foreach (var s in orderedSeeders) await s.SeedAsync();
         return;
     }
 

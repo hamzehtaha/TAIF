@@ -1,15 +1,38 @@
 import { httpService } from "./httpService";
-import { LessonItemDto, CreateLessonItemRequest, UpdateLessonItemRequest } from "@/dtos/lessonItem/LessonItemDto";
-import { LessonItemWithProgressDto } from "@/dtos/lessonItemProgress/LessonItemProgressDto";
+import { LessonItemDto, CreateLessonItemRequest, UpdateLessonItemRequest, LessonItemWithProgressDto } from "@/dtos/lessonItem/LessonItemDto";
+import {
+  LessonItemType,
+  VideoContent,
+  RichTextContent,
+  QuestionContent,
+  QuizQuestion,
+  QuizAnswerRequest,
+  SubmitQuizRequest,
+  QuestionResult,
+  QuizResultResponse,
+  mapLessonItemType,
+  parseContent,
+} from "@/types/lessonContent";
 
-export type LessonItemType = "video" | "text" | "question";
+// Re-export types for convenience
+export type {
+  LessonItemType,
+  VideoContent,
+  RichTextContent,
+  QuestionContent,
+  QuizQuestion,
+  QuizAnswerRequest,
+  SubmitQuizRequest,
+  QuestionResult,
+  QuizResultResponse,
+};
 
 export interface LessonItem {
   id: string;
   lessonId: string;
   name: string;
   url: string;
-  content: string;
+  content: string | object;
   type: LessonItemType;
   durationInSeconds: number;
   order: number;
@@ -70,6 +93,37 @@ class LessonItemService {
    */
   async deleteLessonItem(id: string): Promise<boolean> {
     return httpService.delete<boolean>(`/api/LessonItem/${id}`);
+  }
+
+  /**
+   * Submit quiz answers
+   * POST /api/LessonItem/submit-quiz
+   */
+  async submitQuiz(request: SubmitQuizRequest): Promise<QuizResultResponse> {
+    return httpService.post<QuizResultResponse>("/api/LessonItem/submit-quiz", request);
+  }
+
+  /**
+   * Parse content to typed object - handles both string and object
+   */
+  parseContent<T>(content: string | object | null | undefined): T | null {
+    if (!content) return null;
+    
+    // If already an object, return as-is
+    if (typeof content === "object") {
+      return content as T;
+    }
+    
+    // If string, try to parse
+    if (typeof content === "string") {
+      try {
+        return JSON.parse(content) as T;
+      } catch {
+        return null;
+      }
+    }
+    
+    return null;
   }
 
   /**

@@ -6,8 +6,24 @@ namespace TAIF.Application.Services
 {
     public class InterestService : ServiceBase<Interest>, IInterestService
     {
-        public InterestService(IInterestRepository repository) : base(repository)
+        private readonly IUserRepository _userRepository;
+
+        public InterestService(IInterestRepository repository, IUserRepository userRepository) : base(repository)
         {
+            _userRepository = userRepository;
+        }
+
+        public async Task<List<Interest>> GetUserInterestsAsync(Guid userId)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null || user.Interests == null || !user.Interests.Any())
+            {
+                return new List<Interest>();
+            }
+
+            var interestIds = user.Interests.ToHashSet();
+            var interests = await _repository.FindNoTrackingAsync(i => interestIds.Contains(i.Id));
+            return interests.ToList();
         }
 
         public async Task<bool> InterestsValidationGuard(List<Guid> interests)

@@ -43,6 +43,9 @@ namespace TAIF.API.Seeder.Scripts
             var seedData = JsonSerializer.Deserialize<SeedDataJson>(json, options)
                 ?? throw new InvalidOperationException("Invalid seed JSON");
 
+            // Build tag name to ID map for course tag resolution
+            var tagNameToId = _context.Tags.ToDictionary(t => t.Name, t => t.Id, StringComparer.OrdinalIgnoreCase);
+
             foreach (var categoryData in seedData.Categories)
             {
                 var category = _context.Categories.FirstOrDefault(c => c.Name == categoryData.Name);
@@ -58,12 +61,27 @@ namespace TAIF.API.Seeder.Scripts
                     if (_context.Courses.Any(c => c.Name == courseData.Name))
                         continue;
 
+                    // Resolve tag names to tag IDs
+                    var tagIds = new List<Guid>();
+                    foreach (var tagName in courseData.Tags ?? [])
+                    {
+                        if (tagNameToId.TryGetValue(tagName, out var tagId))
+                        {
+                            tagIds.Add(tagId);
+                        }
+                        else
+                        {
+                            Console.WriteLine($"⚠️ Tag '{tagName}' not found for course '{courseData.Name}'");
+                        }
+                    }
+
                     var course = new Course
                     {
                         Name = courseData.Name,
                         Description = courseData.Description,
                         Photo = courseData.Photo,
-                        CategoryId = category.Id
+                        CategoryId = category.Id,
+                        Tags = tagIds
                     };
 
                     _context.Courses.Add(course);
@@ -123,6 +141,7 @@ namespace TAIF.API.Seeder.Scripts
             public string Name { get; set; } = null!;
             public string Description { get; set; } = null!;
             public string Photo { get; set; } = null!;
+            public List<string>? Tags { get; set; }
             public List<LessonJson>? Lessons { get; set; }
         }
 

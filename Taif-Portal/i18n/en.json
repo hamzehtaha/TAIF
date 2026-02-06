@@ -270,5 +270,25 @@
     "favoriteCourses": "Favorite Courses",
     "noFavorites": "No favorite courses yet",
     "addFavorites": "Enroll in courses and add them to favorites"
+  },
+  "interests": {
+    "title": "What are you interested in?",
+    "subtitle": "Select topics you'd like to learn about. This helps us recommend courses for you.",
+    "skip": "Skip for now",
+    "continue": "Continue",
+    "saving": "Saving...",
+    "selectAtLeast": "Select at least one interest to continue",
+    "updateTitle": "Update Your Interests",
+    "updateSubtitle": "Manage your learning interests to get better course recommendations",
+    "saveChanges": "Save Changes",
+    "noInterests": "No interests available",
+    "selected": "selected"
+  },
+  "recommendations": {
+    "title": "Recommended for You",
+    "subtitle": "Courses based on your interests",
+    "noRecommendations": "No recommendations yet",
+    "selectInterests": "Select your interests to get personalized recommendations",
+    "explore": "Explore Interests"
   }
 }

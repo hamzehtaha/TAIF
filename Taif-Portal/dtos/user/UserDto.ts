@@ -9,6 +9,7 @@ export interface UserDto {
   email: string;
   birthday?: string;
   isActive: boolean;
+  interests?: string[];
   createdAt?: string;
   updatedAt?: string;
 }

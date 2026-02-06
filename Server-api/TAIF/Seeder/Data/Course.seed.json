@@ -7,6 +7,7 @@
           "Name": "Sign Language Fundamentals",
           "Description": "Comprehensive course teaching basic to intermediate sign language skills for deaf and hard of hearing individuals. Learn essential communication techniques and daily conversation signs.",
           "Photo": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800",
+          "Tags": ["Sign Language", "ASL", "Finger Spelling", "Deaf Communication", "Visual Learning"],
           "Lessons": [
             {
               "Title": "Introduction to Sign Language Alphabet",
@@ -112,59 +113,73 @@
               "LessonItems": [
                 {
                   "Name": "Hello and Goodbye",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Learn essential greeting signs for daily interactions.",
-                  "Type": 0,
+                  "Type": "Video",
                   "DurationInSeconds": 300,
-                  "Order": 1
+                  "Order": 1,
+                  "Content": {
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                    "description": "Learn essential greeting signs for daily interactions."
+                  }
                 },
                 {
                   "Name": "My Name Is...",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Introduce yourself using proper sign language etiquette.",
-                  "Type": 0,
+                  "Type": "Video",
                   "DurationInSeconds": 300,
-                  "Order": 2
+                  "Order": 2,
+                  "Content": {
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                    "description": "Introduce yourself using proper sign language etiquette."
+                  }
                 },
                 {
                   "Name": "Nice to Meet You",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Express politeness and courtesy in sign language.",
-                  "Type": 0,
+                  "Type": "Video",
                   "DurationInSeconds": 300,
-                  "Order": 3
+                  "Order": 3,
+                  "Content": {
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                    "description": "Express politeness and courtesy in sign language."
+                  }
                 },
                 {
                   "Name": "How Are You?",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Ask about wellbeing and respond appropriately.",
-                  "Type": 0,
+                  "Type": "Video",
                   "DurationInSeconds": 300,
-                  "Order": 4
+                  "Order": 4,
+                  "Content": {
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                    "description": "Ask about wellbeing and respond appropriately."
+                  }
                 },
                 {
                   "Name": "Thank You and Please",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Master essential polite expressions in sign language.",
-                  "Type": 0,
+                  "Type": "Video",
                   "DurationInSeconds": 300,
-                  "Order": 5
+                  "Order": 5,
+                  "Content": {
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                    "description": "Master essential polite expressions in sign language."
+                  }
                 },
                 {
                   "Name": "Excuse Me and Sorry",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Learn apologetic and attention-getting signs.",
-                  "Type": 0,
+                  "Type": "Video",
                   "DurationInSeconds": 300,
-                  "Order": 6
+                  "Order": 6,
+                  "Content": {
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                    "description": "Learn apologetic and attention-getting signs."
+                  }
                 },
                 {
                   "Name": "Yes and No",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Express agreement and disagreement clearly.",
-                  "Type": 0,
+                  "Type": "Video",
                   "DurationInSeconds": 300,
-                  "Order": 7
+                  "Order": 7,
+                  "Content": {
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                    "description": "Express agreement and disagreement clearly."
+                  }
                 }
               ]
             },
@@ -175,51 +190,63 @@
               "LessonItems": [
                 {
                   "Name": "Mother and Father",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Learn signs for parents and immediate family members.",
-                  "Type": 0,
+                  "Type": "Video",
                   "DurationInSeconds": 300,
-                  "Order": 1
+                  "Order": 1,
+                  "Content": {
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                    "description": "Learn signs for parents and immediate family members."
+                  }
                 },
                 {
                   "Name": "Brother and Sister",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Master sibling relationship signs.",
-                  "Type": 0,
+                  "Type": "Video",
                   "DurationInSeconds": 300,
-                  "Order": 2
+                  "Order": 2,
+                  "Content": {
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                    "description": "Master sibling relationship signs."
+                  }
                 },
                 {
                   "Name": "Grandparents",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Sign for grandmother and grandfather.",
-                  "Type": 0,
+                  "Type": "Video",
                   "DurationInSeconds": 300,
-                  "Order": 3
+                  "Order": 3,
+                  "Content": {
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                    "description": "Sign for grandmother and grandfather."
+                  }
                 },
                 {
                   "Name": "Extended Family",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Learn signs for aunts, uncles, and cousins.",
-                  "Type": 0,
+                  "Type": "Video",
                   "DurationInSeconds": 300,
-                  "Order": 4
+                  "Order": 4,
+                  "Content": {
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                    "description": "Learn signs for aunts, uncles, and cousins."
+                  }
                 },
                 {
                   "Name": "Friend and Family",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Distinguish between different relationship types.",
-                  "Type": 0,
+                  "Type": "Video",
                   "DurationInSeconds": 300,
-                  "Order": 5
+                  "Order": 5,
+                  "Content": {
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                    "description": "Distinguish between different relationship types."
+                  }
                 },
                 {
                   "Name": "Family Tree Activity",
-                  "URL": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                  "Content": "Practice describing your family structure in sign language.",
-                  "Type": 0,
+                  "Type": "Video",
                   "DurationInSeconds": 300,
-                  "Order": 6
+                  "Order": 6,
+                  "Content": {
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                    "description": "Practice describing your family structure in sign language."
+                  }
                 }
               ]
             }
@@ -230,6 +257,7 @@
           "Name": "Braille Reading and Writing",
           "Description": "Complete Braille literacy program for visually impaired individuals. Master the Braille alphabet, numbers, punctuation, and develop fluent reading and writing skills.",
           "Photo": "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=800",
+          "Tags": ["Braille Reading", "Braille Writing", "Tactile Learning", "Visual Learning"],
           "Lessons": [
             {
               "Title": "Braille Basics and Alphabet",
@@ -242,8 +270,7 @@
                   "DurationInSeconds": 300,
                   "Order": 1,
                   "Content": {
-                    "videoId": "dQw4w9WgXcQ",
-                    "provider": "youtube",
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
                     "description": "Learn the six-dot Braille cell structure and numbering system."
                   }
                 },
@@ -261,8 +288,7 @@
                   "DurationInSeconds": 300,
                   "Order": 3,
                   "Content": {
-                    "videoId": "dQw4w9WgXcQ",
-                    "provider": "youtube",
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
                     "description": "Master the first ten letters using dots 1-4."
                   }
                 },
@@ -291,8 +317,7 @@
                   "DurationInSeconds": 300,
                   "Order": 5,
                   "Content": {
-                    "videoId": "dQw4w9WgXcQ",
-                    "provider": "youtube",
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
                     "description": "Learn letters K through T with dot 3 added."
                   }
                 }
@@ -309,8 +334,7 @@
                   "DurationInSeconds": 300,
                   "Order": 1,
                   "Content": {
-                    "videoId": "dQw4w9WgXcQ",
-                    "provider": "youtube",
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
                     "description": "Understand the number indicator and its usage."
                   }
                 },
@@ -347,8 +371,7 @@
                   "DurationInSeconds": 300,
                   "Order": 4,
                   "Content": {
-                    "videoId": "dQw4w9WgXcQ",
-                    "provider": "youtube",
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
                     "description": "Practice basic addition problems in Braille."
                   }
                 }
@@ -366,6 +389,7 @@
           "Name": "Assistive Technology for Daily Living",
           "Description": "Comprehensive training on adaptive devices and technology that enhance independence for individuals with physical and cognitive disabilities. Learn to use screen readers, voice control, and specialized equipment.",
           "Photo": "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800",
+          "Tags": ["Screen Readers", "JAWS", "NVDA", "Voice Control", "Dictation Software", "Adaptive Devices"],
           "Lessons": [
             {
               "Title": "Screen Reader Basics",
@@ -378,8 +402,7 @@
                   "DurationInSeconds": 300,
                   "Order": 1,
                   "Content": {
-                    "videoId": "dQw4w9WgXcQ",
-                    "provider": "youtube",
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
                     "description": "Learn the fundamentals of JAWS screen reader software."
                   }
                 },
@@ -397,8 +420,7 @@
                   "DurationInSeconds": 300,
                   "Order": 3,
                   "Content": {
-                    "videoId": "dQw4w9WgXcQ",
-                    "provider": "youtube",
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
                     "description": "Install and configure the free NVDA screen reader."
                   }
                 },
@@ -423,8 +445,7 @@
                   "DurationInSeconds": 300,
                   "Order": 5,
                   "Content": {
-                    "videoId": "dQw4w9WgXcQ",
-                    "provider": "youtube",
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
                     "description": "Learn essential keyboard shortcuts for screen readers."
                   }
                 }
@@ -441,8 +462,7 @@
                   "DurationInSeconds": 300,
                   "Order": 1,
                   "Content": {
-                    "videoId": "dQw4w9WgXcQ",
-                    "provider": "youtube",
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
                     "description": "Install and train professional dictation software."
                   }
                 },
@@ -460,8 +480,7 @@
                   "DurationInSeconds": 300,
                   "Order": 3,
                   "Content": {
-                    "videoId": "dQw4w9WgXcQ",
-                    "provider": "youtube",
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
                     "description": "Compose text using voice commands."
                   }
                 },
@@ -488,6 +507,7 @@
           "Name": "Sensory Integration and Self-Regulation",
           "Description": "Therapeutic techniques for individuals with autism, ADHD, and sensory processing disorders. Learn strategies to manage sensory input, develop coping mechanisms, and improve focus and emotional regulation.",
           "Photo": "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800",
+          "Tags": ["Sensory Integration", "Self-Regulation", "Deep Pressure Therapy", "Autism Support", "ADHD Strategies"],
           "Lessons": [
             {
               "Title": "Understanding Sensory Processing",
@@ -500,8 +520,7 @@
                   "DurationInSeconds": 300,
                   "Order": 1,
                   "Content": {
-                    "videoId": "dQw4w9WgXcQ",
-                    "provider": "youtube",
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
                     "description": "Learn about the five basic senses plus vestibular and proprioceptive systems."
                   }
                 },
@@ -519,8 +538,7 @@
                   "DurationInSeconds": 300,
                   "Order": 3,
                   "Content": {
-                    "videoId": "dQw4w9WgXcQ",
-                    "provider": "youtube",
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
                     "description": "Identify signs of sensory overwhelm in yourself or others."
                   }
                 },
@@ -552,8 +570,7 @@
                   "DurationInSeconds": 300,
                   "Order": 1,
                   "Content": {
-                    "videoId": "dQw4w9WgXcQ",
-                    "provider": "youtube",
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
                     "description": "Understand how deep pressure calms the nervous system."
                   }
                 },
@@ -571,8 +588,7 @@
                   "DurationInSeconds": 300,
                   "Order": 3,
                   "Content": {
-                    "videoId": "dQw4w9WgXcQ",
-                    "provider": "youtube",
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
                     "description": "Safely use weighted blankets for regulation."
                   }
                 },

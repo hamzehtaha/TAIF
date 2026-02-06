@@ -31,3 +31,18 @@ export interface UpdateLessonItemRequest {
   content?: string;
   type?: number;
 }
+
+/**
+ * DTO for lesson items with user progress info
+ * Used by GET /api/LessonItem/lessonProgress/{lessonId}
+ */
+export interface LessonItemWithProgressDto {
+  id: string;
+  name: string;
+  url: string;
+  content: string | object;
+  type: number;
+  order: number;
+  durationInSeconds: number;
+  isCompleted: boolean;
+}

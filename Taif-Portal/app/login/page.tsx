@@ -40,7 +40,12 @@ export default function Login() {
         email: formData.email,
         password: formData.password,
       });
-      router.push("/dashboard");
+      // Redirect to interests page if user has no interests, otherwise to dashboard
+      if (!authService.hasInterests()) {
+        router.push("/dashboard/interests");
+      } else {
+        router.push("/dashboard");
+      }
     } catch (err) {
       setError("Invalid email or password. Please try again.");
       console.error("Login error:", err);
