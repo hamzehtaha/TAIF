@@ -4,8 +4,10 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslation } from "@/hooks/useTranslation";
-import { useTheme, FontSize } from "@/hooks/useTheme";
+import { useTheme } from "next-themes";
 import { useLanguage } from "@/hooks/useLanguage";
+
+type FontSize = "small" | "medium" | "large" | "extra-large";
 import { authService } from "@/services/authService";
 import { interestService, Interest } from "@/services/interestService";
 import { useEffect, useState } from "react";
@@ -27,9 +29,18 @@ const interestIcons: Record<string, string> = {
 export default function Settings() {
   const t = useTranslation();
   const router = useRouter();
-  const { theme, setTheme, fontSize, setFontSize } = useTheme();
+  const { theme, setTheme } = useTheme();
   const { language, setLanguage } = useLanguage();
   const [mounted, setMounted] = useState(false);
+  const [fontSize, setFontSizeState] = useState<FontSize>("medium");
+
+  const setFontSize = (size: FontSize) => {
+    setFontSizeState(size);
+    localStorage.setItem("fontSize", size);
+    const html = document.documentElement;
+    html.classList.remove("font-small", "font-medium", "font-large", "font-extra-large");
+    html.classList.add(`font-${size}`);
+  };
   const [user, setUser] = useState<any>(null);
   const [interests, setInterests] = useState<Interest[]>([]);
   const [selectedInterests, setSelectedInterests] = useState<Set<string>>(new Set());
@@ -41,6 +52,12 @@ export default function Settings() {
     setUser(authService.getUser());
     if (!authService.isAuthenticated()) {
       router.push("/signin");
+    }
+    // Load saved font size
+    const savedFontSize = localStorage.getItem("fontSize") as FontSize | null;
+    if (savedFontSize) {
+      setFontSizeState(savedFontSize);
+      document.documentElement.classList.add(`font-${savedFontSize}`);
     }
 
     const loadInterests = async () => {
