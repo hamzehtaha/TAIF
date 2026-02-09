@@ -83,6 +83,10 @@ builder.Services.AddScoped<ITagService, TagService>();
 builder.Services.AddScoped<IInterestTagMappingService, InterestTagMappingService>();
 builder.Services.AddScoped<IRecommendationService, RecommendationService>();
 
+// Background job services (API adds jobs, BackgroundJob project processes them)
+builder.Services.AddScoped<IJobRepository, JobRepository>();
+builder.Services.AddScoped<IJobService, JobService>();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -216,6 +220,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
 app.Run();
 
 void InjectSeeders()

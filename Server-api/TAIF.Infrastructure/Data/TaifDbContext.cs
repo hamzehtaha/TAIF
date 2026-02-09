@@ -28,6 +28,7 @@ namespace TAIF.Infrastructure.Data
         public DbSet<Tag> Tags { get; set; }
         public DbSet<InterestTagMapping> InterestTagMappings { get; set; }
         public DbSet<UserCourseBehavior> UserCourseBehaviors { get; set; }
+        public DbSet<JobRequest> JobRequests { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -115,6 +116,17 @@ namespace TAIF.Infrastructure.Data
             {
                 entity.HasIndex(e => new { e.UserId, e.CourseId }).IsUnique();
                 entity.HasIndex(e => e.UserId);
+            });
+
+            modelBuilder.Entity<JobRequest>(entity =>
+            {
+                entity.HasIndex(e => new { e.Status, e.ScheduledAt });
+                entity.HasIndex(e => new { e.Type, e.NextRunAt });
+                entity.HasIndex(e => e.JobName);
+                entity.HasIndex(e => e.LockId);
+                entity.Property(e => e.JobName).HasMaxLength(200);
+                entity.Property(e => e.HandlerType).HasMaxLength(200);
+                entity.Property(e => e.LockId).HasMaxLength(100);
             });
         }
 

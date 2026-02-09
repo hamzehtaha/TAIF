@@ -44,6 +44,37 @@ namespace TAIF.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "JobRequests",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    JobName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    HandlerType = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Payload = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Type = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    ScheduledAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    StartedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CompletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RetryCount = table.Column<int>(type: "int", nullable: false),
+                    MaxRetries = table.Column<int>(type: "int", nullable: false),
+                    ErrorMessage = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IntervalSeconds = table.Column<int>(type: "int", nullable: true),
+                    NextRunAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    LastRunAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    LockId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    LockExpiresAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_JobRequests", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Tags",
                 columns: table => new
                 {
@@ -360,6 +391,26 @@ namespace TAIF.Infrastructure.Migrations
                 column: "TagId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_JobRequests_JobName",
+                table: "JobRequests",
+                column: "JobName");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_JobRequests_LockId",
+                table: "JobRequests",
+                column: "LockId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_JobRequests_Status_ScheduledAt",
+                table: "JobRequests",
+                columns: new[] { "Status", "ScheduledAt" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_JobRequests_Type_NextRunAt",
+                table: "JobRequests",
+                columns: new[] { "Type", "NextRunAt" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_LessonItemProgress_LessonItemId",
                 table: "LessonItemProgress",
                 column: "LessonItemId");
@@ -422,6 +473,9 @@ namespace TAIF.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "InterestTagMappings");
+
+            migrationBuilder.DropTable(
+                name: "JobRequests");
 
             migrationBuilder.DropTable(
                 name: "LessonItemProgress");

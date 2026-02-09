@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TAIF.Application", "TAIF.Ap
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TAIF.Infrastructure", "TAIF.Infrastructure\TAIF.Infrastructure.csproj", "{12F8FEC7-3639-4823-A74E-C5800B7652B9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TAIF.BackgroundJob", "TAIF.BackgroundJob\TAIF.BackgroundJob.csproj", "{B8A3C4D5-E6F7-4890-AB12-CD34EF567890}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{12F8FEC7-3639-4823-A74E-C5800B7652B9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{12F8FEC7-3639-4823-A74E-C5800B7652B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{12F8FEC7-3639-4823-A74E-C5800B7652B9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B8A3C4D5-E6F7-4890-AB12-CD34EF567890}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B8A3C4D5-E6F7-4890-AB12-CD34EF567890}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B8A3C4D5-E6F7-4890-AB12-CD34EF567890}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B8A3C4D5-E6F7-4890-AB12-CD34EF567890}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
