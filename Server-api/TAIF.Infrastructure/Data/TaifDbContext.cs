@@ -29,7 +29,7 @@ namespace TAIF.Infrastructure.Data
         public DbSet<InterestTagMapping> InterestTagMappings { get; set; }
         public DbSet<UserCourseBehavior> UserCourseBehaviors { get; set; }
         public DbSet<QuizSubmission> QuizSubmissions => Set<QuizSubmission>();
-
+        public DbSet<InstructorProfile> InstructorProfiles => Set<InstructorProfile>();
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Enrollment>(entity =>
@@ -120,6 +120,15 @@ namespace TAIF.Infrastructure.Data
             modelBuilder.Entity<QuizSubmission>()
             .HasIndex(x => new { x.UserId, x.LessonItemId })
             .IsUnique();
+            modelBuilder.Entity<InstructorProfile>()
+            .HasOne(i => i.User)
+            .WithOne(u => u.InstructorProfile)
+            .HasForeignKey<InstructorProfile>(i => i.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<InstructorProfile>()
+                .HasIndex(i => i.UserId)
+                .IsUnique();
 
         }
 

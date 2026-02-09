@@ -3,22 +3,21 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TAIF.Domain.Entities;
 
-namespace TAIF.Domain.Entities
+namespace TAIF.Application.DTOs.Responses
 {
-    public class User : Base
+    public class UserResponse
     {
-        public User() { }
+        public Guid Id { get; set; }
         public string FirstName { get; set; } = null!;
         public string LastName { get; set; } = null!;
         public string Email { get; set; } = null!;
-        public string PasswordHash { get; set; } = null!;
         public DateOnly Birthday { get; set; }
         public bool IsActive { get; set; } = true;
         public bool IsInstructor { get; set; } = false;
-        public string? RefreshToken { get; set; }
-        public DateTime? RefreshTokenExpiresAt { get; set; }
-        public ICollection<Guid> Interests { get; set; } = new List<Guid>();
-        public InstructorProfile? InstructorProfile { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        public InstructorProfileResponse? InstructorProfile { get; set; }
     }
 }

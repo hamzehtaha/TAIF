@@ -23,5 +23,17 @@ namespace TAIF.API.Controllers
                 return userId;
             }
         }
+        protected bool IsInstructor
+        {
+            get
+            {
+                var value = User.FindFirstValue("IsInstructor");
+
+                if (string.IsNullOrEmpty(value))
+                    return false;
+
+                return bool.TryParse(value, out var isInstructor) && isInstructor;
+            }
+        }
     }
 }

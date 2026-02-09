@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using System.Security.Cryptography;
 using System.Text;
+using TAIF.Application.DTOs.Requests;
 using TAIF.Application.DTOs.Responses;
 using TAIF.Application.Interfaces.Repositories;
 using TAIF.Application.Interfaces.Services;
@@ -13,26 +14,31 @@ public class AuthService : IAuthService
     private readonly IUserRepository _userRepository;
     private readonly ITokenService _tokenService;
     private readonly IConfiguration _configuration;
-    public AuthService(IUserRepository userRepository,ITokenService tokenService,IConfiguration configuration)
+    private readonly IInstructorProfileRepository _instructorRepository;
+    public AuthService(IUserRepository userRepository,ITokenService tokenService,IConfiguration configuration, IInstructorProfileRepository instructorRepository)
     {
         _userRepository = userRepository;
         _tokenService = tokenService;
         _configuration = configuration;
+        _instructorRepository = instructorRepository;
     }
-    public async Task<AuthResponse> RegisterAsync(string firstName,string lastName,string email,string password)
+    public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
     {
-        var existing = await _userRepository.GetByEmailAsync(email);
-        if (existing != null)
+        var existing = await _userRepository.GetByEmailAsync(request.Email);
+        if (existing is not null)
+        {
             throw new Exception("User already exists");
-
+        }
         var user = new User
         {
             Id = Guid.NewGuid(),
-            FirstName = firstName,
-            LastName = lastName,
-            Email = email,
-            PasswordHash = HashPassword(password),
+            FirstName = request.FirstName,
+            LastName = request.LastName,
+            Email = request.Email,
+            PasswordHash = HashPassword(request.Password),
             IsActive = true,
+            Birthday = request.Birthday,
+            IsInstructor = request.IsInstructor
         };
 
         var accessToken = _tokenService.GenerateAccessToken(user);
@@ -42,9 +48,29 @@ public class AuthService : IAuthService
 
         user.RefreshToken = refreshToken;
         user.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(times.Item1);
-        await _userRepository.AddAsync(user);
-        await _userRepository.SaveChangesAsync();
 
+        await _userRepository.AddAsync(user);
+
+
+        if (request.IsInstructor)
+        {
+            if (string.IsNullOrWhiteSpace(request.Bio))
+                throw new Exception("Bio is required for instructor");
+
+            if (!request.YearsOfExperience.HasValue)
+                throw new Exception("YearsOfExperience is required for instructor");
+
+            var instructorProfile = new InstructorProfile
+            {
+                UserId = user.Id,
+                Bio = request.Bio!,
+                YearsOfExperience = request.YearsOfExperience.Value,
+                LinkedInUrl = request.LinkedInUrl,
+                WebsiteUrl = request.WebsiteUrl
+            };
+            await _instructorRepository.AddAsync(instructorProfile);
+        }
+        await _userRepository.SaveChangesAsync();
         return new AuthResponse(
             accessToken,
             DateTime.UtcNow.AddMinutes(times.Item2),

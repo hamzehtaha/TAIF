@@ -85,6 +85,10 @@ builder.Services.AddScoped<IRecommendationService, RecommendationService>();
 
 builder.Services.AddScoped<IQuizSubmissionService, QuizSubmissionService>();
 builder.Services.AddScoped<IQuizSubmissionRepository, QuizSubmissionRepository>();
+builder.Services.AddScoped<IInstructorProfileRepository, InstructorProfileRepository>();
+builder.Services.AddScoped<IInstructorProfileService, InstructorProfileService>();
+
+
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>

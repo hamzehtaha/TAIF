@@ -17,5 +17,12 @@ namespace TAIF.Application.DTOs.Requests
         public string Email { get; set; } = null!;
         [Required]
         public string Password { get; set; } = null!;
+        [Required]
+        public DateOnly Birthday { get; set; }
+        public bool IsInstructor { get; set; }
+        public string? Bio { get; set; }
+        public int? YearsOfExperience { get; set; }
+        public string? LinkedInUrl { get; set; }
+        public string? WebsiteUrl { get; set; }
     }
 }
