@@ -1,4 +1,4 @@
-﻿using TAIF.Application.DTOs;
+﻿using TAIF.Application.DTOs.Responses;
 
 namespace TAIF.Application.Interfaces.Services;
 

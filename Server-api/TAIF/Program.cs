@@ -83,6 +83,9 @@ builder.Services.AddScoped<ITagService, TagService>();
 builder.Services.AddScoped<IInterestTagMappingService, InterestTagMappingService>();
 builder.Services.AddScoped<IRecommendationService, RecommendationService>();
 
+builder.Services.AddScoped<IQuizSubmissionService, QuizSubmissionService>();
+builder.Services.AddScoped<IQuizSubmissionRepository, QuizSubmissionRepository>();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {

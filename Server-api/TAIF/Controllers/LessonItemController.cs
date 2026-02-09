@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 using TAIF.API.Controllers;
-using TAIF.Application.DTOs;
+using TAIF.Application.DTOs.Requests;
+using TAIF.Application.DTOs.Responses;
 using TAIF.Application.Interfaces.Services;
 using TAIF.Domain.Entities;
 using static TAIF.Domain.Entities.Enums;
@@ -10,12 +12,15 @@ namespace TAIF.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class LessonItemController : TaifControllerBase
     {
         private readonly ILessonItemService _lessonItemService;
-        public LessonItemController(ILessonItemService lessonItemService)
+        private readonly IQuizSubmissionService _quizSubmissionService;
+        public LessonItemController(ILessonItemService lessonItemService, IQuizSubmissionService quizSubmissionService)
         {
             _lessonItemService = lessonItemService;
+            _quizSubmissionService = quizSubmissionService;
         }
         [HttpGet("{id}")]
         public async Task<IActionResult> Get([FromRoute] Guid id)
@@ -71,6 +76,16 @@ namespace TAIF.Controllers
             var result = await _lessonItemService.SubmitQuizAsync(this.UserId,request);
 
             return Ok(ApiResponse<QuizResultResponse>.SuccessResponse(result));
+        }
+        [HttpGet("user-quiz-result/{lessonItemId}")]
+        public async Task<IActionResult> GetUserQuizResult([FromRoute] Guid lessonItemId)
+        {
+            var result = await _quizSubmissionService.GetUserSubmissionAsync(this.UserId, lessonItemId);
+            if (result is null)
+            {
+                return NotFound();
+            }
+            return Ok(ApiResponse<QuizSubmission>.SuccessResponse(result));
         }
 
     }

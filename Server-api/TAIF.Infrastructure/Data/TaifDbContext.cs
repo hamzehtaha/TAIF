@@ -28,6 +28,7 @@ namespace TAIF.Infrastructure.Data
         public DbSet<Tag> Tags { get; set; }
         public DbSet<InterestTagMapping> InterestTagMappings { get; set; }
         public DbSet<UserCourseBehavior> UserCourseBehaviors { get; set; }
+        public DbSet<QuizSubmission> QuizSubmissions => Set<QuizSubmission>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -116,6 +117,10 @@ namespace TAIF.Infrastructure.Data
                 entity.HasIndex(e => new { e.UserId, e.CourseId }).IsUnique();
                 entity.HasIndex(e => e.UserId);
             });
+            modelBuilder.Entity<QuizSubmission>()
+            .HasIndex(x => new { x.UserId, x.LessonItemId })
+            .IsUnique();
+
         }
 
     }

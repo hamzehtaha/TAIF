@@ -1,5 +1,7 @@
 ﻿using System.Text.Json;
-using TAIF.Application.DTOs;
+using TAIF.Application.DTOs.Payloads;
+using TAIF.Application.DTOs.Requests;
+using TAIF.Application.DTOs.Responses;
 using TAIF.Application.Interfaces.Repositories;
 using TAIF.Application.Interfaces.Services;
 using TAIF.Domain.Entities;
@@ -13,12 +15,14 @@ namespace TAIF.Application.Services
         private readonly ILessonItemProgressRepository _lessonItemProgressRepository;
         private readonly ILessonService _lessonService;
         private readonly ILessonItemProgressService _lessonItemProgressService;
-        public LessonItemService(ILessonItemRepository repository, ILessonItemProgressRepository lessonItemProgressRepository, ILessonService lessonService, ILessonItemProgressService lessonItemProgressService) : base(repository)
+        private readonly IQuizSubmissionService _quizSubmissionService;
+        public LessonItemService(ILessonItemRepository repository, ILessonItemProgressRepository lessonItemProgressRepository, ILessonService lessonService, ILessonItemProgressService lessonItemProgressService, IQuizSubmissionService quizSubmissionService) : base(repository)
         {
             _lessonItemRepository = repository;
             _lessonItemProgressRepository = lessonItemProgressRepository;
             _lessonService = lessonService;
             _lessonItemProgressService = lessonItemProgressService;
+            _quizSubmissionService = quizSubmissionService;
         }
         public async Task<List<LessonItemResponse>> GetByLessonIdAsync(Guid lessonId, bool withDeleted = false)
         {
@@ -73,7 +77,8 @@ namespace TAIF.Application.Services
                 })
                 .ToDictionary(q => q.Id);
 
-            var results = new List<QuestionResult>();
+            var results = new List<QuestionAnswersResponse>();
+            var answerPayloads = new List<QuizAnswerPayload>();
             int correctCount = 0;
 
             foreach (var answer in request.Answers)
@@ -84,26 +89,48 @@ namespace TAIF.Application.Services
                 bool isCorrect = question.CorrectIndex == answer.AnswerIndex;
                 if (isCorrect) correctCount++;
 
-                results.Add(new QuestionResult
+                results.Add(new QuestionAnswersResponse
                 {
                     QuestionId = answer.QuestionId,
+                    IsCorrect = isCorrect
+                });
+                answerPayloads.Add(new QuizAnswerPayload
+                {
+                    QuestionId = answer.QuestionId,
+                    SelectedAnswerIndex = answer.AnswerIndex,
+                    CorrectAnswerIndex = question.CorrectIndex,
                     IsCorrect = isCorrect
                 });
             }
 
             int score = (int)Math.Round((double)correctCount / questions.Count * 100);
-            SetLessonItemAsCompletedRequest setLessonItemAsCompletedRequest = new SetLessonItemAsCompletedRequest();
-            setLessonItemAsCompletedRequest.LessonItemId = request.LessonItemId;
-            var lesson = await _lessonService.GetByIdAsync(lessonItem.LessonId);
-            if (lesson is null)
+
+            var answersJson = JsonSerializer.Serialize(answerPayloads);
+
+            var userAnswer = await _quizSubmissionService.GetUserSubmissionAsync(userId, request.LessonItemId);
+            if (userAnswer is null)
             {
-                throw new Exception("Error while getting lesson in SubmitQuizAsync");
+                await _quizSubmissionService.CreateAsync(new QuizSubmission
+                {
+                    UserId = userId,
+                    LessonItemId = request.LessonItemId,
+                    AnswersJson = answersJson,
+                    Score = score,
+                    TotalQuestions = questions.Count,
+                    CorrectAnswers = correctCount
+                });
             }
-            setLessonItemAsCompletedRequest.CourseId = lesson.CourseId;
-            var result = await _lessonItemProgressService.SetLessonItemAsCompleted(userId, setLessonItemAsCompletedRequest);
-            if (result is null)
+            else
             {
-                throw new Exception("Error while SetLessonItemAsCompleted in SubmitQuizAsync");
+                await _quizSubmissionService.UpdateAsync(userAnswer.Id,new QuizSubmission
+                {
+                    UserId = userId,
+                    LessonItemId = request.LessonItemId,
+                    AnswersJson = answersJson,
+                    Score = score,
+                    TotalQuestions = questions.Count,
+                    CorrectAnswers = correctCount
+                });
             }
             return new QuizResultResponse
             {
@@ -139,7 +166,5 @@ namespace TAIF.Application.Services
                 questions = sanitizedQuestions
             };
         }
-
     }
-
 }

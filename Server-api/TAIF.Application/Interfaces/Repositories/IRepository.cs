@@ -1,5 +1,5 @@
 ﻿using System.Linq.Expressions;
-using TAIF.Application.DTOs;
+using TAIF.Application.DTOs.Responses;
 using TAIF.Domain.Entities;
 
 namespace TAIF.Application.Interfaces.Repositories;
