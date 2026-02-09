@@ -11,5 +11,7 @@ namespace TAIF.Domain.Entities
         public Category Category { get; set; } = null!;
         ICollection<Lesson> Lessons { get; set; } = new List<Lesson>();
         public ICollection<Guid> Tags { get; set; } = new List<Guid>();
+        public double TotalDurationInSeconds { get; set; } = 0;
+        public int TotalEnrolled { get; set; } = 0;
     }
 }

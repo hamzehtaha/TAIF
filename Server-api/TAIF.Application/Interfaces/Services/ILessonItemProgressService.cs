@@ -11,5 +11,8 @@ namespace TAIF.Application.Interfaces.Services
     public interface ILessonItemProgressService : IService<LessonItemProgress>
     {
         public Task<LessonItemProgress> SetLessonItemAsCompleted(Guid UserId, SetLessonItemAsCompletedRequest dto);
+        Task<QuizResultResponse> SubmitQuizAsync(Guid userId, SubmitQuizRequest request);
+        Task<List<LessonItemResponse>> GetLessonItemsProgressAsync(Guid UserId, Guid lessonId, bool withDeleted = false);
+
     }
 }

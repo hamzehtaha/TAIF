@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace TAIF.Application.DTOs
 {
-    public class SetLessonItemAsCompletedRequest
+    public record UpdateLessonItemProgressRequest
     {
 
         [Required]
@@ -16,5 +16,8 @@ namespace TAIF.Application.DTOs
         public Guid LessonID { get; set; }
         [Required]
         public Guid LessonItemId { get; set; }
+        [Required]
+        [Range(0, double.MaxValue, ErrorMessage = "Completed duration must be a non-negative value.")]
+        public double CompletedDurationInSeconds { get; set; }
     }
 }

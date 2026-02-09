@@ -12,7 +12,6 @@ namespace TAIF.Domain.Entities
         public Lesson Lesson { get; set; } = null!;
         public int Order { get; set; }
         public double DurationInSeconds { get; set; } = 0;
-        public ICollection<Enrollment> Enrollments { get; set; } = new List<Enrollment>();
     }
 
 }
