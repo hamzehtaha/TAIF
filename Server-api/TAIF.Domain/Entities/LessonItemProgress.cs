@@ -16,6 +16,6 @@ namespace TAIF.Domain.Entities
         public Guid CourseID { get; set; }
         public Guid LessonID { get; set; }
         public bool IsCompleted { get; set; } = false;
-        public double CompletedDuraionInSeconds { get; set; } = 0;
+        public double CompletedDurationInSeconds { get; set; } = 0;
     }
 }

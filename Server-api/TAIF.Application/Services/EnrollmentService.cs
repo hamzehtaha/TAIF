@@ -46,6 +46,7 @@ namespace TAIF.Application.Services
         {
             Enrollment enrollment = await _repo.FindOneAsync((x) => x.UserId.Equals(userId) && x.CourseId.Equals(courseId));
             enrollment.LastLessonItemId = lessonItemId;
+            await _repo.SaveChangesAsync();
         }
     }
 }

@@ -10,14 +10,12 @@ namespace TAIF.Application.Services
     public class LessonItemProgressService : ServiceBase<LessonItemProgress>, ILessonItemProgressService
     {
         private readonly ILessonItemProgressRepository _lessonItemProgressRepository;
-        private readonly ILessonService _lessonService;
         private readonly ILessonItemService _lessonItemService;
         private readonly IEnrollmentService _enrollmentService;
 
         public LessonItemProgressService(ILessonItemProgressRepository repository, ILessonService lessonService, ILessonItemService lessonItemService, IEnrollmentService enrollmentService) : base(repository)
         {
             _lessonItemProgressRepository = repository;
-            _lessonService = lessonService;
             _lessonItemService = lessonItemService;
             _enrollmentService = enrollmentService;
         }
@@ -98,7 +96,7 @@ namespace TAIF.Application.Services
                 CourseID = dto.CourseId,
                 LessonID = dto.LessonID,
                 IsCompleted = true,
-                CompletedDuraionInSeconds = lessonItem.DurationInSeconds
+                CompletedDurationInSeconds = lessonItem.DurationInSeconds
             };
             await _lessonItemProgressRepository.AddAsync(lessonItemProgress);
             await _enrollmentService.UpdateLastLessonItemId(UserId, dto.CourseId, dto.LessonItemId);
