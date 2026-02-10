@@ -6,7 +6,8 @@
     "Description": "Leading online platform for technology education and professional development",
     "Email": "info@techacademy.com",
     "Phone": "+1-800-TECH-101",
-    "IsActive": true
+    "IsActive": true,
+    "IsPublic":true
   },
   {
     "Id": "550e8400-e29b-41d4-a716-446655440001",
@@ -15,6 +16,7 @@
     "Description": "Specialized in creative skills and personal development training",
     "Email": "info@creativelearning.com",
     "Phone": "+1-800-CREATE-1",
-    "IsActive": true
+    "IsActive": true,
+    "IsPublic": false
   }
 ]

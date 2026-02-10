@@ -8,7 +8,8 @@ namespace TAIF.Domain.Entities
         public string? Email { get; set; }
         public string? Phone { get; set; }
         public bool IsActive { get; set; } = true;
-        
+        public bool IsPublic { get; set; } = true;
+
         // Navigation
         public ICollection<InstructorProfile> Instructors { get; set; } = new List<InstructorProfile>();
     }

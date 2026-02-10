@@ -77,22 +77,16 @@ namespace TAIF.Controllers
         [HttpPost("")]
         public async Task<IActionResult> Create([FromBody] CreateInstructorProfileRequest request)
         {
-            // Instructor can only create for themselves
-            // Admin can create for anyone
-            if (UserRoleType != UserRoleType.Admin)
-                return Forbid();
-
             var instructor = new InstructorProfile
             {
                 UserId = UserId,
-                OrganizationId = request.OrganizationId,
                 WebsiteUrl = request.WebsiteUrl,
                 YearsOfExperience = request.YearsOfExperience,
                 Rating = 0m,
                 CoursesCount = 0
             };
 
-            var created_instructor = await _instructorProfileService.CreateAsync(instructor);
+            var created_instructor = await _instructorProfileService.CreateWithAutoOrgAsync(instructor);
             return Ok(ApiResponse<InstructorProfile>.SuccessResponse(created_instructor));
         }
         [HttpPut("{id}")]
@@ -101,11 +95,6 @@ namespace TAIF.Controllers
             var instructor = await _instructorProfileService.GetByIdAsync(id);
             if (instructor is null)
                 return NotFound();
-
-            // Instructor can only update their own profile
-            // Admin can update anyone's profile
-            if (UserRoleType != UserRoleType.Admin && instructor.UserId != this.UserId)
-                return Forbid();
 
             var instructor_updated = await _instructorProfileService.UpdateAsync(id, request);
             return Ok(ApiResponse<InstructorProfile>.SuccessResponse(instructor_updated));

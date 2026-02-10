@@ -49,7 +49,8 @@ namespace TAIF.API.Seeder.Scripts
                         Description = org.Description,
                         Email = org.Email,
                         Phone = org.Phone,
-                        IsActive = org.IsActive
+                        IsActive = org.IsActive,
+                        IsPublic = org.IsPublic
                     };
                     _context.Organizations.Add(newOrg);
                 }
@@ -68,6 +69,7 @@ namespace TAIF.API.Seeder.Scripts
             public string? Email { get; set; }
             public string? Phone { get; set; }
             public bool IsActive { get; set; } = true;
+            public bool IsPublic { get; set; } = true;
         }
     }
 }

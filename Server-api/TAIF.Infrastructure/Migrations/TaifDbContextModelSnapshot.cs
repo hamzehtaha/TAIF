@@ -397,6 +397,9 @@ namespace TAIF.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsPublic")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Logo")
                         .HasColumnType("text");
 

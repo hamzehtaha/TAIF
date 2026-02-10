@@ -12,7 +12,7 @@ using TAIF.Infrastructure.Data;
 namespace TAIF.Infrastructure.Migrations
 {
     [DbContext(typeof(TaifDbContext))]
-    [Migration("20260210114735_InitialCreate")]
+    [Migration("20260210130848_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -398,6 +398,9 @@ namespace TAIF.Infrastructure.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsPublic")
                         .HasColumnType("boolean");
 
                     b.Property<string>("Logo")
