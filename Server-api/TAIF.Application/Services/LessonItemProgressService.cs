@@ -1,6 +1,8 @@
 using System.Text.Json;
 using TAIF.Application.DTOs;
+using TAIF.Application.DTOs.Payloads;
 using TAIF.Application.DTOs.Requests;
+using TAIF.Application.DTOs.Responses;
 using TAIF.Application.Interfaces.Repositories;
 using TAIF.Application.Interfaces.Services;
 using TAIF.Domain.Entities;
@@ -13,16 +15,18 @@ namespace TAIF.Application.Services
         private readonly ILessonItemProgressRepository _lessonItemProgressRepository;
         private readonly ILessonItemService _lessonItemService;
         private readonly IEnrollmentService _enrollmentService;
+        private readonly IQuizSubmissionService _quizSubmissionService;
 
-        public LessonItemProgressService(ILessonItemProgressRepository repository, ILessonService lessonService, ILessonItemService lessonItemService, IEnrollmentService enrollmentService) : base(repository)
+        public LessonItemProgressService(ILessonItemProgressRepository repository, ILessonService lessonService, ILessonItemService lessonItemService, IEnrollmentService enrollmentService, IQuizSubmissionService quizSubmissionService) : base(repository)
         {
             _lessonItemProgressRepository = repository;
             _lessonItemService = lessonItemService;
             _enrollmentService = enrollmentService;
+            _quizSubmissionService = quizSubmissionService;
         }
         public async Task<QuizResultResponse> SubmitQuizAsync(Guid userId, SubmitQuizRequest request)
         {
-            var lessonItem = await _lessonItemRepository.GetByIdAsync(request.LessonItemId);
+            var lessonItem = await _lessonItemService.GetByIdAsync(request.LessonItemId);
             if (lessonItem == null || lessonItem.Type != LessonItemType.Question)
             {
                 throw new Exception("Lesson item type is not question");
