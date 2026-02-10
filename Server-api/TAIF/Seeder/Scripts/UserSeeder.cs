@@ -43,10 +43,12 @@ namespace TAIF.API.Seeder.Scripts
                 {
                     var newUser = new User
                     {
+                        Id = user.Id,
                         FirstName = user.FirstName,
                         LastName = user.LastName,
                         Email = user.Email,
                         IsActive = true,
+                        UserRoleType = user.UserRoleType,
                         Birthday = DateOnly.FromDateTime(DateTime.Now),
                         // password = 123
                         PasswordHash = "pmWkWSBCL51Bfkhn79xPuKBKHz//H6B+mY6G9/eieuM=",
@@ -61,9 +63,11 @@ namespace TAIF.API.Seeder.Scripts
 
         private class UserJson
         {
+            public Guid Id { get; set; }
             public string FirstName { get; set; } = null!;
             public string LastName { get; set; } = null!;
             public string Email { get; set; } = null!;
+            public UserRoleType UserRoleType { get; set; } = UserRoleType.User;
         }
     }
 }

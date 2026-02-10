@@ -9,6 +9,8 @@ namespace TAIF.Domain.Entities
         public string? Photo { get; set; }
         public Guid CategoryId { get; set; }
         public Category Category { get; set; } = null!;
+        public Guid UserId { get; set; }
+        public User Creator { get; set; } = null!;
         ICollection<Lesson> Lessons { get; set; } = new List<Lesson>();
         public ICollection<Guid> Tags { get; set; } = new List<Guid>();
     }

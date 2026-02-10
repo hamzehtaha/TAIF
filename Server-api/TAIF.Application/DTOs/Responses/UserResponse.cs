@@ -15,9 +15,10 @@ namespace TAIF.Application.DTOs.Responses
         public string Email { get; set; } = null!;
         public DateOnly Birthday { get; set; }
         public bool IsActive { get; set; } = true;
-        public bool IsInstructor { get; set; } = false;
+        public bool IsCompleted { get; set; } = false;
+        public UserRoleType UserRoleType { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
-        public InstructorProfileResponse? InstructorProfile { get; set; }
+
     }
 }

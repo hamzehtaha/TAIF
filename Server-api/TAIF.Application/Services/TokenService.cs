@@ -26,8 +26,7 @@ namespace TAIF.Application.Services
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
             new Claim("firstName", user.FirstName),
             new Claim("lastName", user.LastName),
-            new Claim("IsInstructor", user.IsInstructor.ToString()),
-
+            new Claim("UserRoleType", ((int)user.UserRoleType).ToString()),
         };
 
             var key = new SymmetricSecurityKey(

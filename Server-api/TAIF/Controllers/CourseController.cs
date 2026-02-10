@@ -9,6 +9,7 @@ using TAIF.Application.DTOs.Responses;
 using TAIF.Application.Interfaces.Services;
 using TAIF.Application.Services;
 using TAIF.Domain.Entities;
+
 namespace TAIF.Controllers
 {
     [ApiController]
@@ -18,6 +19,7 @@ namespace TAIF.Controllers
     {
         private readonly ICourseService _courseService;
         private readonly ITagService _tagService;
+
         public CourseController(ICourseService courseService, ITagService tagService)
         {
             _courseService = courseService;
@@ -31,6 +33,7 @@ namespace TAIF.Controllers
             if (courses is null) return NotFound();
             return Ok(ApiResponse<List<Course>>.SuccessResponse(courses));
         }
+
         [HttpGet("paged")]
         public async Task<IActionResult> GetPaged([FromQuery] CourseFilter filter)
         {
@@ -51,6 +54,7 @@ namespace TAIF.Controllers
 
             return Ok(ApiResponse<PagedResult<Course>>.SuccessResponse(result));
         }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> Get([FromRoute] Guid id)
         {
@@ -76,6 +80,7 @@ namespace TAIF.Controllers
         }
 
         [HttpPost("")]
+        [Authorize(Policy = "InstructorOrCompanyOrAdmin")]
         public async Task<IActionResult> Create([FromBody] CreateCourseRequest request)
         {
             await _tagService.TagsValidationGuard(request.Tags);
@@ -86,15 +91,17 @@ namespace TAIF.Controllers
                 Photo = request.Photo,
                 CategoryId = request.CategoryId,
                 Tags = request.Tags,
+                UserId = this.UserId
             };
             var created_course = await _courseService.CreateAsync(course);
             return Ok(ApiResponse<Course>.SuccessResponse(created_course));
         }
 
         [HttpPut("{id}")]
+        [Authorize(Policy = "InstructorOrCompanyOrAdmin")]
         public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateCourseRequest request)
         {
-            if(request.Tags is not null && request.Tags.Any())
+            if (request.Tags is not null && request.Tags.Any())
                 await _tagService.TagsValidationGuard(request.Tags);
 
             var course = await _courseService.UpdateAsync(id, request);
@@ -102,6 +109,7 @@ namespace TAIF.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Policy = "InstructorOrCompanyOrAdmin")]
         public async Task<IActionResult> Delete([FromRoute] Guid id)
         {
             var result = await _courseService.DeleteAsync(id);

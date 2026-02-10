@@ -16,13 +16,11 @@ namespace TAIF.API.Controllers
         private readonly IAuthService _authService;
         private readonly ILogger<AuthController> _logger;
         private readonly IUserService _userService;
-        private readonly IInstructorProfileService _instructorProfileService;
-        public AuthController(IAuthService authService,ILogger<AuthController> logger,IUserService userService, IInstructorProfileService instructorProfileService)
+        public AuthController(IAuthService authService,ILogger<AuthController> logger,IUserService userService)
         {
             _authService = authService;
             _logger = logger;
             _userService = userService;
-            _instructorProfileService = instructorProfileService;
         }
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterRequest request)
@@ -30,7 +28,6 @@ namespace TAIF.API.Controllers
             var result = await _authService.RegisterAsync(
                 request
             );
-
             return Ok(result);
         }
         [HttpPost("login")]
@@ -82,24 +79,10 @@ namespace TAIF.API.Controllers
             userResponse.LastName = user.LastName;
             userResponse.Birthday = user.Birthday;
             userResponse.IsActive = user.IsActive;
-            userResponse.IsInstructor = user.IsInstructor;
+            userResponse.UserRoleType = user.UserRoleType;
             userResponse.CreatedAt = user.CreatedAt;
             userResponse.UpdatedAt = user.UpdatedAt;
-            if (user.IsInstructor)
-            {
-                var instructor = await _instructorProfileService.GetByUserIdAsync(userId);
-                if (instructor is not null)
-                {
-                    userResponse.InstructorProfile = new InstructorProfileResponse();
-                    userResponse.InstructorProfile.Id = instructor.Id;
-                    userResponse.InstructorProfile.Bio = instructor.Bio;
-                    userResponse.InstructorProfile.CoursesCount = instructor.CoursesCount;
-                    userResponse.InstructorProfile.LinkedInUrl = instructor.LinkedInUrl;
-                    userResponse.InstructorProfile.WebsiteUrl = instructor.WebsiteUrl;
-                    userResponse.InstructorProfile.YearsOfExperience = instructor.YearsOfExperience;
-                }
-            }
-            // 3️ Return user (DTO recommended)
+            userResponse.IsCompleted = user.IsCompleted;
             return Ok(ApiResponse<UserResponse>.SuccessResponse(userResponse));
         }
     }

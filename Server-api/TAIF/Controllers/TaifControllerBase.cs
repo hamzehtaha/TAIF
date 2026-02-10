@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using TAIF.Domain.Entities;
 
 namespace TAIF.API.Controllers
 {
@@ -23,16 +24,19 @@ namespace TAIF.API.Controllers
                 return userId;
             }
         }
-        protected bool IsInstructor
+        protected UserRoleType UserRoleType
         {
             get
             {
-                var value = User.FindFirstValue("IsInstructor");
+                var value = User.FindFirstValue("UserRoleType");
 
                 if (string.IsNullOrEmpty(value))
-                    return false;
+                    throw new UnauthorizedAccessException("UserRoleType claim missing");
 
-                return bool.TryParse(value, out var isInstructor) && isInstructor;
+                if (!Enum.TryParse<UserRoleType>(value, out var userRoleType))
+                    throw new UnauthorizedAccessException($"Invalid UserRoleType claim: {value}");
+
+                return userRoleType;
             }
         }
     }

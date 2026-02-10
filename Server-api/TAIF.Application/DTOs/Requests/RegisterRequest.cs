@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TAIF.Domain.Entities;
 
 namespace TAIF.Application.DTOs.Requests
 {
@@ -19,10 +20,7 @@ namespace TAIF.Application.DTOs.Requests
         public string Password { get; set; } = null!;
         [Required]
         public DateOnly Birthday { get; set; }
-        public bool IsInstructor { get; set; }
-        public string? Bio { get; set; }
-        public int? YearsOfExperience { get; set; }
-        public string? LinkedInUrl { get; set; }
-        public string? WebsiteUrl { get; set; }
+        [Required]
+        public UserRoleType UserRoleType { get; set; } = UserRoleType.User;
     }
 }

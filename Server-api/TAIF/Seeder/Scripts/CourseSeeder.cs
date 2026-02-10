@@ -46,6 +46,19 @@ namespace TAIF.API.Seeder.Scripts
             // Build tag name to ID map for course tag resolution
             var tagNameToId = _context.Tags.ToDictionary(t => t.Name, t => t.Id, StringComparer.OrdinalIgnoreCase);
 
+            // Get instructors (users with Instructor role)
+            var instructors = _context.Users
+                .Where(u => u.UserRoleType == UserRoleType.Instructor)
+                .ToList();
+
+            if (instructors.Count == 0)
+            {
+                Console.WriteLine("⚠️ No instructors found. Please seed users first.");
+                return;
+            }
+
+            var instructorIndex = 0;
+
             foreach (var categoryData in seedData.Categories)
             {
                 var category = _context.Categories.FirstOrDefault(c => c.Name == categoryData.Name);
@@ -75,13 +88,18 @@ namespace TAIF.API.Seeder.Scripts
                         }
                     }
 
+                    // Round-robin assign courses to instructors
+                    var instructor = instructors[instructorIndex % instructors.Count];
+                    instructorIndex++;
+
                     var course = new Course
                     {
                         Name = courseData.Name,
                         Description = courseData.Description,
                         Photo = courseData.Photo,
                         CategoryId = category.Id,
-                        Tags = tagIds
+                        Tags = tagIds,
+                        UserId = instructor.Id
                     };
 
                     _context.Courses.Add(course);

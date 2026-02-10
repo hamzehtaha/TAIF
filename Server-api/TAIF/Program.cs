@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Text;
 using TAIF.API.Middleware;
 using TAIF.API.Seeder;
+using TAIF.API.Seeder.Scripts;
 using TAIF.Application.Interfaces.Repositories;
 using TAIF.Application.Interfaces.Services;
 using TAIF.Application.Services;
@@ -85,10 +86,12 @@ builder.Services.AddScoped<IRecommendationService, RecommendationService>();
 
 builder.Services.AddScoped<IQuizSubmissionService, QuizSubmissionService>();
 builder.Services.AddScoped<IQuizSubmissionRepository, QuizSubmissionRepository>();
+
+builder.Services.AddScoped<IOrganizationRepository, OrganizationRepository>();
+builder.Services.AddScoped<IOrganizationService, OrganizationService>();
+
 builder.Services.AddScoped<IInstructorProfileRepository, InstructorProfileRepository>();
 builder.Services.AddScoped<IInstructorProfileService, InstructorProfileService>();
-
-
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -137,7 +140,29 @@ builder.Services.AddAuthentication("Bearer")
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    // Admin Only Policy
+    options.AddPolicy("AdminOnly", policy =>
+        policy.RequireAssertion(context =>
+            context.User.FindFirst("UserRoleType")?.Value == "0"));
+
+    // Instructor, Company, or Admin
+    options.AddPolicy("InstructorOrCompanyOrAdmin", policy =>
+        policy.RequireAssertion(context =>
+        {
+            var roleValue = context.User.FindFirst("UserRoleType")?.Value;
+            return roleValue == "1" || roleValue == "2" || roleValue == "0";
+        }));
+
+    // Instructor Only (but Admin can also do it)
+    options.AddPolicy("InstructorOrAdmin", policy =>
+        policy.RequireAssertion(context =>
+        {
+            var roleValue = context.User.FindFirst("UserRoleType")?.Value;
+            return roleValue == "1" || roleValue == "0";
+        }));
+});
 
 builder.Services.AddCors(options =>
 {
@@ -157,20 +182,38 @@ if (args.Length >= 2 && args[0].Equals("seed", StringComparison.OrdinalIgnoreCas
 {
     var entityName = args[1].ToLower();
     using var scope = app.Services.CreateScope();
-    var allSeeders = scope.ServiceProvider.GetServices<IEntitySeeder>().ToList();
+    
+    // Get fresh services from scope
+    var serviceProvider = scope.ServiceProvider;
+    var allSeeders = serviceProvider.GetServices<IEntitySeeder>().ToList();
+    
     if (entityName == "all")
     {
-        // Order seeders: RecommendationSeeder must run before CourseSeeder (tags need to exist first)
+        // Order seeders correctly
         var orderedSeeders = allSeeders
             .OrderBy(s => s.GetType().Name switch
             {
-                "RecommendationSeeder" => 0,  // First: seeds Interests and Tags
-                "CourseSeeder" => 1,          // Second: uses Tags for courses
-                _ => 2                         // Other seeders last
+                "UserSeeder" => 0,                  // First: seed users
+                "OrganizationSeeder" => 1,          // Second: seed organizations
+                "InstructorProfileSeeder" => 2,     // Third: seed instructor profiles
+                "RecommendationSeeder" => 3,        // Fourth: seed interests & tags
+                "CourseSeeder" => 4,                // Fifth: seed courses (uses users + tags)
+                _ => 5                              // Other seeders last
             })
             .ToList();
         
-        foreach (var s in orderedSeeders) await s.SeedAsync();
+        foreach (var s in orderedSeeders) 
+        {
+            try
+            {
+                await s.SeedAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error in {s.GetType().Name}: {ex.Message}");
+                throw;
+            }
+        }
         return;
     }
 
@@ -227,13 +270,10 @@ app.Run();
 
 void InjectSeeders()
 {
-    var seederType = typeof(IEntitySeeder);
-    var seeders = Assembly.GetAssembly(seederType)!
-        .GetTypes()
-        .Where(t => seederType.IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract);
-
-    foreach (var seeder in seeders)
-    {
-        builder.Services.AddScoped(seederType, seeder);
-    }
+    // Only register explicit seeders - remove the reflection-based registration
+    builder.Services.AddScoped<IEntitySeeder, UserSeeder>();
+    builder.Services.AddScoped<IEntitySeeder, OrganizationSeeder>();
+    builder.Services.AddScoped<IEntitySeeder, InstructorProfileSeeder>();
+    builder.Services.AddScoped<IEntitySeeder, RecommendationSeeder>();
+    builder.Services.AddScoped<IEntitySeeder, CourseSeeder>();
 }

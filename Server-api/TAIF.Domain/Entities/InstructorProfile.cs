@@ -9,12 +9,16 @@ namespace TAIF.Domain.Entities
     public class InstructorProfile : Base
     {
         public Guid UserId { get; set; }
-        public string Bio { get; set; } = null!;
-        public int YearsOfExperience { get; set; }
-        public int CoursesCount { get; set; }
-        public string? LinkedInUrl { get; set; }
+        public Guid? OrganizationId { get; set; }
+        
         public string? WebsiteUrl { get; set; }
+        public int YearsOfExperience { get; set; }
+        public decimal Rating { get; set; } = 0m;
+        public int CoursesCount { get; set; } = 0;
+        
+        // Navigation
         public User User { get; set; } = null!;
+        public Organization? Organization { get; set; }
     }
 
 }

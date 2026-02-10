@@ -1,6 +1,6 @@
 namespace TAIF.Application.DTOs.Requests
 {
-    public class UpdateInstructorProfileRequest
+    public class CreateInstructorProfileRequest
     {
         public Guid? OrganizationId { get; set; }
         public string? WebsiteUrl { get; set; }

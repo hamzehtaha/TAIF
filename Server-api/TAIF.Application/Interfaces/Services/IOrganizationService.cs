@@ -2,7 +2,7 @@ using TAIF.Domain.Entities;
 
 namespace TAIF.Application.Interfaces.Services
 {
-    public interface IInstructorProfileService : IService<InstructorProfile>
+    public interface IOrganizationService : IService<Organization>
     {
     }
 }

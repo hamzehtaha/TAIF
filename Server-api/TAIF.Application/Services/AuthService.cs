@@ -14,13 +14,11 @@ public class AuthService : IAuthService
     private readonly IUserRepository _userRepository;
     private readonly ITokenService _tokenService;
     private readonly IConfiguration _configuration;
-    private readonly IInstructorProfileRepository _instructorRepository;
-    public AuthService(IUserRepository userRepository,ITokenService tokenService,IConfiguration configuration, IInstructorProfileRepository instructorRepository)
+    public AuthService(IUserRepository userRepository,ITokenService tokenService,IConfiguration configuration)
     {
         _userRepository = userRepository;
         _tokenService = tokenService;
         _configuration = configuration;
-        _instructorRepository = instructorRepository;
     }
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
     {
@@ -28,6 +26,11 @@ public class AuthService : IAuthService
         if (existing is not null)
         {
             throw new Exception("User already exists");
+        }
+        bool isCompleted = false;
+        if (request.UserRoleType == UserRoleType.Admin || request.UserRoleType == UserRoleType.User)
+        {
+            isCompleted = true;
         }
         var user = new User
         {
@@ -38,38 +41,16 @@ public class AuthService : IAuthService
             PasswordHash = HashPassword(request.Password),
             IsActive = true,
             Birthday = request.Birthday,
-            IsInstructor = request.IsInstructor
+            UserRoleType = request.UserRoleType,
+            IsCompleted = isCompleted
         };
 
         var accessToken = _tokenService.GenerateAccessToken(user);
         var refreshToken = _tokenService.GenerateRefreshToken(user);
         var times = GetTokenExpires();
-
-
         user.RefreshToken = refreshToken;
         user.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(times.Item1);
-
         await _userRepository.AddAsync(user);
-
-
-        if (request.IsInstructor)
-        {
-            if (string.IsNullOrWhiteSpace(request.Bio))
-                throw new Exception("Bio is required for instructor");
-
-            if (!request.YearsOfExperience.HasValue)
-                throw new Exception("YearsOfExperience is required for instructor");
-
-            var instructorProfile = new InstructorProfile
-            {
-                UserId = user.Id,
-                Bio = request.Bio!,
-                YearsOfExperience = request.YearsOfExperience.Value,
-                LinkedInUrl = request.LinkedInUrl,
-                WebsiteUrl = request.WebsiteUrl
-            };
-            await _instructorRepository.AddAsync(instructorProfile);
-        }
         await _userRepository.SaveChangesAsync();
         return new AuthResponse(
             accessToken,
