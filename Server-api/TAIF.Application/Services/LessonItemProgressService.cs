@@ -1,5 +1,6 @@
 using System.Text.Json;
 using TAIF.Application.DTOs;
+using TAIF.Application.DTOs.Requests;
 using TAIF.Application.Interfaces.Repositories;
 using TAIF.Application.Interfaces.Services;
 using TAIF.Domain.Entities;
@@ -21,7 +22,7 @@ namespace TAIF.Application.Services
         }
         public async Task<QuizResultResponse> SubmitQuizAsync(Guid userId, SubmitQuizRequest request)
         {
-            var lessonItem = await _lessonItemService.GetByIdAsync(request.LessonItemId);
+            var lessonItem = await _lessonItemRepository.GetByIdAsync(request.LessonItemId);
             if (lessonItem == null || lessonItem.Type != LessonItemType.Question)
             {
                 throw new Exception("Lesson item type is not question");
@@ -38,7 +39,8 @@ namespace TAIF.Application.Services
                 })
                 .ToDictionary(q => q.Id);
 
-            var results = new List<QuestionResult>();
+            var results = new List<QuestionAnswersResponse>();
+            var answerPayloads = new List<QuizAnswerPayload>();
             int correctCount = 0;
 
             foreach (var answer in request.Answers)
@@ -49,14 +51,49 @@ namespace TAIF.Application.Services
                 bool isCorrect = question.CorrectIndex == answer.AnswerIndex;
                 if (isCorrect) correctCount++;
 
-                results.Add(new QuestionResult
+                results.Add(new QuestionAnswersResponse
                 {
                     QuestionId = answer.QuestionId,
+                    IsCorrect = isCorrect
+                });
+                answerPayloads.Add(new QuizAnswerPayload
+                {
+                    QuestionId = answer.QuestionId,
+                    SelectedAnswerIndex = answer.AnswerIndex,
+                    CorrectAnswerIndex = question.CorrectIndex,
                     IsCorrect = isCorrect
                 });
             }
 
             int score = (int)Math.Round((double)correctCount / questions.Count * 100);
+
+            var answersJson = JsonSerializer.Serialize(answerPayloads);
+
+            var userAnswer = await _quizSubmissionService.GetUserSubmissionAsync(userId, request.LessonItemId);
+            if (userAnswer is null)
+            {
+                await _quizSubmissionService.CreateAsync(new QuizSubmission
+                {
+                    UserId = userId,
+                    LessonItemId = request.LessonItemId,
+                    AnswersJson = answersJson,
+                    Score = score,
+                    TotalQuestions = questions.Count,
+                    CorrectAnswers = correctCount
+                });
+            }
+            else
+            {
+                await _quizSubmissionService.UpdateAsync(userAnswer.Id, new QuizSubmission
+                {
+                    UserId = userId,
+                    LessonItemId = request.LessonItemId,
+                    AnswersJson = answersJson,
+                    Score = score,
+                    TotalQuestions = questions.Count,
+                    CorrectAnswers = correctCount
+                });
+            }
             return new QuizResultResponse
             {
                 Results = results,

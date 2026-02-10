@@ -5,14 +5,19 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { LanguageProvider } from "@/hooks/useLanguage";
-import { ThemeProvider } from "@/hooks/useTheme";
+import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { useState } from "react";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
 
   return (
-    <ThemeProvider>
+    <NextThemesProvider
+      attribute="class"
+      defaultTheme="light"
+      enableSystem
+      disableTransitionOnChange
+    >
       <LanguageProvider>
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
@@ -22,6 +27,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
           </TooltipProvider>
         </QueryClientProvider>
       </LanguageProvider>
-    </ThemeProvider>
+    </NextThemesProvider>
   );
 }

@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using TAIF.Application.DTOs;
 using TAIF.Application.DTOs.Filters;
+using TAIF.Application.DTOs.Requests;
+using TAIF.Application.DTOs.Responses;
 using TAIF.Application.Interfaces.Services;
 using TAIF.Domain.Entities;
 

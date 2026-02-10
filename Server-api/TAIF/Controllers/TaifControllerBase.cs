@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using TAIF.Domain.Entities;
 
 namespace TAIF.API.Controllers
 {
@@ -21,6 +22,21 @@ namespace TAIF.API.Controllers
                     throw new UnauthorizedAccessException("Invalid UserId claim");
 
                 return userId;
+            }
+        }
+        protected UserRoleType UserRoleType
+        {
+            get
+            {
+                var value = User.FindFirstValue("UserRoleType");
+
+                if (string.IsNullOrEmpty(value))
+                    throw new UnauthorizedAccessException("UserRoleType claim missing");
+
+                if (!Enum.TryParse<UserRoleType>(value, out var userRoleType))
+                    throw new UnauthorizedAccessException($"Invalid UserRoleType claim: {value}");
+
+                return userRoleType;
             }
         }
     }

@@ -2,7 +2,8 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using TAIF.Application.DTOs;
+using TAIF.Application.DTOs.Requests;
+using TAIF.Application.DTOs.Responses;
 using TAIF.Application.Interfaces.Services;
 using TAIF.Domain.Entities;
 
@@ -25,12 +26,8 @@ namespace TAIF.API.Controllers
         public async Task<IActionResult> Register(RegisterRequest request)
         {
             var result = await _authService.RegisterAsync(
-                request.FirstName,
-                request.LastName,
-                request.Email,
-                request.Password
+                request
             );
-
             return Ok(result);
         }
         [HttpPost("login")]
@@ -75,8 +72,18 @@ namespace TAIF.API.Controllers
             {
                 return NotFound("User not found");
             }
-            // 3️ Return user (DTO recommended)
-            return Ok(ApiResponse<User>.SuccessResponse(user));
+            UserResponse userResponse = new UserResponse();
+            userResponse.Id = user.Id;
+            userResponse.Email = user.Email;
+            userResponse.FirstName = user.FirstName;
+            userResponse.LastName = user.LastName;
+            userResponse.Birthday = user.Birthday;
+            userResponse.IsActive = user.IsActive;
+            userResponse.UserRoleType = user.UserRoleType;
+            userResponse.CreatedAt = user.CreatedAt;
+            userResponse.UpdatedAt = user.UpdatedAt;
+            userResponse.IsCompleted = user.IsCompleted;
+            return Ok(ApiResponse<UserResponse>.SuccessResponse(userResponse));
         }
     }
 }

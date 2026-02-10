@@ -1,7 +1,8 @@
 ﻿using Microsoft.Extensions.Configuration;
 using System.Security.Cryptography;
 using System.Text;
-using TAIF.Application.DTOs;
+using TAIF.Application.DTOs.Requests;
+using TAIF.Application.DTOs.Responses;
 using TAIF.Application.Interfaces.Repositories;
 using TAIF.Application.Interfaces.Services;
 using TAIF.Domain.Entities;
@@ -19,32 +20,38 @@ public class AuthService : IAuthService
         _tokenService = tokenService;
         _configuration = configuration;
     }
-    public async Task<AuthResponse> RegisterAsync(string firstName,string lastName,string email,string password)
+    public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
     {
-        var existing = await _userRepository.GetByEmailAsync(email);
-        if (existing != null)
+        var existing = await _userRepository.GetByEmailAsync(request.Email);
+        if (existing is not null)
+        {
             throw new Exception("User already exists");
-
+        }
+        bool isCompleted = false;
+        if (request.UserRoleType == UserRoleType.Admin || request.UserRoleType == UserRoleType.User)
+        {
+            isCompleted = true;
+        }
         var user = new User
         {
             Id = Guid.NewGuid(),
-            FirstName = firstName,
-            LastName = lastName,
-            Email = email,
-            PasswordHash = HashPassword(password),
+            FirstName = request.FirstName,
+            LastName = request.LastName,
+            Email = request.Email,
+            PasswordHash = HashPassword(request.Password),
             IsActive = true,
+            Birthday = request.Birthday,
+            UserRoleType = request.UserRoleType,
+            IsCompleted = isCompleted
         };
 
         var accessToken = _tokenService.GenerateAccessToken(user);
         var refreshToken = _tokenService.GenerateRefreshToken(user);
         var times = GetTokenExpires();
-
-
         user.RefreshToken = refreshToken;
         user.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(times.Item1);
         await _userRepository.AddAsync(user);
         await _userRepository.SaveChangesAsync();
-
         return new AuthResponse(
             accessToken,
             DateTime.UtcNow.AddMinutes(times.Item2),

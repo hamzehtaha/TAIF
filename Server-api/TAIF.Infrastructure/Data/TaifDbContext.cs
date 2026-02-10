@@ -17,6 +17,8 @@ namespace TAIF.Infrastructure.Data
         {
         }
         public DbSet<User> Users { get; set; }
+        public DbSet<Organization> Organizations { get; set; }
+        public DbSet<InstructorProfile> InstructorProfiles { get; set; }
         public DbSet<Category> Categories { get; set; }
         public DbSet<Course> Courses { get; set; }
         public DbSet<Lesson> lessons { get; set; }
@@ -28,9 +30,32 @@ namespace TAIF.Infrastructure.Data
         public DbSet<Tag> Tags { get; set; }
         public DbSet<InterestTagMapping> InterestTagMappings { get; set; }
         public DbSet<UserCourseBehavior> UserCourseBehaviors { get; set; }
-
+        public DbSet<QuizSubmission> QuizSubmissions => Set<QuizSubmission>();
+        
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            // InstructorProfile configuration
+            modelBuilder.Entity<InstructorProfile>(entity =>
+            {
+                entity.HasOne(ip => ip.User)
+                      .WithOne()
+                      .HasForeignKey<InstructorProfile>(ip => ip.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(ip => ip.Organization)
+                      .WithMany(o => o.Instructors)
+                      .HasForeignKey(ip => ip.OrganizationId)
+                      .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasIndex(ip => ip.UserId).IsUnique();
+            });
+
+            // Organization configuration
+            modelBuilder.Entity<Organization>(entity =>
+            {
+                entity.HasIndex(o => o.Name).IsUnique();
+            });
+
             modelBuilder.Entity<Enrollment>(entity =>
             {
                 entity.HasIndex(e => new { e.UserId, e.CourseId })
@@ -65,6 +90,14 @@ namespace TAIF.Infrastructure.Data
                       .HasMaxLength(2000);
             });
 
+            modelBuilder.Entity<Course>(entity =>
+            {
+                entity.HasOne(c => c.Creator)
+                      .WithMany(u => u.CreatedCourses)
+                      .HasForeignKey(c => c.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
             var guidCollectionConverter = new ValueConverter<ICollection<Guid>, string>(
                 v => string.Join(",", v ?? Array.Empty<Guid>()),
                 v => string.IsNullOrEmpty(v)
@@ -75,9 +108,9 @@ namespace TAIF.Infrastructure.Data
             );
 
             var guidCollectionComparer = new ValueComparer<ICollection<Guid>>(
-                (c1, c2) => c1.SequenceEqual(c2),             // How to compare two collections
-                c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())), // Hash code
-                c => c.ToList()                                // How to make a snapshot
+                (c1, c2) => c1.SequenceEqual(c2),
+                c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                c => c.ToList()
             );
 
             modelBuilder.Entity<Course>()
@@ -90,7 +123,6 @@ namespace TAIF.Infrastructure.Data
                 .HasConversion(guidCollectionConverter)
                 .Metadata.SetValueComparer(guidCollectionComparer);
 
-            // Recommendation entities configuration
             modelBuilder.Entity<Interest>(entity =>
             {
                 entity.HasIndex(e => e.Name).IsUnique();
@@ -111,7 +143,10 @@ namespace TAIF.Infrastructure.Data
                 entity.HasIndex(e => new { e.UserId, e.CourseId }).IsUnique();
                 entity.HasIndex(e => e.UserId);
             });
-        }
 
+            modelBuilder.Entity<QuizSubmission>()
+            .HasIndex(x => new { x.UserId, x.LessonItemId })
+            .IsUnique();
+        }
     }
 }

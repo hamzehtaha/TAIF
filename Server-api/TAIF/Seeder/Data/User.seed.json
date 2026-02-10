@@ -1,7 +1,37 @@
 [
   {
+    "Id": "110e8400-e29b-41d4-a716-446655440000",
     "FirstName": "super",
     "LastName": "admin",
-    "Email": "super@TAIF.com"
+    "Email": "super@taif.com",
+    "UserRoleType": 0
+  },
+  {
+    "Id": "220e8400-e29b-41d4-a716-446655440001",
+    "FirstName": "John",
+    "LastName": "Davis",
+    "Email": "john.davis@taif.com",
+    "UserRoleType": 1
+  },
+  {
+    "Id": "220e8400-e29b-41d4-a716-446655440002",
+    "FirstName": "Sarah",
+    "LastName": "Wilson",
+    "Email": "sarah.wilson@taif.com",
+    "UserRoleType": 1
+  },
+  {
+    "Id": "220e8400-e29b-41d4-a716-446655440003",
+    "FirstName": "Michael",
+    "LastName": "Johnson",
+    "Email": "michael.johnson@taif.com",
+    "UserRoleType": 1
+  },
+  {
+    "Id": "220e8400-e29b-41d4-a716-446655440004",
+    "FirstName": "Emma",
+    "LastName": "Anderson",
+    "Email": "emma.anderson@taif.com",
+    "UserRoleType": 1
   }
 ]

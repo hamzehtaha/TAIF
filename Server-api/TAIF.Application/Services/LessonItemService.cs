@@ -1,5 +1,7 @@
 ﻿using System.Text.Json;
-using TAIF.Application.DTOs;
+using TAIF.Application.DTOs.Payloads;
+using TAIF.Application.DTOs.Requests;
+using TAIF.Application.DTOs.Responses;
 using TAIF.Application.Interfaces.Repositories;
 using TAIF.Application.Interfaces.Services;
 using TAIF.Domain.Entities;
@@ -58,7 +60,5 @@ namespace TAIF.Application.Services
                 questions = sanitizedQuestions
             };
         }
-
     }
-
 }

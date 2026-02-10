@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useLanguage } from "@/hooks/useLanguage";
-import { useTheme } from "@/hooks/useTheme";
+import { useTheme } from "next-themes";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Moon, Sun, Globe } from "lucide-react";
@@ -12,8 +12,9 @@ import { authService, User } from "@/services/authService";
 
 export function Header() {
   const { language, setLanguage } = useLanguage();
-  const { theme, setTheme, isDark } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const t = useTranslation();
+  const isDark = resolvedTheme === "dark";
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);

@@ -1,15 +1,11 @@
-﻿using TAIF.Application.DTOs;
+﻿using TAIF.Application.DTOs.Requests;
+using TAIF.Application.DTOs.Responses;
 
 namespace TAIF.Application.Interfaces.Services;
 
 public interface IAuthService
 {
-    Task<AuthResponse> RegisterAsync(
-        string firstName,
-        string lastName,
-        string email,
-        string password
-    );
+    Task<AuthResponse> RegisterAsync(RegisterRequest request);
     Task<AuthResponse?> LoginAsync(string email, string password);
     Task<AuthResponse?> RefreshTokenAsync(string refreshToken);
 

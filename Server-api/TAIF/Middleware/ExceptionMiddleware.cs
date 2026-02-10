@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Text.Json;
 using TAIF.Application.DTOs;
+using TAIF.Application.DTOs.Responses;
 
 namespace TAIF.API.Middleware;
 
