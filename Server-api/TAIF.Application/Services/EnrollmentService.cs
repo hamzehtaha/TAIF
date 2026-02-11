@@ -41,5 +41,12 @@ namespace TAIF.Application.Services
             var enrollment = await _repo.FindOneNoTrackingAsync((x) => x.UserId.Equals(userId) && x.CourseId.Equals(courseId));
             return enrollment;
         }
+
+        public async Task UpdateLastLessonItemId(Guid userId, Guid courseId, Guid lessonItemId)
+        {
+            Enrollment enrollment = await _repo.FindOneAsync((x) => x.UserId.Equals(userId) && x.CourseId.Equals(courseId));
+            enrollment.LastLessonItemId = lessonItemId;
+            await _repo.SaveChangesAsync();
+        }
     }
 }

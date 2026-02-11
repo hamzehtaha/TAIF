@@ -12,7 +12,8 @@ namespace TAIF.Application.DTOs.Requests
 
         [Required]
         public Guid CourseId { get; set; }
-
+        [Required]
+        public Guid LessonID { get; set; }
         [Required]
         public Guid LessonItemId { get; set; }
     }
