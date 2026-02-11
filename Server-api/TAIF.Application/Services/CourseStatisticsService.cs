@@ -10,20 +10,17 @@ namespace TAIF.Application.Services
         private readonly ICourseRepository _courseRepository;
         private readonly IEnrollmentRepository _enrollmentRepository;
         private readonly ILessonRepository _lessonRepository;
-        private readonly ILessonItemRepository _lessonItemRepository;
         private readonly ILogger<CourseStatisticsService> _logger;
 
         public CourseStatisticsService(
             ICourseRepository courseRepository,
             IEnrollmentRepository enrollmentRepository,
             ILessonRepository lessonRepository,
-            ILessonItemRepository lessonItemRepository,
             ILogger<CourseStatisticsService> logger)
         {
             _courseRepository = courseRepository;
             _enrollmentRepository = enrollmentRepository;
             _lessonRepository = lessonRepository;
-            _lessonItemRepository = lessonItemRepository;
             _logger = logger;
         }
 
@@ -39,42 +36,17 @@ namespace TAIF.Application.Services
                 return;
             }
 
-            // Calculate enrollment counts
-            var enrollments = await _enrollmentRepository.GetAllNoTrackingAsync(withDeleted: false);
-            var enrollmentCounts = enrollments
-                .GroupBy(e => e.CourseId)
-                .ToDictionary(g => g.Key, g => g.Count());
-
-            // Calculate total duration
-            var lessons = await _lessonRepository.GetAllNoTrackingAsync(withDeleted: false);
-            var lessonsByCourse = lessons
-                .GroupBy(l => l.CourseId)
-                .ToDictionary(g => g.Key, g => g.Select(l => l.Id).ToList());
-
-            var allLessonItems = await _lessonItemRepository.GetAllNoTrackingAsync(withDeleted: false);
-            var courseDurations = new Dictionary<Guid, double>();
-
-            foreach (var kvp in lessonsByCourse)
-            {
-                var courseId = kvp.Key;
-                var lessonIds = kvp.Value;
-                var totalDuration = allLessonItems
-                    .Where(li => lessonIds.Contains(li.LessonId))
-                    .Sum(li => li.DurationInSeconds);
-                courseDurations[courseId] = totalDuration;
-            }
+            // Database-side aggregation - no memory loading
+            var enrollmentCounts = await _enrollmentRepository.GetEnrollmentCountsPerCourseAsync();
+            var courseDurations = await _lessonRepository.GetTotalDurationPerCourseAsync();
 
             // Update each course
             int updatedCount = 0;
             foreach (var course in courses)
             {
-                var enrollmentCount = enrollmentCounts.ContainsKey(course.Id)
-                    ? enrollmentCounts[course.Id]
-                    : 0;
-
-                var totalDuration = courseDurations.ContainsKey(course.Id)
-                    ? courseDurations[course.Id]
-                    : 0;
+                // Using GetValueOrDefault (1 lookup instead of 2)
+                var enrollmentCount = enrollmentCounts.GetValueOrDefault(course.Id);
+                var totalDuration = courseDurations.GetValueOrDefault(course.Id);
 
                 if (course.TotalEnrolled != enrollmentCount || 
                     Math.Abs(course.TotalDurationInSeconds - totalDuration) > 0.001)
@@ -119,13 +91,8 @@ namespace TAIF.Application.Services
             var enrollmentCount = enrollments.Count;
 
             // Calculate total duration
-            var lessons = await _lessonRepository
-                .FindNoTrackingAsync(l => l.CourseId == courseId);
-            var lessonIds = lessons.Select(l => l.Id).ToList();
-
-            var lessonItems = await _lessonItemRepository
-                .FindNoTrackingAsync(li => lessonIds.Contains(li.LessonId));
-            var totalDuration = lessonItems.Sum(li => li.DurationInSeconds);
+            var allDurations = await _lessonRepository.GetTotalDurationPerCourseAsync();
+            var totalDuration = allDurations.GetValueOrDefault(courseId);
 
             // Update course statistics
             course.TotalEnrolled = enrollmentCount;

@@ -245,8 +245,13 @@ using (var scope = app.Services.CreateScope())
     {
         Log.Error(ex, "An error occurred while migrating the database");
     }
+}
 
-    // Update course statistics on startup
+// TODO: Move course statistics update to a better place (e.g., background job, scheduled task, or manual trigger)
+// Update course statistics on startup - Fire and forget with its own scope
+_ = Task.Run(async () =>
+{
+    using var scope = app.Services.CreateScope();
     try
     {
         var courseStatisticsService = scope.ServiceProvider.GetRequiredService<ICourseStatisticsService>();
@@ -257,7 +262,7 @@ using (var scope = app.Services.CreateScope())
     {
         Log.Error(ex, "An error occurred while updating course statistics on startup");
     }
-}
+});
 
 app.UseCors("AllowAll");
 app.UseSwagger();
