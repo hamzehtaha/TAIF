@@ -153,11 +153,7 @@ namespace TAIF.Application.Services
         /// </summary>
         public async Task<double> GetUserCourseCompletedDurationAsync(Guid userId, Guid courseId)
         {
-            var completedItems = await _lessonItemProgressRepository.FindNoTrackingAsync(
-                p => p.UserId == userId && p.CourseID == courseId
-            );
-            
-            return completedItems.Sum(p => p.CompletedDurationInSeconds);
+            return await _lessonItemProgressRepository.SumCompletedDurationAsync(userId, courseId);
         }
     }
 }

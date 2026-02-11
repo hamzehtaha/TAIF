@@ -9,6 +9,6 @@ namespace TAIF.Application.Interfaces.Repositories
 {
     public  interface ILessonItemProgressRepository : IRepository<LessonItemProgress>
     {
-
+        Task<double> SumCompletedDurationAsync(Guid userId, Guid courseId);
     }
 }
