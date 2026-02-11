@@ -17,10 +17,13 @@ namespace TAIF.Controllers
     {
         private readonly ILessonItemService _lessonItemService;
         private readonly IQuizSubmissionService _quizSubmissionService;
-        public LessonItemController(ILessonItemService lessonItemService, IQuizSubmissionService quizSubmissionService)
+        private readonly ILessonItemProgressService _lessonItemProgressService;
+
+        public LessonItemController(ILessonItemService lessonItemService, IQuizSubmissionService quizSubmissionService, ILessonItemProgressService lessonItemProgressService)
         {
             _lessonItemService = lessonItemService;
             _quizSubmissionService = quizSubmissionService;
+            _lessonItemProgressService = lessonItemProgressService;
         }
         [HttpGet("{id}")]
         public async Task<IActionResult> Get([FromRoute] Guid id)
@@ -32,7 +35,7 @@ namespace TAIF.Controllers
         [HttpGet("lessonProgress/{lessonId}")]
         public async Task<IActionResult> GetLessonItemsProgressAsync([FromRoute] Guid lessonId)
         {
-            var lessonItems = await _lessonItemService.GetLessonItemsProgressAsync(this.UserId, lessonId);
+            var lessonItems = await _lessonItemProgressService.GetLessonItemsProgressAsync(this.UserId, lessonId);
             if (lessonItems is null) return NotFound();
             return Ok(ApiResponse<List<LessonItemResponse>>.SuccessResponse(lessonItems));
         }
@@ -73,7 +76,7 @@ namespace TAIF.Controllers
         [HttpPost("submit-quiz")]
         public async Task<IActionResult> SubmitQuiz([FromBody] SubmitQuizRequest request)
         {
-            var result = await _lessonItemService.SubmitQuizAsync(this.UserId,request);
+            var result = await _lessonItemProgressService.SubmitQuizAsync(this.UserId,request);
 
             return Ok(ApiResponse<QuizResultResponse>.SuccessResponse(result));
         }

@@ -60,11 +60,6 @@ namespace TAIF.Infrastructure.Data
             {
                 entity.HasIndex(e => new { e.UserId, e.CourseId })
                       .IsUnique();
-
-                entity.HasOne(e => e.LastLessonItem)
-                       .WithMany(li => li.Enrollments)
-                       .HasForeignKey(e => e.LastLessonItemId)
-                       .OnDelete(DeleteBehavior.Restrict);
             });
 
             modelBuilder.Entity<LessonItemProgress>(entity =>
