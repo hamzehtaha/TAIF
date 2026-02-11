@@ -14,14 +14,16 @@ namespace TAIF.Application.Services
     {
         private readonly ILessonItemProgressRepository _lessonItemProgressRepository;
         private readonly ILessonItemService _lessonItemService;
-        private readonly IEnrollmentService _enrollmentService;
         private readonly IQuizSubmissionService _quizSubmissionService;
 
-        public LessonItemProgressService(ILessonItemProgressRepository repository, ILessonService lessonService, ILessonItemService lessonItemService, IEnrollmentService enrollmentService, IQuizSubmissionService quizSubmissionService) : base(repository)
+        public LessonItemProgressService(
+            ILessonItemProgressRepository repository, 
+            ILessonService lessonService, 
+            ILessonItemService lessonItemService, 
+            IQuizSubmissionService quizSubmissionService) : base(repository)
         {
             _lessonItemProgressRepository = repository;
             _lessonItemService = lessonItemService;
-            _enrollmentService = enrollmentService;
             _quizSubmissionService = quizSubmissionService;
         }
         
@@ -143,7 +145,6 @@ namespace TAIF.Application.Services
                 CompletedDurationInSeconds = lessonItem.DurationInSeconds
             };
             await _lessonItemProgressRepository.AddAsync(lessonItemProgress);
-            await _enrollmentService.UpdateLastLessonItemId(UserId, dto.CourseId, dto.LessonItemId);
             await _repository.SaveChangesAsync();
             return lessonItemProgress;
         }
@@ -153,11 +154,7 @@ namespace TAIF.Application.Services
         /// </summary>
         public async Task<double> GetUserCourseCompletedDurationAsync(Guid userId, Guid courseId)
         {
-            var completedItems = await _lessonItemProgressRepository.FindNoTrackingAsync(
-                p => p.UserId == userId && p.CourseID == courseId
-            );
-            
-            return completedItems.Sum(p => p.CompletedDurationInSeconds);
+            return await _lessonItemProgressRepository.GetCompletedDurationSumAsync(userId, courseId);
         }
     }
 }
