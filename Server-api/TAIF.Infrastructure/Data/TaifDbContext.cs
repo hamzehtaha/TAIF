@@ -48,6 +48,9 @@ namespace TAIF.Infrastructure.Data
                       .OnDelete(DeleteBehavior.SetNull);
 
                 entity.HasIndex(ip => ip.UserId).IsUnique();
+
+                entity.Property(ip => ip.Rating)
+                      .HasPrecision(5, 2);
             });
 
             // Organization configuration
@@ -56,10 +59,53 @@ namespace TAIF.Infrastructure.Data
                 entity.HasIndex(o => o.Name).IsUnique();
             });
 
+            // Course configuration
+            modelBuilder.Entity<Course>(entity =>
+            {
+                entity.HasOne(c => c.Creator)
+                      .WithMany(u => u.CreatedCourses)
+                      .HasForeignKey(c => c.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(c => c.Category)
+                      .WithMany()
+                      .HasForeignKey(c => c.CategoryId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // Lesson configuration
+            modelBuilder.Entity<Lesson>(entity =>
+            {
+                entity.HasOne(l => l.Course)
+                      .WithMany()
+                      .HasForeignKey(l => l.CourseId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // LessonItem configuration
+            modelBuilder.Entity<LessonItem>(entity =>
+            {
+                entity.HasOne(li => li.Lesson)
+                      .WithMany()
+                      .HasForeignKey(li => li.LessonId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // Enrollment configuration
             modelBuilder.Entity<Enrollment>(entity =>
             {
                 entity.HasIndex(e => new { e.UserId, e.CourseId })
                       .IsUnique();
+
+                entity.HasOne(e => e.User)
+                      .WithMany()
+                      .HasForeignKey(e => e.UserId)
+                      .OnDelete(DeleteBehavior.Restrict); // Change to Restrict
+
+                entity.HasOne(e => e.Course)
+                      .WithMany()
+                      .HasForeignKey(e => e.CourseId)
+                      .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasOne(e => e.LastLessonItem)
                        .WithMany(li => li.Enrollments)
@@ -67,12 +113,24 @@ namespace TAIF.Infrastructure.Data
                        .OnDelete(DeleteBehavior.Restrict);
             });
 
+            // LessonItemProgress configuration
             modelBuilder.Entity<LessonItemProgress>(entity =>
             {
                 entity.HasIndex(e => new { e.UserId, e.LessonItemId })
                       .IsUnique();
+
+                entity.HasOne(lip => lip.User)
+                      .WithMany()
+                      .HasForeignKey(lip => lip.UserId)
+                      .OnDelete(DeleteBehavior.Restrict); // Change to Restrict
+
+                entity.HasOne(lip => lip.LessonItem)
+                      .WithMany()
+                      .HasForeignKey(lip => lip.LessonItemId)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
 
+            // Review configuration
             modelBuilder.Entity<Review>(entity =>
             {
                 entity.HasIndex(e => new { e.UserId, e.CourseId })
@@ -81,7 +139,7 @@ namespace TAIF.Infrastructure.Data
                 entity.HasOne(r => r.User)
                       .WithMany()
                       .HasForeignKey(r => r.UserId)
-                      .OnDelete(DeleteBehavior.Cascade);
+                      .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(r => r.Course)
                       .WithMany()
@@ -89,20 +147,67 @@ namespace TAIF.Infrastructure.Data
                       .OnDelete(DeleteBehavior.Cascade);
 
                 entity.Property(r => r.Rating)
-                      .IsRequired();
-
-                entity.Property(r => r.Comment)
-                      .HasMaxLength(2000);
+                      .HasPrecision(5, 2);
             });
 
-            modelBuilder.Entity<Course>(entity =>
+            // UserCourseBehavior configuration
+            modelBuilder.Entity<UserCourseBehavior>(entity =>
             {
-                entity.HasOne(c => c.Creator)
-                      .WithMany(u => u.CreatedCourses)
-                      .HasForeignKey(c => c.UserId)
+                entity.HasIndex(e => new { e.UserId, e.CourseId }).IsUnique();
+                entity.HasIndex(e => e.UserId);
+
+                entity.HasOne(ucb => ucb.User)
+                      .WithMany()
+                      .HasForeignKey(ucb => ucb.UserId)
+                      .OnDelete(DeleteBehavior.Restrict); // Change to Restrict
+
+                entity.HasOne(ucb => ucb.Course)
+                      .WithMany()
+                      .HasForeignKey(ucb => ucb.CourseId)
+                      .OnDelete(DeleteBehavior.Cascade); // Keep Cascade
+            });
+
+            // QuizSubmission configuration - FIXED: No User navigation property
+            modelBuilder.Entity<QuizSubmission>(entity =>
+            {
+                entity.HasIndex(x => new { x.UserId, x.LessonItemId })
+                      .IsUnique();
+
+                entity.HasOne(qs => qs.LessonItem)
+                      .WithMany()
+                      .HasForeignKey(qs => qs.LessonItemId)
                       .OnDelete(DeleteBehavior.Cascade);
             });
 
+            // Interest configuration
+            modelBuilder.Entity<Interest>(entity =>
+            {
+                entity.HasIndex(e => e.Name).IsUnique();
+            });
+
+            // Tag configuration
+            modelBuilder.Entity<Tag>(entity =>
+            {
+                entity.HasIndex(e => e.Name).IsUnique();
+            });
+
+            // InterestTagMapping configuration
+            modelBuilder.Entity<InterestTagMapping>(entity =>
+            {
+                entity.HasIndex(e => new { e.InterestId, e.TagId }).IsUnique();
+
+                entity.HasOne(itm => itm.Interest)
+                      .WithMany()
+                      .HasForeignKey(itm => itm.InterestId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(itm => itm.Tag)
+                      .WithMany()
+                      .HasForeignKey(itm => itm.TagId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // Value converters
             var guidCollectionConverter = new ValueConverter<ICollection<Guid>, string>(
                 v => string.Join(",", v ?? Array.Empty<Guid>()),
                 v => string.IsNullOrEmpty(v)
@@ -127,31 +232,6 @@ namespace TAIF.Infrastructure.Data
                 .Property(e => e.Interests)
                 .HasConversion(guidCollectionConverter)
                 .Metadata.SetValueComparer(guidCollectionComparer);
-
-            modelBuilder.Entity<Interest>(entity =>
-            {
-                entity.HasIndex(e => e.Name).IsUnique();
-            });
-
-            modelBuilder.Entity<Tag>(entity =>
-            {
-                entity.HasIndex(e => e.Name).IsUnique();
-            });
-
-            modelBuilder.Entity<InterestTagMapping>(entity =>
-            {
-                entity.HasIndex(e => new { e.InterestId, e.TagId }).IsUnique();
-            });
-
-            modelBuilder.Entity<UserCourseBehavior>(entity =>
-            {
-                entity.HasIndex(e => new { e.UserId, e.CourseId }).IsUnique();
-                entity.HasIndex(e => e.UserId);
-            });
-
-            modelBuilder.Entity<QuizSubmission>()
-            .HasIndex(x => new { x.UserId, x.LessonItemId })
-            .IsUnique();
         }
     }
 }
