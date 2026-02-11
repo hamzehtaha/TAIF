@@ -21,7 +21,7 @@ namespace TAIF.Controllers
         /// Updates statistics (TotalEnrolled, TotalDurationInSeconds) for all courses
         /// </summary>
         [HttpPost("updateAll")]
-        [Authorize(Policy = "AdminOnly")] // Only admins can trigger full update
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> UpdateAllCourseStatistics()
         {
             await _courseStatisticsService.UpdateAllCourseStatisticsAsync();
@@ -35,8 +35,9 @@ namespace TAIF.Controllers
         [Authorize(Policy = "InstructorOrCompanyOrAdmin")]
         public async Task<IActionResult> UpdateCourseStatistics([FromRoute] Guid courseId)
         {
-            await _courseStatisticsService.UpdateCourseStatisticsAsync(courseId);
-            return Ok(ApiResponse<string>.SuccessResponse($"Course statistics updated successfully"));
+            var result = await _courseStatisticsService.UpdateCourseStatisticsAsync(courseId);
+            if (!result) return NotFound();
+            return Ok(ApiResponse<string>.SuccessResponse("Course statistics updated successfully"));
         }
     }
 }

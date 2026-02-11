@@ -101,7 +101,7 @@ namespace TAIF.Application.Services
                 updatedCount, courses.Count);
         }
 
-        public async Task UpdateCourseStatisticsAsync(Guid courseId)
+        public async Task<bool> UpdateCourseStatisticsAsync(Guid courseId)
         {
             _logger.LogInformation("Starting course statistics update for course {CourseId}", courseId);
 
@@ -109,7 +109,8 @@ namespace TAIF.Application.Services
 
             if (course == null)
             {
-                throw new InvalidOperationException($"Course with ID {courseId} not found");
+                _logger.LogWarning("Course {CourseId} not found", courseId);
+                return false;
             }
 
             // Calculate enrollment count
@@ -140,6 +141,8 @@ namespace TAIF.Application.Services
             _logger.LogInformation(
                 "Successfully updated course {CourseId}: {EnrollmentCount} enrollments, {Duration} seconds",
                 courseId, enrollmentCount, totalDuration);
+
+            return true;
         }
     }
 }

@@ -15,6 +15,7 @@ namespace TAIF.Application.Interfaces.Services
         /// Updates statistics for a specific course
         /// </summary>
         /// <param name="courseId">The course ID to update</param>
-        Task UpdateCourseStatisticsAsync(Guid courseId);
+        /// <returns>True if the course was found and updated, false if not found</returns>
+        Task<bool> UpdateCourseStatisticsAsync(Guid courseId);
     }
 }
