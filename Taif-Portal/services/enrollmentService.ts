@@ -1,5 +1,5 @@
 import { httpService } from "./httpService";
-import { EnrollRequest, EnrollmentDto, ToggleFavouriteRequest } from "@/dtos/enrollment/EnrollmentDto";
+import { EnrollRequest, EnrollmentDto, EnrollmentDetailsResponse, ToggleFavouriteRequest } from "@/dtos/enrollment/EnrollmentDto";
 import { CourseDto } from "@/dtos/course/CourseDto";
 
 export interface EnrollmentWithCourse {
@@ -26,10 +26,19 @@ class EnrollmentService {
   }
 
   /**
-   * Get enrollment for a specific course (not available in backend yet)
+   * Get enrollment for a specific course
+   * GET /api/enrollments/details/{courseId}
    */
   async getEnrollmentByCourse(courseId: string): Promise<EnrollmentDto | null> {
     return httpService.get<EnrollmentDto>(`/api/enrollments/details/${courseId}`);
+  }
+
+  /**
+   * Get enrollment details with progress for a specific course
+   * GET /api/enrollments/details-with-progress/{courseId}
+   */
+  async getEnrollmentWithProgress(courseId: string): Promise<EnrollmentDetailsResponse | null> {
+    return httpService.get<EnrollmentDetailsResponse>(`/api/enrollments/details-with-progress/${courseId}`);
   }
 
   /**

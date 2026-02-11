@@ -10,6 +10,7 @@ namespace TAIF.Application.Interfaces.Services
 {
     public interface IEnrollmentService : IService<Enrollment>
     {
+        Task<Enrollment> GetEnrollmentDetailsAsync(Guid userId, Guid courseId);
         Task<EnrollmentDetailsResponse> GetEnrollmentDetailsWithProgressAsync(Guid userId, Guid courseId);
         Task<List<Course>> GetUserCoursesAsync(Guid userId);
         Task<List<User>> GetCourseUsersAsync(Guid courseId);

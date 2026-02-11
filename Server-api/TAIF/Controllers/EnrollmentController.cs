@@ -38,6 +38,19 @@ namespace TAIF.API.Controllers
         }
 
         [HttpGet("details/{courseId}")]
+        public async Task<IActionResult> GetEnrollmentDetails([FromRoute] Guid courseId)
+        {
+            var enrollment = await _service.GetEnrollmentDetailsAsync(this.UserId, courseId);
+            
+            if (enrollment == null)
+            {
+                return NotFound(ApiResponse<Enrollment>.FailResponse("Enrollment not found"));
+            }
+            
+            return Ok(ApiResponse<Enrollment>.SuccessResponse(enrollment));
+        }
+
+        [HttpGet("details-with-progress/{courseId}")]
         public async Task<IActionResult> GetEnrollmentDetailsWithProgress([FromRoute] Guid courseId)
         {
             var enrollmentWithProgress = await _service.GetEnrollmentDetailsWithProgressAsync(this.UserId, courseId);

@@ -14,6 +14,16 @@ export interface EnrollmentDto {
   isDeleted?: boolean;
 }
 
+export interface EnrollmentDetailsResponse {
+  id: string;
+  userId: string;
+  courseId: string;
+  enrolledAt: string;
+  isFavourite: boolean;
+  lastLessonItemId?: string;
+  completedDurationInSeconds: number;
+}
+
 export interface EnrollRequest {
   courseId: string;
 }
