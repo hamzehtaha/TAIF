@@ -7,8 +7,8 @@ using TAIF.Domain.Entities;
 
 namespace TAIF.Application.Interfaces.Repositories
 {
-    public  interface ILessonItemProgressRepository : IRepository<LessonItemProgress>
+    public interface ILessonItemProgressRepository : IRepository<LessonItemProgress>
     {
-
+        Task<double> GetCompletedDurationSumAsync(Guid userId, Guid courseId);
     }
 }

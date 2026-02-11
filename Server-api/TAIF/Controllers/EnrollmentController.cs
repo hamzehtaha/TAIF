@@ -44,6 +44,16 @@ namespace TAIF.API.Controllers
             return Ok(ApiResponse<Enrollment>.SuccessResponse(enrollment));
         }
 
+        /// <summary>
+        /// Gets enrollment details with total completed duration in seconds
+        /// </summary>
+        [HttpGet("details/{courseId}/progress")]
+        public async Task<IActionResult> GetEnrollmentDetailsWithProgress([FromRoute] Guid courseId)
+        {
+            var enrollmentWithProgress = await _service.GetEnrollmentDetailsWithProgressAsync(this.UserId, courseId);
+            return Ok(ApiResponse<EnrollmentDetailsResponse>.SuccessResponse(enrollmentWithProgress));
+        }
+
         [HttpGet("user")]
         public async Task<IActionResult> GetUserCourses()
         {
@@ -72,5 +82,4 @@ namespace TAIF.API.Controllers
             return Ok(ApiResponse<bool>.SuccessResponse(result));
         }
     }
-
 }

@@ -14,16 +14,18 @@ namespace TAIF.Application.Services
     {
         private readonly ILessonItemProgressRepository _lessonItemProgressRepository;
         private readonly ILessonItemService _lessonItemService;
-        private readonly IEnrollmentService _enrollmentService;
         private readonly IQuizSubmissionService _quizSubmissionService;
 
-        public LessonItemProgressService(ILessonItemProgressRepository repository, ILessonService lessonService, ILessonItemService lessonItemService, IEnrollmentService enrollmentService, IQuizSubmissionService quizSubmissionService) : base(repository)
+        public LessonItemProgressService(
+            ILessonItemProgressRepository repository, 
+            ILessonItemService lessonItemService, 
+            IQuizSubmissionService quizSubmissionService) : base(repository)
         {
             _lessonItemProgressRepository = repository;
             _lessonItemService = lessonItemService;
-            _enrollmentService = enrollmentService;
             _quizSubmissionService = quizSubmissionService;
         }
+        
         public async Task<QuizResultResponse> SubmitQuizAsync(Guid userId, SubmitQuizRequest request)
         {
             var lessonItem = await _lessonItemService.GetByIdAsync(request.LessonItemId);
@@ -104,6 +106,7 @@ namespace TAIF.Application.Services
                 Score = score
             };
         }
+        
         public async Task<List<LessonItemResponse>> GetLessonItemsProgressAsync(Guid userId, Guid lessonId, bool withDeleted = false)
         {
             var lessonItems = await _lessonItemService.FindNoTrackingAsync((x) => x.LessonId.Equals(lessonId) && (withDeleted || !x.IsDeleted));
@@ -122,6 +125,7 @@ namespace TAIF.Application.Services
                 }).ToList();
             return lessonItemsResponse;
         }
+        
         public async Task<LessonItemProgress> SetLessonItemAsCompleted(Guid UserId, SetLessonItemAsCompletedRequest dto)
         {
             var lessonItem = await _lessonItemService.GetByIdAsync(dto.LessonItemId);
@@ -140,9 +144,16 @@ namespace TAIF.Application.Services
                 CompletedDurationInSeconds = lessonItem.DurationInSeconds
             };
             await _lessonItemProgressRepository.AddAsync(lessonItemProgress);
-            await _enrollmentService.UpdateLastLessonItemId(UserId, dto.CourseId, dto.LessonItemId);
             await _repository.SaveChangesAsync();
             return lessonItemProgress;
+        }
+
+        /// <summary>
+        /// Gets the total completed duration in seconds for a user's progress in a specific course
+        /// </summary>
+        public async Task<double> GetUserCourseCompletedDurationAsync(Guid userId, Guid courseId)
+        {
+            return await _lessonItemProgressRepository.GetCompletedDurationSumAsync(userId, courseId);
         }
     }
 }
