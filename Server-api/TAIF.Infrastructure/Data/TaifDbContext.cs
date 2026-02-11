@@ -107,10 +107,6 @@ namespace TAIF.Infrastructure.Data
                       .HasForeignKey(e => e.CourseId)
                       .OnDelete(DeleteBehavior.Cascade);
 
-                entity.HasOne(e => e.LastLessonItem)
-                       .WithMany(li => li.Enrollments)
-                       .HasForeignKey(e => e.LastLessonItemId)
-                       .OnDelete(DeleteBehavior.Restrict);
             });
 
             // LessonItemProgress configuration
