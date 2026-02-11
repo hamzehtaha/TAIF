@@ -18,7 +18,6 @@ namespace TAIF.Application.Services
 
         public LessonItemProgressService(
             ILessonItemProgressRepository repository, 
-            ILessonService lessonService, 
             ILessonItemService lessonItemService, 
             IQuizSubmissionService quizSubmissionService) : base(repository)
         {

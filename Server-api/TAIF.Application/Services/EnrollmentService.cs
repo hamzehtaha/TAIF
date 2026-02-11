@@ -47,7 +47,7 @@ namespace TAIF.Application.Services
             var enrollment = await _repo.FindOneNoTrackingAsync((x) => x.UserId.Equals(userId) && x.CourseId.Equals(courseId));
             return enrollment;
         }
-        public async Task<EnrollmentDetailsResponse> GetEnrollmentDetailsWithProgressAsync(Guid userId, Guid courseId)
+        public async Task<EnrollmentDetailsResponse?> GetEnrollmentDetailsWithProgressAsync(Guid userId, Guid courseId)
         {
             var enrollment = await _repo.FindOneNoTrackingAsync((x) => x.UserId.Equals(userId) && x.CourseId.Equals(courseId));
             

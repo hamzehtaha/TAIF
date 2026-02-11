@@ -28,10 +28,14 @@ namespace TAIF.Controllers
         public async Task<IActionResult> SetLessonItemAsCompleted([FromBody] SetLessonItemAsCompletedRequest request)
         {
             LessonItemProgress lessonItemProgress = await _lessonItemProgressService.SetLessonItemAsCompleted(this.UserId, request);
-            
-            await _enrollmentService.UpdateLastLessonItemId(this.UserId, request.CourseId, request.LessonItemId);
-            
             return Ok(ApiResponse<LessonItemProgress>.SuccessResponse(lessonItemProgress));
+        }
+
+        [HttpPut("UpdateLastLessonItem")]
+        public async Task<IActionResult> UpdateLastLessonItem([FromBody] UpdateLastLessonItemRequest request)
+        {
+            await _enrollmentService.UpdateLastLessonItemId(this.UserId, request.CourseId, request.LessonItemId);
+            return Ok(ApiResponse<bool>.SuccessResponse(true));
         }
     }
 }
