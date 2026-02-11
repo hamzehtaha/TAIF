@@ -13,6 +13,10 @@ dist
 dist-ssr
 *.local
 
+# Build artifacts
+package-lock.json
+*.tsbuildinfo
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
