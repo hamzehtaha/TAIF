@@ -24,6 +24,7 @@ namespace TAIF.Application.Services
             _enrollmentService = enrollmentService;
             _quizSubmissionService = quizSubmissionService;
         }
+        
         public async Task<QuizResultResponse> SubmitQuizAsync(Guid userId, SubmitQuizRequest request)
         {
             var lessonItem = await _lessonItemService.GetByIdAsync(request.LessonItemId);
@@ -104,6 +105,7 @@ namespace TAIF.Application.Services
                 Score = score
             };
         }
+        
         public async Task<List<LessonItemResponse>> GetLessonItemsProgressAsync(Guid userId, Guid lessonId, bool withDeleted = false)
         {
             var lessonItems = await _lessonItemService.FindNoTrackingAsync((x) => x.LessonId.Equals(lessonId) && (withDeleted || !x.IsDeleted));
@@ -122,6 +124,7 @@ namespace TAIF.Application.Services
                 }).ToList();
             return lessonItemsResponse;
         }
+        
         public async Task<LessonItemProgress> SetLessonItemAsCompleted(Guid UserId, SetLessonItemAsCompletedRequest dto)
         {
             var lessonItem = await _lessonItemService.GetByIdAsync(dto.LessonItemId);
@@ -143,6 +146,18 @@ namespace TAIF.Application.Services
             await _enrollmentService.UpdateLastLessonItemId(UserId, dto.CourseId, dto.LessonItemId);
             await _repository.SaveChangesAsync();
             return lessonItemProgress;
+        }
+
+        /// <summary>
+        /// Gets the total completed duration in seconds for a user's progress in a specific course
+        /// </summary>
+        public async Task<double> GetUserCourseCompletedDurationAsync(Guid userId, Guid courseId)
+        {
+            var completedItems = await _lessonItemProgressRepository.FindNoTrackingAsync(
+                p => p.UserId == userId && p.CourseID == courseId
+            );
+            
+            return completedItems.Sum(p => p.CompletedDurationInSeconds);
         }
     }
 }
