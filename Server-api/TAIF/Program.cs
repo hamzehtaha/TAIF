@@ -93,6 +93,8 @@ builder.Services.AddScoped<IOrganizationService, OrganizationService>();
 builder.Services.AddScoped<IInstructorProfileRepository, InstructorProfileRepository>();
 builder.Services.AddScoped<IInstructorProfileService, InstructorProfileService>();
 
+builder.Services.AddScoped<ICourseStatisticsService, CourseStatisticsService>();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -244,6 +246,23 @@ using (var scope = app.Services.CreateScope())
         Log.Error(ex, "An error occurred while migrating the database");
     }
 }
+
+// TODO: Move course statistics update to a better place (e.g., background job, scheduled task, or manual trigger)
+// Update course statistics on startup - Fire and forget with its own scope
+_ = Task.Run(async () =>
+{
+    using var scope = app.Services.CreateScope();
+    try
+    {
+        var courseStatisticsService = scope.ServiceProvider.GetRequiredService<ICourseStatisticsService>();
+        await courseStatisticsService.UpdateAllCourseStatisticsAsync();
+        Log.Information("Course statistics updated successfully on startup");
+    }
+    catch (Exception ex)
+    {
+        Log.Error(ex, "An error occurred while updating course statistics on startup");
+    }
+});
 
 app.UseCors("AllowAll");
 app.UseSwagger();
