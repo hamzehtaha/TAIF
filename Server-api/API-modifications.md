@@ -11,6 +11,7 @@ This document outlines all the API changes needed to support the Instructor Port
 4. [Entities to Update/Create](#entities-to-updatecreate)
 5. [DTOs to Update/Create](#dtos-to-updatecreate)
 6. [Services to Update/Create](#services-to-updatecreate)
+7. [Enrollment API Documentation](#enrollment-api-documentation)
 
 ---
 
@@ -581,3 +582,182 @@ dotnet ef database update
 1. Add filtering to lesson items endpoint
 2. Add standalone content support
 3. Add bulk operations
+
+---
+
+## Enrollment API Documentation
+
+### Overview
+The enrollment API provides two endpoints for retrieving enrollment details, supporting both basic enrollment information and enhanced data with progress tracking.
+
+### Endpoints
+
+#### 1. Get Basic Enrollment Details
+Retrieves basic enrollment information for a user's enrollment in a specific course.
+
+**Endpoint:** `GET /api/enrollments/details/{courseId}`
+
+**Authentication:** Required
+
+**Path Parameters:**
+- `courseId` (Guid) - The unique identifier of the course
+
+**Response:**
+- **Success (200):** Returns `ApiResponse<Enrollment>` containing basic enrollment data
+- **Not Found (404):** Returns `ApiResponse<Enrollment>` with error message when enrollment not found
+
+**Response Body (Success):**
+```json
+{
+  "success": true,
+  "message": "Success",
+  "data": {
+    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "courseId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "enrolledAt": "2024-01-15T10:30:00Z",
+    "isFavourite": true,
+    "lastLessonItemId": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+  }
+}
+```
+
+**Use Cases:**
+- Checking enrollment status
+- Getting the last accessed lesson item for resume functionality
+- Basic enrollment management without progress data
+
+---
+
+#### 2. Get Enrollment Details With Progress
+Retrieves detailed enrollment information including progress tracking data (completed duration).
+
+**Endpoint:** `GET /api/enrollments/details-with-progress/{courseId}`
+
+**Authentication:** Required
+
+**Path Parameters:**
+- `courseId` (Guid) - The unique identifier of the course
+
+**Response:**
+- **Success (200):** Returns `ApiResponse<EnrollmentDetailsResponse>` containing enrollment data with progress
+- **Not Found (404):** Returns `ApiResponse<EnrollmentDetailsResponse>` with error message when enrollment not found
+
+**Response Body (Success):**
+```json
+{
+  "success": true,
+  "message": "Success",
+  "data": {
+    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "courseId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "enrolledAt": "2024-01-15T10:30:00Z",
+    "isFavourite": true,
+    "lastLessonItemId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "completedDurationInSeconds": 3600.5
+  }
+}
+```
+
+**Use Cases:**
+- Displaying course progress to students
+- Calculating completion percentage
+- Analytics and reporting
+- Tracking time spent on course content
+
+---
+
+### DTOs
+
+#### Enrollment (Basic DTO)
+```csharp
+public class Enrollment
+{
+    public Guid Id { get; set; }
+    public Guid UserId { get; set; }
+    public Guid CourseId { get; set; }
+    public DateTime EnrolledAt { get; set; }
+    public bool IsFavourite { get; set; }
+    public Guid? LastLessonItemId { get; set; }
+}
+```
+
+#### EnrollmentDetailsResponse (Enhanced DTO)
+```csharp
+public class EnrollmentDetailsResponse
+{
+    public Guid Id { get; set; }
+    public Guid UserId { get; set; }
+    public Guid CourseId { get; set; }
+    public DateTime EnrolledAt { get; set; }
+    public bool IsFavourite { get; set; }
+    public Guid? LastLessonItemId { get; set; }
+    public double CompletedDurationInSeconds { get; set; }
+}
+```
+
+---
+
+### Frontend Integration
+
+#### TypeScript DTOs
+```typescript
+// Basic enrollment DTO
+export interface EnrollmentDto {
+  id: string;
+  userId: string;
+  courseId: string;
+  enrolledAt: string;
+  isFavourite: boolean;
+  lastLessonItemId?: string;
+}
+
+// Enhanced enrollment DTO with progress
+export interface EnrollmentDetailsResponse {
+  id: string;
+  userId: string;
+  courseId: string;
+  enrolledAt: string;
+  isFavourite: boolean;
+  lastLessonItemId?: string;
+  completedDurationInSeconds: number;
+}
+```
+
+#### Service Methods
+```typescript
+class EnrollmentService {
+  // Get basic enrollment details
+  async getEnrollmentByCourse(courseId: string): Promise<EnrollmentDto | null> {
+    return httpService.get<EnrollmentDto>(`/api/enrollments/details/${courseId}`);
+  }
+
+  // Get enrollment details with progress
+  async getEnrollmentWithProgress(courseId: string): Promise<EnrollmentDetailsResponse | null> {
+    return httpService.get<EnrollmentDetailsResponse>(
+      `/api/enrollments/details-with-progress/${courseId}`
+    );
+  }
+}
+```
+
+---
+
+### Migration Guide
+
+For applications currently using the enrollment endpoint, both endpoints are now available:
+
+1. **Existing Code (No Changes Required):**
+   - The endpoint `/api/enrollments/details/{courseId}` now returns basic `Enrollment` data
+   - This maintains backward compatibility with existing clients
+
+2. **New Code (Progress Tracking):**
+   - Use `/api/enrollments/details-with-progress/{courseId}` to get progress data
+   - This endpoint includes all basic enrollment fields plus `completedDurationInSeconds`
+
+3. **Choosing the Right Endpoint:**
+   - Use basic endpoint when you only need enrollment status and last accessed item
+   - Use progress endpoint when you need to display time spent or completion metrics
+
+---
