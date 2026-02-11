@@ -93,6 +93,8 @@ builder.Services.AddScoped<IOrganizationService, OrganizationService>();
 builder.Services.AddScoped<IInstructorProfileRepository, InstructorProfileRepository>();
 builder.Services.AddScoped<IInstructorProfileService, InstructorProfileService>();
 
+builder.Services.AddScoped<ICourseStatisticsService, CourseStatisticsService>();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -242,6 +244,18 @@ using (var scope = app.Services.CreateScope())
     catch (Exception ex)
     {
         Log.Error(ex, "An error occurred while migrating the database");
+    }
+
+    // Update course statistics on startup
+    try
+    {
+        var courseStatisticsService = scope.ServiceProvider.GetRequiredService<ICourseStatisticsService>();
+        await courseStatisticsService.UpdateAllCourseStatisticsAsync();
+        Log.Information("Course statistics updated successfully on startup");
+    }
+    catch (Exception ex)
+    {
+        Log.Error(ex, "An error occurred while updating course statistics on startup");
     }
 }
 
