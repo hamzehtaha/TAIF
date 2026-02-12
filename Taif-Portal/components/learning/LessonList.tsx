@@ -1,8 +1,8 @@
 "use client";
 
 import { ChevronRight, CheckCircle, BookOpen } from "lucide-react";
-import { Lesson } from "@/services/lessonService";
-import { LessonItem } from "@/services/lessonItemService";
+import { Lesson } from "@/models/lesson.model";
+import { LessonItem } from "@/models/lesson-item.model";
 
 import { cn } from "@/lib/utils";
 import { LessonItemRow } from "./LessonItemRow";

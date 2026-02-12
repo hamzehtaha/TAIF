@@ -9,6 +9,8 @@
  * these types automatically via the lessonItemService.parseContent() helper.
  */
 
+import { LessonItemType } from "@/enums/lesson-item-type.enum";
+
 // =============================================================================
 // VIDEO CONTENT (type: 0 / "video")
 // =============================================================================
@@ -67,10 +69,6 @@ export interface QuizResultResponse {
   score: number;
 }
 
-// =============================================================================
-// LESSON ITEM TYPE MAPPING
-// =============================================================================
-export type LessonItemType = "video" | "text" | "question";
 
 /**
  * Maps backend numeric type to frontend string type

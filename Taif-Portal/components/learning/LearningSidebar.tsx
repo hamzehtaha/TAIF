@@ -1,7 +1,7 @@
 "use client";
 
-import { X, CheckCircle } from "lucide-react";
-import { LessonItem } from "@/services/lessonItemService";
+import { X } from "lucide-react";
+import { LessonItem } from "@/models/lesson-item.model";
 import { LessonItemRow } from "./LessonItemRow";
 import { ProgressIndicator } from "./ProgressIndicator";
 import { cn } from "@/lib/utils";

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { authService } from "@/services/authService";
+import { authService } from "@/services/auth.service";
 
 const PUBLIC_ROUTES = ["/login", "/signup", "/", "/about", "/contact"];
 

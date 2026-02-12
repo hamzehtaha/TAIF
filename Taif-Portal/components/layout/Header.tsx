@@ -8,7 +8,8 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Moon, Sun, Globe } from "lucide-react";
 import { useState, useEffect } from "react";
-import { authService, User } from "@/services/authService";
+import { authService } from "@/services/auth.service";
+import { User } from "@/models/user.model";
 
 export function Header() {
   const { language, setLanguage } = useLanguage();

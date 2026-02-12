@@ -4,115 +4,82 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslation } from "@/hooks/useTranslation";
-import { authService } from "@/services/authService";
-import { enrollmentService } from "@/services/enrollmentService";
-import { courseService, Course } from "@/services/courseService";
-import { categoryService } from "@/services/categoryService";
+import { authService } from "@/services/auth.service";
+import { enrollmentService } from "@/services/enrollment.service";
+import { courseService } from "@/services/course.service";
+import { Course } from "@/models/course.model";
+import { categoryService } from "@/services/category.service";
 import { CourseCard } from "@/components/CourseCard";
 import { PuzzleLoader } from "@/components/PuzzleLoader";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BookOpen, Award, Clock, TrendingUp, AlertCircle, Sparkles } from "lucide-react";
+import { BookOpen, Award, Clock, TrendingUp, Sparkles } from "lucide-react";
 
 export default function DashboardHome() {
   const t = useTranslation();
   const router = useRouter();
   const user = authService.getUser();
-  const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([]);
+  const [myCourses, setMyCourses] = useState<Course[]>([]);
   const [recommendedCourses, setRecommendedCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingRecommendations, setLoadingRecommendations] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const loadData = async () => {
+    try {
+      setError(null);
+      const [courses, recommendedCourses, categories] = await Promise.all([
+        enrollmentService.getUserCourses(),
+        courseService.getRecommendedCourses(),
+        categoryService.getCategories()
+      ]);
+      const enrichedCourses = await courseService.enrichCoursesWithCategories(courses, categories);
+      const enrichedRecommendedCourses = await courseService.enrichCoursesWithCategories(recommendedCourses, categories);
+      setMyCourses(enrichedCourses ?? []);
+      setRecommendedCourses(enrichedRecommendedCourses ?? []);
+    } catch (err) {
+      console.error("Failed to load enrolled courses:", err);
+      setError("Failed to load your courses. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+
   useEffect(() => {
-    // Check authentication
     if (!authService.isAuthenticated()) {
       router.push("/login");
       return;
     }
-
-    // Load enrolled courses from API
-    const loadData = async () => {
-      try {
-        setError(null);
-        const [courseDtos, categories] = await Promise.all([
-          enrollmentService.getUserCourses(),
-          categoryService.getCategories()
-        ]);
-        
-        // Create category map for quick lookup
-        const categoryMap = new Map(categories.map(c => [c.id, c.name]));
-        
-        // Map DTOs to Course model with category names
-        const courses: Course[] = courseDtos.map(dto => ({
-          id: dto.id,
-          title: dto.name,
-          description: dto.description || "",
-          thumbnail: dto.photo || "/placeholder-course.jpg",
-          imageUrl: dto.photo || "/placeholder-course.jpg",
-          categoryId: dto.categoryId,
-          categoryName: categoryMap.get(dto.categoryId) || undefined,
-          isEnrolled: true,
-          rating: dto.rating || 4.5,
-          reviewCount: dto.reviewCount || 25,
-          durationInMinutes: dto.durationInMinutes || Math.floor(Math.random() * 180) + 60,
-          progress: dto.progress ?? 35,
-        }));
-        setEnrolledCourses(courses.slice(0, 3));
-      } catch (err) {
-        console.error("Failed to load enrolled courses:", err);
-        setError("Failed to load your courses. Please try again.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    // Load recommended courses with category names
-    const loadRecommendations = async () => {
-      try {
-        const [courses, categories] = await Promise.all([
-          courseService.getRecommendedCourses(6),
-          categoryService.getCategories()
-        ]);
-        const enrichedCourses = await courseService.enrichCoursesWithCategories(courses, categories);
-        setRecommendedCourses(enrichedCourses);
-      } catch (err) {
-        console.error("Failed to load recommendations:", err);
-      } finally {
-        setLoadingRecommendations(false);
-      }
-    };
-
     loadData();
-    loadRecommendations();
   }, [router]);
 
   const stats = [
     {
       icon: BookOpen,
       label: t.dashboard.coursesEnrolled,
-      value: enrolledCourses.length.toString(),
+      value: myCourses.length.toString(),
       color: "bg-primary",
     },
     {
       icon: Clock,
       label: t.dashboard.hoursLearned,
-      value: "—",
+      value: 0,
       subtitle: "Not implemented yet",
       color: "bg-accent",
     },
     {
       icon: Award,
       label: t.dashboard.certificates,
-      value: "—",
+      value: 0,
       subtitle: "Not implemented yet",
       color: "bg-success",
     },
     {
       icon: TrendingUp,
       label: t.dashboard.completionRate,
-      value: "—",
+      value: 0,
       subtitle: "Not implemented yet",
       color: "bg-warning",
     },
@@ -190,9 +157,9 @@ export default function DashboardHome() {
                 <div key={i} className="bg-muted rounded-lg h-96 animate-pulse" />
               ))}
             </div>
-          ) : enrolledCourses.length > 0 ? (
+          ) : myCourses.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {enrolledCourses.map((course) => (
+              {myCourses.map((course) => (
                 <CourseCard key={course.id} course={course} />
               ))}
             </div>
@@ -235,7 +202,7 @@ export default function DashboardHome() {
             </Link>
           </div>
 
-          {loadingRecommendations ? (
+          {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="bg-muted rounded-lg h-96 animate-pulse" />

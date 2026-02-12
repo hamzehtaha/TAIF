@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Course } from "@/services/courseService";
+import { Course } from "@/models/course.model";
 import { useTranslation } from "@/hooks/useTranslation";
 import { BookOpen, Heart, CheckCircle, Star, Clock, Sparkles } from "lucide-react";
 
@@ -43,10 +44,11 @@ export function CourseCard({ course, onEnroll, onToggleFavourite, showRecommende
         {/* Course Image */}
         <div className="relative overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20 aspect-video">
           {course.imageUrl && course.imageUrl !== "/placeholder-course.jpg" ? (
-            <img
+            <Image
               src={course.imageUrl}
               alt={course.title}
-              className="w-full h-full object-cover hover:scale-105 transition-transform"
+              fill
+              className="object-cover hover:scale-105 transition-transform"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">

@@ -22,7 +22,6 @@ export enum UserRole {
   Admin = 'admin',
 }
 
-// Base entity matching backend Base.cs
 export interface BaseEntity {
   id: string;
   createdAt: string;

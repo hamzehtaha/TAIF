@@ -1,7 +1,7 @@
 "use client";
 
 import { Video, FileText, HelpCircle, CheckCircle, Play } from "lucide-react";
-import { LessonItem } from "@/services/lessonItemService";
+import { LessonItem } from "@/models/lesson-item.model";
 import { cn } from "@/lib/utils";
 
 interface LessonItemRowProps {

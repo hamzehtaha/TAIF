@@ -223,15 +223,15 @@ export function InstructorSidebar() {
               isCollapsed && "justify-center"
             )}>
               <Avatar className="h-8 w-8">
-                <AvatarImage src={instructor.avatar} alt={instructor.name} />
+                <AvatarImage src={instructor.avatar} alt={instructor.firstName} />
                 <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                  {instructor.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'IN'}
+                  {instructor.firstName?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'IN'}
                 </AvatarFallback>
               </Avatar>
               {!isCollapsed && (
                 <div className="flex-1 overflow-hidden">
                   <p className="truncate text-sm font-medium">
-                    {instructor.name}
+                    {instructor.firstName}
                   </p>
                   <p className="truncate text-xs text-muted-foreground">
                     {instructor.email}

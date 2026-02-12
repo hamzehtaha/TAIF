@@ -7,7 +7,7 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { authService } from "@/services/authService";
+import { authService } from "@/services/auth.service";
 import { User, Mail, Lock, Eye, EyeOff, CheckCircle } from "lucide-react";
 
 export default function SignUp() {

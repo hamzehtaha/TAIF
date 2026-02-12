@@ -1,7 +1,7 @@
 import { useTranslation } from "@/hooks/useTranslation";
 import { Button } from "@/components/ui/button";
 import { Download, Share2 } from "lucide-react";
-import { Certificate } from "@/services/certificateService";
+import { Certificate } from "@/services/certificate.service";
 
 interface CertificateViewerProps {
   certificate: Certificate;

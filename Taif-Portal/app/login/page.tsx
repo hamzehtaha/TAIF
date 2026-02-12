@@ -7,8 +7,9 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { authService } from "@/services/authService";
+import { authService } from "@/services/auth.service";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { interestService } from "@/services/interest.service";
 
 export default function Login() {
   const t = useTranslation();
@@ -40,8 +41,7 @@ export default function Login() {
         email: formData.email,
         password: formData.password,
       });
-      // Redirect to interests page if user has no interests, otherwise to dashboard
-      if (!authService.hasInterests()) {
+      if (!(await interestService.hasInterests())) {
         router.push("/dashboard/interests");
       } else {
         router.push("/dashboard");

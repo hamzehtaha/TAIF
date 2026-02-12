@@ -4,17 +4,18 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTranslation } from "@/hooks/useTranslation";
-import { authService } from "@/services/authService";
-import { courseService, Course } from "@/services/courseService";
-import { categoryService, Category } from "@/services/categoryService";
-import { enrollmentService } from "@/services/enrollmentService";
-import { reviewService } from "@/services/reviewService";
+import { authService } from "@/services/auth.service";
+import { courseService } from "@/services/course.service";
+import { categoryService } from "@/services/category.service";
+import { enrollmentService } from "@/services/enrollment.service";
 import { CourseCard } from "@/components/CourseCard";
 import { CategoryFilter } from "@/components/learning/CategoryFilter";
 import { PuzzleLoader } from "@/components/PuzzleLoader";
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search, Filter, AlertCircle, Star } from "lucide-react";
+import { Search, Filter} from "lucide-react";
+import { Course } from "@/models/course.model";
+import { Category } from "@/models/category.model";
 
 export default function Courses() {
   const t = useTranslation();

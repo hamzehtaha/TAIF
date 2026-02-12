@@ -10,7 +10,7 @@ import {
   QuestionContent, 
   QuizQuestion,
   QuizResultResponse 
-} from "@/services/lessonItemService";
+} from "@/services/lesson-item.service";
 
 interface QuizContentProps {
   lessonItemId: string;

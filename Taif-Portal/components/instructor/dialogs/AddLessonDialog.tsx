@@ -204,7 +204,7 @@ export function AddLessonDialog({
                     <BookOpen className="h-12 w-12 mx-auto mb-3 opacity-50" />
                     <p className="mb-2">No lessons available</p>
                     <p className="text-xs">
-                      Create standalone lessons first or switch to "Create New"
+                      Create standalone lessons first or switch to &quot;Create New&quot;
                     </p>
                   </div>
                 )}

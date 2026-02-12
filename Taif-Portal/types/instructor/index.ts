@@ -10,7 +10,8 @@
 
 export interface Instructor {
   id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   avatar?: string;
   bio?: string;
@@ -33,6 +34,8 @@ export interface CourseStats {
   totalEnrollments: number;
   averageRating: number;
   totalReviews: number;
+  totalStudents: number;
+  completionRate: number;
 }
 
 export interface InstructorCourse {

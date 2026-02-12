@@ -360,7 +360,7 @@ export default function SettingsPage() {
             <AlertDialogTitle>Reset Data</AlertDialogTitle>
             <AlertDialogDescription>
               This will clear all your local changes and restore the default mock data.
-              You will lose all courses, lessons, and content you've created.
+              You will lose all courses, lessons, and content you&apos;ve created.
               This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>

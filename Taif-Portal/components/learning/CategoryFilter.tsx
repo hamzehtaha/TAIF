@@ -1,7 +1,8 @@
 "use client";
 
-import { Category } from "@/services/categoryService";
+
 import { cn } from "@/lib/utils";
+import { Category } from "@/models/category.model";
 
 interface CategoryFilterProps {
   categories: Category[];

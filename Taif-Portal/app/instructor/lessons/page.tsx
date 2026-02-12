@@ -82,7 +82,7 @@ export default function LessonsPage() {
     loadLessonItems();
   }, [loadLessons, loadLessonItems]);
 
-  const safeLessons = lessons || [];
+  const safeLessons = useMemo(() => lessons || [], [lessons]);
   const safeItems = lessonItems || [];
 
   const filteredLessons = safeLessons.filter((lesson) =>
@@ -156,7 +156,7 @@ export default function LessonsPage() {
         setReorderedItems(updated.items.sort((a, b) => a.order - b.order));
       }
     }
-  }, [safeLessons]);
+  }, [safeLessons, selectedLesson]);
 
   const handleReorderItems = async (newOrder: InstructorLessonItem[]) => {
     if (!selectedLesson) return;

@@ -2,19 +2,19 @@
 
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/hooks/useTranslation";
-import { authService } from "@/services/authService";
-import { lessonService, Lesson } from "@/services/lessonService";
+import { authService } from "@/services/auth.service";
+import { lessonService } from "@/services/lesson.service";
 import { 
   lessonItemService, 
-  LessonItem,
   VideoContent,
   QuestionContent,
   RichTextContent as RichTextContentType
-} from "@/services/lessonItemService";
-import { lessonItemProgressService } from "@/services/lessonItemProgressService";
+} from "@/services/lesson-item.service";
+import { lessonItemProgressService } from "@/services/lesson-item-progress.service";
 import { VideoPlayer, QuizContent, RichTextContent } from "@/components/lesson";
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+
 import Link from "next/link";
 import {
   ChevronLeft,
@@ -31,8 +31,11 @@ import {
   HelpCircle,
   AlertCircle,
   BookOpen,
-  PlayCircle,
 } from "lucide-react";
+import { LessonItem } from "@/models/lesson-item.model";
+import { Lesson } from "@/models/lesson.model";
+
+
 
 const getItemIcon = (type: string) => {
   switch (type) {
@@ -364,7 +367,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; l
                     {currentItem.name}
                   </h1>
                   <p className="text-sm text-muted-foreground mb-6">
-                    {t.learning?.itemOf?.replace("{current}", String(currentItemIndex + 1)).replace("{total}", String(lessonItems.length)) || `Item ${currentItemIndex + 1} of ${lessonItems.length}`} {t.learning?.inLesson || "in"} "{lesson.title}"
+                    {t.learning?.itemOf?.replace("{current}", String(currentItemIndex + 1)).replace("{total}", String(lessonItems.length)) || `Item ${currentItemIndex + 1} of ${lessonItems.length}`} {t.learning?.inLesson || "in"} &quot;{lesson.title}&quot;
                   </p>
 
                   {/* Navigation */}

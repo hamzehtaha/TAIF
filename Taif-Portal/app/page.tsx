@@ -9,11 +9,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, BookOpen, Heart, Folder } from "lucide-react";
 import { useState, useEffect } from "react";
-import { courseService, Course } from "@/services/courseService";
-import { categoryService, Category } from "@/services/categoryService";
-import { enrollmentService } from "@/services/enrollmentService";
-import { authService } from "@/services/authService";
+import { courseService } from "@/services/course.service";
+import { categoryService } from "@/services/category.service";
+import { enrollmentService } from "@/services/enrollment.service";
+import { authService } from "@/services/auth.service";
 import { CourseCard } from "@/components/CourseCard";
+import { Course } from "@/models/course.model";
+import { Category } from "@/models/category.model";
 
 export default function Index() {
   const t = useTranslation();
@@ -69,7 +71,7 @@ export default function Index() {
           isFavourite: true,
           rating: dto.rating || 4.5,
           reviewCount: dto.reviewCount || 20,
-          durationInMinutes: dto.durationInMinutes || Math.floor(Math.random() * 180) + 60,
+          durationInMinutes: dto.totalDurationInSeconds || Math.floor(Math.random() * 180) + 60,
           progress: dto.progress ?? 35,
         }));
         setFavouriteCourses(courses);
@@ -261,7 +263,7 @@ export default function Index() {
       )}
 
       {/* Featured Courses Section */}
-      <section className={`py-20 ${isAuthenticated ? '' : 'bg-muted/30'}`}>
+      <section className={isAuthenticated ? 'py-20 ' : 'bg-muted/30 py-20'}>
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-12">
             <div>

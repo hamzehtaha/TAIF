@@ -8,12 +8,13 @@ import { useTheme } from "next-themes";
 import { useLanguage } from "@/hooks/useLanguage";
 
 type FontSize = "small" | "medium" | "large" | "extra-large";
-import { authService } from "@/services/authService";
-import { interestService, Interest } from "@/services/interestService";
+import { authService } from "@/services/auth.service";
+import { interestService } from "@/services/interest.service";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Bell, Lock, User, LogOut, Type, Moon, Sun, Globe, Sparkles, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Interest } from "@/models/interest.model";
 
 const interestIcons: Record<string, string> = {
   "Sign Language & Deaf Education": "👋",
@@ -104,7 +105,7 @@ export default function Settings() {
 
   const handleLogout = () => {
     authService.logout();
-    router.push("/");
+    router.push("/login");
   };
 
   const fontSizes: { value: FontSize; label: string }[] = [

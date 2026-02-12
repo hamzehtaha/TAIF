@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { authService } from "@/services/authService";
+import { authService } from "@/services/auth.service";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useRouter } from "next/navigation";
 
 export default function ProfileTestPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string>("");
@@ -16,7 +18,7 @@ export default function ProfileTestPage() {
     setResult(null);
 
     try {
-      const response = await authService.getProfile();
+      const response = await authService.getUserProfile();
       setResult(response);
     } catch (err: any) {
       setError(err.message || "Failed to fetch profile");
@@ -28,7 +30,8 @@ export default function ProfileTestPage() {
 
   const handleLogout = async () => {
     await authService.logout();
-    window.location.href = "/login";
+    router.push("/login");
+    // window.location.href = "/login";
   };
 
   return (

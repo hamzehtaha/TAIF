@@ -123,7 +123,8 @@ export interface UpdateCourseInput {
 // ============================================
 
 export interface UpdateInstructorInput {
-  name?: string;
+  firstName?: string;
+  lastName?: string;
   bio?: string;
   expertise?: string[];
   avatar?: string;
@@ -396,6 +397,8 @@ const createInitialData = (): DataStore => {
         totalEnrollments: 0,
         averageRating: 0,
         totalReviews: 0,
+        totalStudents: 0,
+        completionRate: 0,
       },
       createdAt: now,
       updatedAt: now,
@@ -416,6 +419,8 @@ const createInitialData = (): DataStore => {
         totalEnrollments: 45,
         averageRating: 4.7,
         totalReviews: 12,
+        totalStudents: 45,
+        completionRate: 75,
       },
       createdAt: now,
       updatedAt: now,
@@ -436,6 +441,8 @@ const createInitialData = (): DataStore => {
         totalEnrollments: 120,
         averageRating: 4.9,
         totalReviews: 28,
+        totalStudents: 120,
+        completionRate: 85,
       },
       createdAt: now,
       updatedAt: now,
@@ -456,6 +463,8 @@ const createInitialData = (): DataStore => {
         totalEnrollments: 200,
         averageRating: 4.5,
         totalReviews: 45,
+        totalStudents: 200,
+        completionRate: 60,
       },
       createdAt: now,
       updatedAt: now,
@@ -468,7 +477,8 @@ const createInitialData = (): DataStore => {
   // Instructor
   const instructor: Instructor = {
     id: instructorId,
-    name: 'John Instructor',
+    firstName: 'John',
+    lastName: 'Instructor',
     email: 'john@example.com',
     avatar: 'https://picsum.photos/seed/instructor/100/100',
     bio: 'Experienced software developer and educator',
@@ -984,6 +994,8 @@ class MockDataService implements IDataService {
         totalEnrollments: 0,
         averageRating: 0,
         totalReviews: 0,
+        totalStudents: 0,
+        completionRate: 0,
       },
       createdAt: now,
       updatedAt: now,

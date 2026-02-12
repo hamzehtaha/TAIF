@@ -576,7 +576,7 @@ export default function RichContentPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Content</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{contentToDelete?.title}"? This action cannot be undone.
+              Are you sure you want to delete &quot;{contentToDelete?.title}&quot;? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

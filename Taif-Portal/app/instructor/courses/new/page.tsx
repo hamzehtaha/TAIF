@@ -297,7 +297,7 @@ export default function NewCoursePage() {
                 </div>
 
                 <div className="bg-muted/50 rounded-lg p-4">
-                  <h4 className="font-medium mb-2">What's Next?</h4>
+                  <h4 className="font-medium mb-2">What&apos;s Next?</h4>
                   <ul className="text-sm text-muted-foreground space-y-1">
                     <li>• Add lessons to your course</li>
                     <li>• Create lesson items (videos, content, quizzes)</li>

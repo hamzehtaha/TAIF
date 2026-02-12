@@ -101,7 +101,7 @@ export function InstructorHeader({ breadcrumbs = [], title }: InstructorHeaderPr
             <DropdownMenuItem className="flex flex-col items-start gap-1 p-3">
               <span className="font-medium">New enrollment</span>
               <span className="text-xs text-muted-foreground">
-                A new student enrolled in "Web Development Bootcamp"
+                A new student enrolled in &quot;Web Development Bootcamp&quot;
               </span>
             </DropdownMenuItem>
             <DropdownMenuItem className="flex flex-col items-start gap-1 p-3">

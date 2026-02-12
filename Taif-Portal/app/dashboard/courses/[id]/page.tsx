@@ -4,28 +4,26 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslation } from "@/hooks/useTranslation";
-import { authService } from "@/services/authService";
-import { courseService, Course } from "@/services/courseService";
-import { lessonService, Lesson } from "@/services/lessonService";
-import { lessonItemService, LessonItem } from "@/services/lessonItemService";
-import { enrollmentService } from "@/services/enrollmentService";
-import { categoryService } from "@/services/categoryService";
-import { reviewService, Review, ReviewStatistics } from "@/services/reviewService";
-import { EnrollmentDto } from "@/dtos/enrollment/EnrollmentDto";
+import { authService } from "@/services/auth.service";
+import { courseService } from "@/services/course.service";
+import { lessonService } from "@/services/lesson.service";
+import { lessonItemService } from "@/services/lesson-item.service";
+import { enrollmentService } from "@/services/enrollment.service";
+import { categoryService } from "@/services/category.service";
+import { reviewService, Review, ReviewStatistics } from "@/services/review.service";
 import { LessonList } from "@/components/learning/LessonList";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
+import { Course } from "@/models/course.model";
+import { Lesson } from "@/models/lesson.model";
 import {
-  ChevronRight,
   CheckCircle,
   Play,
   Heart,
   AlertCircle,
   BookOpen,
-  Video,
-  FileText,
-  HelpCircle,
   Star,
   Users,
   MessageSquare,
@@ -33,7 +31,9 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { CourseStatistics, statisticsService } from "@/services/statisitcsService";
+import { CourseStatistics, statisticsService } from "@/services/statisitcs.service";
+import { Enrollment } from "@/models/enrollment.model";
+import { LessonItem } from "@/models/lesson-item.model";
 
 interface CourseRating {
   reviews: Review[];
@@ -46,7 +46,7 @@ interface LessonWithItems extends Lesson {
 
 interface CourseDetails extends Omit<Course, 'lessons'> {
   lessons: LessonWithItems[];
-  enrollment?: EnrollmentDto | null;
+  enrollment?: Enrollment | null;
 }
 
 
@@ -357,10 +357,11 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
             {/* Course Image */}
             <div className="relative bg-gradient-to-br from-primary/20 to-accent/20 rounded-lg overflow-hidden mb-6 aspect-video">
               {course.imageUrl ? (
-                <img
+                <Image
                   src={course.imageUrl}
                   alt={course.title}
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">

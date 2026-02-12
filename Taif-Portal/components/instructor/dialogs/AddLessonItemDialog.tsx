@@ -283,7 +283,7 @@ export function AddLessonItemDialog({
                     <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
                     <p className="mb-2">No items available</p>
                     <p className="text-xs">
-                      Create content first or switch to "Create New"
+                      Create content first or switch to &quot;Create New&quot;
                     </p>
                   </div>
                 )}

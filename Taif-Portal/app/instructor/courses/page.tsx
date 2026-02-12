@@ -384,7 +384,7 @@ export default function CoursesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Course</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{courseToDelete?.name}"? This action cannot be undone.
+              Are you sure you want to delete &quot;{courseToDelete?.name}&quot;? This action cannot be undone.
               All lessons and content within this course will be permanently deleted.
             </AlertDialogDescription>
           </AlertDialogHeader>

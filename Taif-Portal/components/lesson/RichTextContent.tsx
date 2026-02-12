@@ -1,7 +1,7 @@
 "use client";
 
 import { FileText } from "lucide-react";
-import { RichTextContent as RichTextContentType } from "@/services/lessonItemService";
+import { RichTextContent as RichTextContentType } from "@/services/lesson-item.service";
 
 interface RichTextContentProps {
   content: RichTextContentType;

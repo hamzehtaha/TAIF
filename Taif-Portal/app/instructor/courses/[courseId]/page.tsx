@@ -780,7 +780,7 @@ export default function CourseDetailPage() {
                     <div className="text-center py-8 text-muted-foreground">
                       <BookOpen className="h-12 w-12 mx-auto mb-3 opacity-50" />
                       <p className="mb-2">No lessons available</p>
-                      <p className="text-xs">Create standalone lessons first or switch to "Create New"</p>
+                      <p className="text-xs">Create standalone lessons first or switch to &quot;Create New&quot;</p>
                     </div>
                   )}
                 </div>
@@ -818,7 +818,7 @@ export default function CourseDetailPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Course</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{currentCourse.title}"? This action cannot be undone.
+              Are you sure you want to delete &quot;{currentCourse.title}&quot;? This action cannot be undone.
               All lessons and content will be permanently deleted.
             </AlertDialogDescription>
           </AlertDialogHeader>

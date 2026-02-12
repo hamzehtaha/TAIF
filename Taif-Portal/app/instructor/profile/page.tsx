@@ -30,7 +30,8 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
-    name: instructor?.name || "",
+    firstName: instructor?.firstName || "",
+    lastName: instructor?.lastName || "",
     email: instructor?.email || "",
     bio: instructor?.bio || "",
     expertise: instructor?.expertise?.join(", ") || "",
@@ -40,7 +41,8 @@ export default function ProfilePage() {
     setIsSaving(true);
     try {
       await dataService.updateInstructor({
-        name: formData.name,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
         bio: formData.bio,
         expertise: formData.expertise.split(",").map((e) => e.trim()).filter(Boolean),
       });
@@ -103,7 +105,7 @@ export default function ProfilePage() {
                   <Avatar className="h-32 w-32">
                     <AvatarImage src={instructor.avatar} />
                     <AvatarFallback className="bg-primary text-primary-foreground text-3xl">
-                      {instructor.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'IN'}
+                      {instructor.firstName?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'IN'}
                     </AvatarFallback>
                   </Avatar>
                   {isEditing && (
@@ -119,7 +121,7 @@ export default function ProfilePage() {
                 {!isEditing && (
                   <div className="text-center">
                     <p className="font-semibold text-lg">
-                      {instructor.name}
+                      {instructor.firstName}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {instructor.email}
@@ -133,10 +135,10 @@ export default function ProfilePage() {
                 {isEditing ? (
                   <>
                     <div className="space-y-2">
-                      <Label htmlFor="name">Full Name</Label>
+                      <Label htmlFor="firstName">First Name</Label>
                       <Input
-                        id="name"
-                        value={formData.name}
+                        id="firstName"
+                        value={formData.firstName}
                         onChange={(e) =>
                           setFormData((prev) => ({
                             ...prev,
