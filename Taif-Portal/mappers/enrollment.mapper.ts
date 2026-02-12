@@ -4,6 +4,7 @@ import { Enrollment } from "@/models/enrollment.model";
 export class EnrollmentMapper {
 
     static map(dto: EnrollmentDto): Enrollment {
+        if (!dto) return null;
         return {
             id: dto.id,
             userId: dto.userId,

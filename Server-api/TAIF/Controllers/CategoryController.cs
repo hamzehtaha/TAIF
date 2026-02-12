@@ -19,7 +19,7 @@ namespace TAIF.Controllers
         {
             _categoryService = categoryService;
         }
-
+        [AllowAnonymous]
         [HttpGet("")]
         public async Task<IActionResult> GetAll()
         {

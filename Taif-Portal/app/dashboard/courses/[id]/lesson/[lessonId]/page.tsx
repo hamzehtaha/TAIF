@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { LessonItem } from "@/models/lesson-item.model";
 import { Lesson } from "@/models/lesson.model";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 
 
@@ -75,12 +76,6 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; l
 
   useEffect(() => {
     if (!courseId || !lessonId) return;
-
-    if (!authService.isAuthenticated()) {
-      router.push("/login");
-      return;
-    }
-
     const loadLessonData = async () => {
       try {
         setError(null);
@@ -230,6 +225,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; l
   }
 
   return (
+    <ProtectedRoute>
     <div className="flex flex-col h-screen bg-background">
       {/* Top Header with Controls */}
       <div className="bg-card border-b border-border px-4 py-3 flex items-center justify-between">
@@ -556,5 +552,6 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; l
           </div>
         </div>
       </div>
+    </ProtectedRoute>
   );
 }

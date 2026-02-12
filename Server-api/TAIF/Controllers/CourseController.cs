@@ -25,7 +25,7 @@ namespace TAIF.Controllers
             _courseService = courseService;
             _tagService = tagService;
         }
-
+        [AllowAnonymous]
         [HttpGet("")]
         public async Task<IActionResult> GetAll()
         {

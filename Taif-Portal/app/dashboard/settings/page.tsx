@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import { Bell, Lock, User, LogOut, Type, Moon, Sun, Globe, Sparkles, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Interest } from "@/models/interest.model";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 const interestIcons: Record<string, string> = {
   "Sign Language & Deaf Education": "👋",
@@ -51,9 +52,6 @@ export default function Settings() {
   useEffect(() => {
     setMounted(true);
     setUser(authService.getUser());
-    if (!authService.isAuthenticated()) {
-      router.push("/signin");
-    }
     // Load saved font size
     const savedFontSize = localStorage.getItem("fontSize") as FontSize | null;
     if (savedFontSize) {
@@ -116,6 +114,7 @@ export default function Settings() {
   ];
 
   return (
+    <ProtectedRoute>
     <MainLayout>
       <div className="container mx-auto px-4 py-12">
         <h1 className="text-4xl font-bold mb-8">{t.settings.title}</h1>
@@ -435,5 +434,6 @@ export default function Settings() {
         </div>
       </div>
     </MainLayout>
+    </ProtectedRoute>
   );
 }

@@ -16,6 +16,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Search, Filter} from "lucide-react";
 import { Course } from "@/models/course.model";
 import { Category } from "@/models/category.model";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 export default function Courses() {
   const t = useTranslation();
@@ -40,11 +41,6 @@ export default function Courses() {
   }, [searchParams]);
 
   useEffect(() => {
-    // Check authentication
-    if (!authService.isAuthenticated()) {
-      router.push("/login");
-      return;
-    }
 
     // Load all data
     const loadData = async () => {
@@ -145,6 +141,7 @@ export default function Courses() {
   }
 
   return (
+    <ProtectedRoute>
     <MainLayout>
       <div className="container mx-auto px-4 py-12">
         {/* Header */}
@@ -222,5 +219,6 @@ export default function Courses() {
         )}
       </div>
     </MainLayout>
+    </ProtectedRoute>
   );
 }

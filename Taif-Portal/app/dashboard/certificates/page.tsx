@@ -17,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 // Mock certificates data
 const mockCertificates: Certificate[] = [
@@ -55,11 +56,6 @@ export default function CertificatesPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
-    if (!authService.isAuthenticated()) {
-      router.push("/signin");
-      return;
-    }
-
     // Load certificates (using mock data for now)
     const timer = setTimeout(() => {
       const user = authService.getUser();
@@ -91,11 +87,13 @@ export default function CertificatesPage() {
 
   if (loading) {
     return (
+      <ProtectedRoute>
       <MainLayout>
         <div className="container mx-auto px-4 py-12">
           <div className="bg-muted rounded-lg h-96 animate-pulse" />
         </div>
       </MainLayout>
+      </ProtectedRoute>
     );
   }
 

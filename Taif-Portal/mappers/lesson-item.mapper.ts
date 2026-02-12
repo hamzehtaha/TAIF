@@ -5,6 +5,7 @@ import { LessonItemDto } from "@/dtos/lesson-item.dto";
 
 export class LessonItemMapper {
     static map(dto: LessonItemDto, lessonId?: string): LessonItem {
+        if (!dto) return null;
         return {
             id: dto.id,
             lessonId: dto.lessonId || lessonId || "",

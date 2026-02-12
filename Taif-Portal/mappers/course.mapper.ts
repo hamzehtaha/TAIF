@@ -4,6 +4,7 @@ import { Course } from "@/models/course.model";
 export class CourseMapper {
 
   static map(dto: CourseDto): Course {
+    if (!dto) return null;
     return {
       id: dto.id,
       title: dto.name,

@@ -1,5 +1,6 @@
 "use client";
 
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,7 +32,6 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { CourseStatistics, statisticsService } from "@/services/statisitcs.service";
 import { Enrollment } from "@/models/enrollment.model";
 import { LessonItem } from "@/models/lesson-item.model";
 
@@ -49,8 +49,6 @@ interface CourseDetails extends Omit<Course, 'lessons'> {
   enrollment?: Enrollment | null;
 }
 
-
-
 export default function CourseDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const t = useTranslation();
   const router = useRouter();
@@ -65,9 +63,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
     reviews: [],
     statistics: null,
   });
-  const [courseStatistics, setCourseStatistics] = useState<CourseStatistics>({
-    enrolledStudents: 0,
-  });
+
   const [newReview, setNewReview] = useState({ rating: 5, comment: "" });
   const [submittingReview, setSubmittingReview] = useState(false);
   const [hasReviewed, setHasReviewed] = useState(false);
@@ -81,11 +77,6 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
   }, [params]);
 
   useEffect(() => {
-    if (!authService.isAuthenticated()) {
-      router.push("/login");
-      return;
-    }
-
     if (!id) return;
 
     const loadCourseData = async () => {
@@ -93,7 +84,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
         setError(null);
 
         // Load course, lessons, and enrollment status in parallel
-        const [courseData, lessonsData, enrolledCourses, favouriteCourses, categories, enrollment, reviews, hasReviewedCourse, reviewStatistics, courseStatistics] = await Promise.all([
+        const [courseData, lessonsData, enrolledCourses, favouriteCourses, categories, enrollment, reviews, hasReviewedCourse, reviewStatistics] = await Promise.all([
           courseService.getCourseById(id),
           lessonService.getLessonsByCourse(id).catch(() => []),
           enrollmentService.getUserCourses().catch(() => []),
@@ -103,7 +94,6 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
           reviewService.getCourseReviews(id).catch(() => []),
           reviewService.hasUserReviewedCourse(id).catch(() => false),
           reviewService.getCourseReviewStatistics(id).catch(() => null),
-          statisticsService.getCourseStatistics(id).catch(() => null),
         ]);
 
         // Check enrollment and favourite status
@@ -143,7 +133,6 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
           statistics: reviewStatistics,
         });
         setHasReviewed(hasReviewedCourse);
-        setCourseStatistics(courseStatistics);
 
       } catch (err) {
         console.error("Failed to load course:", err);
@@ -348,7 +337,8 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
   }
 
   return (
-    <MainLayout>
+    <ProtectedRoute>
+      <MainLayout>
       <div className="container mx-auto px-4 py-12">
         {/* Hero Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
@@ -501,7 +491,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
                     {t.courses?.enrolledStudents || "Enrolled Students"}
                   </span>
                   <span className="font-medium">
-                    {courseStatistics?.enrolledStudents || 0}
+                    {course.totalEnrolled || 0}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
@@ -621,5 +611,6 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
         </div>
       </div>
     </MainLayout>
+    </ProtectedRoute>
   );
 }

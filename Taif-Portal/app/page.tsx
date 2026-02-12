@@ -27,7 +27,11 @@ export default function Index() {
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [loadingFavourites, setLoadingFavourites] = useState(true);
   const [loadingFeatured, setLoadingFeatured] = useState(true);
-  const isAuthenticated = authService.isAuthenticated();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    setIsAuthenticated(authService.isAuthenticated());
+  }, []);
 
   useEffect(() => {
     // Load categories from API
@@ -46,7 +50,6 @@ export default function Index() {
   }, []);
 
   useEffect(() => {
-    // Load favourite courses if authenticated
     if (!isAuthenticated) {
       setLoadingFavourites(false);
       return;

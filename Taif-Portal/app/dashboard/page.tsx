@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BookOpen, Award, Clock, TrendingUp, Sparkles } from "lucide-react";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 export default function DashboardHome() {
   const t = useTranslation();
@@ -48,10 +49,6 @@ export default function DashboardHome() {
 
 
   useEffect(() => {
-    if (!authService.isAuthenticated()) {
-      router.push("/login");
-      return;
-    }
     loadData();
   }, [router]);
 
@@ -90,6 +87,7 @@ export default function DashboardHome() {
   }
 
   return (
+    <ProtectedRoute>
     <MainLayout>
       <div className="container mx-auto px-4 py-12">
         {/* Welcome Section */}
@@ -275,5 +273,6 @@ export default function DashboardHome() {
         </div>
       </div>
     </MainLayout>
+    </ProtectedRoute>
   );
 }
