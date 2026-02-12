@@ -12,11 +12,20 @@ namespace TAIF.Infrastructure.Repositories
 {
     public class EnrollmentRepository : RepositoryBase<Enrollment>, IEnrollmentRepository
     {
-        private readonly TaifDbContext _db;
+        private readonly TaifDbContext _context;
 
         public EnrollmentRepository(TaifDbContext context) : base(context)
         {
-            _db = context;
+            _context = context;
+        }
+
+        public async Task<Dictionary<Guid, int>> GetEnrollmentCountsPerCourseAsync()
+        {
+            return await _context.Enrollments
+                .Where(e => !e.IsDeleted)
+                .GroupBy(e => e.CourseId)
+                .Select(g => new { CourseId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.CourseId, x => x.Count);
         }
     }
 }
