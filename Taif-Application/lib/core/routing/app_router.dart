@@ -53,20 +53,16 @@ class AppRouter {
           ),
         ],
         errorBuilder: (context, state) => ErrorScreen(error: state.error),
-        redirect: (context, state) {
-          // Add authentication redirect logic here
-          // Return null to allow navigation, return path to redirect
-          return null;
-        },
+        redirect: (context, state) => null,
       );
 }
 
 /// Extension for easy navigation access
 extension BuildContextExtension on BuildContext {
   void go(String location) => GoRouter.of(this).go(location);
-  void push(String location) => GoRouter.of(this).push(location);
+  void push(String location) => GoRouter.of(this).push<void>(location);
   void pop() => GoRouter.of(this).pop();
-  void replace(String location) => GoRouter.of(this).replace(location);
+  void replace(String location) => GoRouter.of(this).replace<void>(location);
 }
 
 /// Error Screen for routing errors

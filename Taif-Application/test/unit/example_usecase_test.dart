@@ -29,13 +29,13 @@ void main() {
         () async {
       // Arrange
       when(() => mockRepository.getExampleById(any()))
-          .thenAnswer((_) async => Right(tExample));
+          .thenAnswer((_) async => Right<AppError, ExampleEntity>(tExample));
 
       // Act
       final result = await useCase(const GetExampleDataParams(id: '1'));
 
       // Assert
-      expect(result, Right(tExample));
+      expect(result, Right<AppError, ExampleEntity>(tExample));
       verify(() => mockRepository.getExampleById('1'));
     });
 
@@ -43,13 +43,13 @@ void main() {
       // Arrange
       const tError = NetworkError(message: 'Server error', code: '500');
       when(() => mockRepository.getExampleById(any()))
-          .thenAnswer((_) async => Left(tError));
+          .thenAnswer((_) async => const Left<AppError, ExampleEntity>(tError));
 
       // Act
       final result = await useCase(const GetExampleDataParams(id: '1'));
 
       // Assert
-      expect(result, Left(tError));
+      expect(result, const Left<AppError, ExampleEntity>(tError));
     });
   });
 }

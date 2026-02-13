@@ -9,11 +9,10 @@ class AppLogger {
   static void initialize() {
     _logger = Logger(
       printer: PrettyPrinter(
-        errorMethodCount: 8,
         lineLength: 100,
-        printTime: true,
+        dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
       ),
-      level: EnvConfig.current.enableLogging ? Level.debug : Level.nothing,
+      level: EnvConfig.current.enableLogging ? Level.debug : Level.off,
     );
   }
 
@@ -45,7 +44,9 @@ class AppLogger {
     final sanitized = message
         .replaceAll(RegExp(r'Bearer\s+\S+'), 'Bearer [REDACTED]')
         .replaceAll(
-            RegExp(r'Authorization:[^,\n]+'), 'Authorization: [REDACTED]')
+          RegExp(r'Authorization:[^,\n]+'),
+          'Authorization: [REDACTED]',
+        )
         .replaceAll(RegExp(r'token[=:]\S+'), 'token=[REDACTED]')
         .replaceAll(RegExp(r'password[=:]\S+'), 'password=[REDACTED]');
 

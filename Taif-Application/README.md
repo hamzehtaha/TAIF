@@ -56,7 +56,7 @@ Single source of truth for API base URLs:
 **Rule:** Never hardcode URLs in API files.
 
 ### 3. Multilingual Support (Arabic + English)
-**Files:** `lib/l10n/app_*.json`, `lib/core/utils/app_localizations.dart`
+**Files:** `lib/Multilingual/app_*.json`, `lib/core/utils/app_localizations.dart`
 
 - Full RTL/LTR handling
 - Arabic font: Cairo

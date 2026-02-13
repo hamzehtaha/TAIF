@@ -5,8 +5,8 @@ import '../repositories/example_repository.dart';
 
 /// TAIF UseCase Base Class
 /// All usecases extend this for consistency
-abstract class UseCase<Type, Params> {
-  Future<Either<AppError, Type>> call(Params params);
+abstract class UseCase<Result, Params> {
+  Future<Either<AppError, Result>> call(Params params);
 }
 
 /// No parameters usecase
@@ -24,7 +24,8 @@ class GetExampleDataUseCase
 
   @override
   Future<Either<AppError, ExampleEntity>> call(
-          GetExampleDataParams params) async =>
+    GetExampleDataParams params,
+  ) async =>
       await _repository.getExampleById(params.id);
 }
 

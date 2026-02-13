@@ -19,7 +19,7 @@ class ProfileScreen extends StatelessWidget {
           // Profile Header
           Container(
             padding: const EdgeInsets.all(24),
-            color: AppColors.primary.withOpacity(0.1),
+            color: AppColors.primary.withAlpha(26),
             child: Column(
               children: [
                 const CircleAvatar(

@@ -10,6 +10,16 @@ set(BINARY_NAME "taif")
 # versions of CMake.
 cmake_policy(VERSION 3.14...3.25)
 
+# Suppress deprecation warnings from external SDKs (Firebase)
+# This silences warnings from firebase_cpp_sdk_windows/CMakeLists.txt
+cmake_policy(SET CMP0048 NEW)
+if(POLICY CMP0148)
+  cmake_policy(SET CMP0148 NEW)
+endif()
+
+# Also suppress deprecation warnings via command-line for subdirectories
+set(CMAKE_WARN_DEPRECATED OFF CACHE BOOL "Suppress deprecation warnings" FORCE)
+
 # Define build configuration option.
 get_property(IS_MULTICONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
 if(IS_MULTICONFIG)
@@ -28,6 +38,10 @@ set(CMAKE_EXE_LINKER_FLAGS_PROFILE "${CMAKE_EXE_LINKER_FLAGS_RELEASE}")
 set(CMAKE_SHARED_LINKER_FLAGS_PROFILE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE}")
 set(CMAKE_C_FLAGS_PROFILE "${CMAKE_C_FLAGS_RELEASE}")
 set(CMAKE_CXX_FLAGS_PROFILE "${CMAKE_CXX_FLAGS_RELEASE}")
+
+# Suppress LNK4099 warnings from Firebase prebuilt libraries (PDB not found)
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /ignore:4099")
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /ignore:4099")
 
 # Use Unicode for all projects.
 add_definitions(-DUNICODE -D_UNICODE)

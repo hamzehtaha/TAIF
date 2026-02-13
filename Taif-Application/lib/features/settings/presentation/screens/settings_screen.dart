@@ -52,15 +52,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // Language Section
           _buildSectionHeader('Language & Region'),
           BlocBuilder<LocaleBloc, LocaleState>(
-            builder: (context, state) {
-              return ListTile(
-                leading: const Icon(Icons.language),
-                title: Text(l10n.translate('language')),
-                subtitle: Text(state.isArabic ? 'العربية' : 'English'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => _showLanguageDialog(context, state.locale),
-              );
-            },
+            builder: (context, state) => ListTile(
+              leading: const Icon(Icons.language),
+              title: Text(l10n.translate('language')),
+              subtitle: Text(state.isArabic ? 'العربية' : 'English'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => _showLanguageDialog(context, state.locale),
+            ),
           ),
 
           const Divider(),
@@ -113,7 +111,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
 
   void _showLanguageDialog(BuildContext context, Locale currentLocale) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (BuildContext context) => AlertDialog(
         title: const Text('Select Language'),

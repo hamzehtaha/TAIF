@@ -148,7 +148,7 @@ lib/
 │   └── example_feature/          # Reference implementation
 │
 ├── generated/                     # Code-gen files
-├── l10n/                          # Localization files
+├── Multilingual/                          # Localization files
 │   ├── app_en.json               # English translations
 │   └── app_ar.json               # Arabic translations
 │

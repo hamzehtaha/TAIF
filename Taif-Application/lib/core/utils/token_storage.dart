@@ -12,9 +12,6 @@ class TokenStorage {
 
   TokenStorage()
       : _secureStorage = const FlutterSecureStorage(
-          aOptions: AndroidOptions(
-            encryptedSharedPreferences: true,
-          ),
           iOptions: IOSOptions(
             accountName: 'taif_tokens',
             accessibility: KeychainAccessibility.first_unlock_this_device,

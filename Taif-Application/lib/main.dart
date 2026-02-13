@@ -55,54 +55,50 @@ class TaifApp extends StatelessWidget {
     final router = AppRouter.createRouter();
 
     return BlocBuilder<ThemeBloc, ThemeState>(
-      builder: (context, themeState) {
-        return BlocBuilder<LocaleBloc, LocaleState>(
-          builder: (context, localeState) {
-            return MaterialApp.router(
-              title: EnvConfig.current.appName,
-              debugShowCheckedModeBanner: false,
+      builder: (context, themeState) => BlocBuilder<LocaleBloc, LocaleState>(
+        builder: (context, localeState) => MaterialApp.router(
+          title: EnvConfig.current.appName,
+          debugShowCheckedModeBanner: false,
 
-              // Theme - Dynamic based on Bloc state
-              theme: AppTheme.light,
-              darkTheme: AppTheme.dark,
-              themeMode: themeState.themeMode,
+          // Theme - Dynamic based on Bloc state
+          theme: AppTheme.light,
+          darkTheme: AppTheme.dark,
+          themeMode: themeState.themeMode,
 
-              // Locale - Dynamic based on Bloc state
-              locale: localeState.locale,
+          // Locale - Dynamic based on Bloc state
+          locale: localeState.locale,
 
-              // Localization
-              localizationsDelegates: const [
-                AppLocalizations.delegate,
-                GlobalMaterialLocalizations.delegate,
-                GlobalWidgetsLocalizations.delegate,
-                GlobalCupertinoLocalizations.delegate,
-              ],
-              supportedLocales: AppLocalizations.supportedLocales,
-              localeResolutionCallback: (locale, supportedLocales) {
-                // Use bloc locale if set, otherwise check device locale
-                if (localeState.locale.languageCode != 'en') {
-                  return localeState.locale;
-                }
+          // Localization
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          localeResolutionCallback: (locale, supportedLocales) {
+            // Use bloc locale if set, otherwise check device locale
+            if (localeState.locale.languageCode != 'en') {
+              return localeState.locale;
+            }
 
-                if (locale == null) return const Locale('en');
+            if (locale == null) return const Locale('en');
 
-                // Check if the current device locale is supported
-                for (final supportedLocale in supportedLocales) {
-                  if (supportedLocale.languageCode == locale.languageCode) {
-                    return supportedLocale;
-                  }
-                }
+            // Check if the current device locale is supported
+            for (final supportedLocale in supportedLocales) {
+              if (supportedLocale.languageCode == locale.languageCode) {
+                return supportedLocale;
+              }
+            }
 
-                // Default to English if not supported
-                return const Locale('en');
-              },
-
-              // Routing
-              routerConfig: router,
-            );
+            // Default to English if not supported
+            return const Locale('en');
           },
-        );
-      },
+
+          // Routing
+          routerConfig: router,
+        ),
+      ),
     );
   }
 }
