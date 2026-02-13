@@ -1,0 +1,9 @@
+#include "Pods/Target Support Files/Pods-Runner/Pods-Runner.debug-prod.xcconfig"
+#include "Generated.xcconfig"
+
+// Production environment build settings
+FLUTTER_BUILD_MODE=release
+FLUTTER_TARGET=lib/main.dart
+APP_NAME=TAIF
+APP_DISPLAY_NAME=TAIF
+APP_BUNDLE_ID=com.taif.app

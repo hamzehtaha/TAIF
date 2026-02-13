@@ -1,0 +1,9 @@
+#include "Pods/Target Support Files/Pods-Runner/Pods-Runner.profile-staging.xcconfig"
+#include "Generated.xcconfig"
+
+// Staging profile build settings
+FLUTTER_BUILD_MODE=profile
+FLUTTER_TARGET=lib/main.dart
+APP_NAME=TAIF Staging
+APP_DISPLAY_NAME=TAIF Staging
+APP_BUNDLE_ID=com.taif.app.staging

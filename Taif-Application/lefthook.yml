@@ -1,0 +1,59 @@
+# TAIF Pre-commit Hooks Configuration
+# Install lefthook: dart pub global activate lefthook
+# Or use npm: npm install -g @evilmartians/lefthook
+# Then run: lefthook install
+
+pre-commit:
+  parallel: true
+  commands:
+    # Format Dart code
+    dart-format:
+      glob: "*.dart"
+      run: dart format {staged_files} --set-exit-if-changed
+      skip:
+        - merge
+        - squash
+    
+    # Analyze Dart code
+    flutter-analyze:
+      glob: "*.dart"
+      run: flutter analyze
+      skip:
+        - merge
+        - squash
+    
+    # Run tests
+    flutter-test:
+      glob: "*.dart"
+      run: flutter test
+      skip:
+        - merge
+        - squash
+
+commit-msg:
+  commands:
+    # Validate commit message format
+    commitlint:
+      run: commitlint --edit {1}
+      skip:
+        - merge
+        - squash
+
+# Pre-push hook - runs before pushing to remote
+pre-push:
+  commands:
+    # Run full test suite before pushing
+    flutter-test-full:
+      run: flutter test
+      skip:
+        - merge
+
+# Post-checkout hook - runs after git checkout
+post-checkout:
+  commands:
+    # Install dependencies if pubspec.yaml changed
+    flutter-pub-get:
+      run: |
+        if git diff --name-only HEAD@{1} HEAD | grep -q "pubspec.yaml"; then
+          flutter pub get
+        fi
