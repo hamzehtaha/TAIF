@@ -59,7 +59,8 @@ android {
             applicationIdSuffix ".dev"
             resValue "string", "app_name", "TAIF Dev"
             versionNameSuffix "-dev"
-            // Debug signing config by default
+            // Set as default flavor for flutter run
+            isDefault true
         }
         
         staging {
@@ -103,6 +104,24 @@ android {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+// Make flutter run work without --flavor flag by aliasing assembleDebug to assembleDevDebug
+gradle.projectsEvaluated {
+    def assembleDebug = tasks.findByName("assembleDebug")
+    if (assembleDebug != null) {
+        assembleDebug.dependsOn "assembleDevDebug"
+        assembleDebug.doLast {
+            // Copy the flavored APK to the location flutter expects
+            copy {
+                from "${buildDir}/outputs/flutter-apk/app-dev-debug.apk"
+                into "${buildDir}/outputs/flutter-apk/"
+                rename { String fileName ->
+                    fileName.replace('app-dev-debug.apk', 'app-debug.apk')
+                }
+            }
         }
     }
 }
