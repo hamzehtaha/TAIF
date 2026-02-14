@@ -75,6 +75,14 @@ export function Header() {
                 {t.nav.courses}
               </Link>
             )}
+            {mounted && isAuthenticated && (
+              <Link
+                href="/dashboard/plans"
+                className="text-sm font-medium hover:text-primary transition"
+              >
+                {t.nav.paths || "Learning Paths"}
+              </Link>
+            )}
             <Link
               href="/contact"
               className="text-sm font-medium hover:text-primary transition"
@@ -173,6 +181,14 @@ export function Header() {
                 className="block text-sm font-medium hover:text-primary"
               >
                 {t.nav.courses}
+              </Link>
+            )}
+            {mounted && isAuthenticated && (
+              <Link
+                href="/dashboard/plans"
+                className="block text-sm font-medium hover:text-primary"
+              >
+                {t.nav.paths || "Learning Paths"}
               </Link>
             )}
             <Link

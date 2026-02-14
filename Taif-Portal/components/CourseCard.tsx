@@ -139,7 +139,7 @@ export function CourseCard({ course, onEnroll, onToggleFavourite, showRecommende
                 className="flex-1"
                 variant="outline"
               >
-                Continue Learning
+                {t.learning.continueLearning}
               </Button>
             )}
             {course.isEnrolled && onToggleFavourite && (

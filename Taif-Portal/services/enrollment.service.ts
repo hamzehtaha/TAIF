@@ -16,7 +16,11 @@ class EnrollmentService {
 
   async getUserCourses(): Promise<Course[]> {
     const courseDtos = await httpService.get<CourseDto[]>(`${this.serviceBaseUrl}/user`);
-    const courses: Course[] = courseDtos.map(dto => CourseMapper.map(dto));
+    const courses: Course[] = courseDtos.map(dto => {
+      const course = CourseMapper.map(dto);
+      course.isEnrolled = true;
+      return course;
+    });
     return courses;
   }
 
@@ -49,6 +53,15 @@ class EnrollmentService {
       return favourites.some(course => course.id === courseId);
     } catch {
       return false;
+    }
+  }
+
+  async getEnrollmentDetailsWithProgress(courseId: string): Promise<Enrollment | null> {
+    try {
+      const dto = await httpService.get<EnrollmentDto>(`${this.serviceBaseUrl}/details/${courseId}/progress`);
+      return EnrollmentMapper.map(dto);
+    } catch {
+      return null;
     }
   }
 
