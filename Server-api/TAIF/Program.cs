@@ -95,6 +95,17 @@ builder.Services.AddScoped<IInstructorProfileService, InstructorProfileService>(
 
 builder.Services.AddScoped<ICourseStatisticsService, CourseStatisticsService>();
 
+builder.Services.AddScoped<ILearningPathRepository, LearningPathRepository>();
+builder.Services.AddScoped<ILearningPathSectionRepository, LearningPathSectionRepository>();
+builder.Services.AddScoped<ILearningPathCourseRepository, LearningPathCourseRepository>();
+builder.Services.AddScoped<IUserLearningPathProgressRepository, UserLearningPathProgressRepository>();
+
+builder.Services.AddScoped<ILearningPathService, LearningPathService>();
+builder.Services.AddScoped<ILearningPathSectionService, LearningPathSectionService>();
+builder.Services.AddScoped<ILearningPathCourseService, LearningPathCourseService>();
+builder.Services.AddScoped<IUserLearningPathProgressService, UserLearningPathProgressService>();
+builder.Services.AddScoped<ILearningPathStatisticsService, LearningPathStatisticsService>();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -247,20 +258,28 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// TODO: Move course statistics update to a better place (e.g., background job, scheduled task, or manual trigger)
-// Update course statistics on startup - Fire and forget with its own scope
+// TODO: Move  statistics update to a better place (e.g., background job, scheduled task, or manual trigger)
+// Update statistics on startup - Sequential execution to ensure courses are calculated before learning paths
 _ = Task.Run(async () =>
 {
     using var scope = app.Services.CreateScope();
     try
     {
+        // STEP 1: Update course statistics FIRST
         var courseStatisticsService = scope.ServiceProvider.GetRequiredService<ICourseStatisticsService>();
+        Log.Information("Starting course statistics update on startup");
         await courseStatisticsService.UpdateAllCourseStatisticsAsync();
         Log.Information("Course statistics updated successfully on startup");
+
+        // STEP 2: Update learning path statistics AFTER courses are done
+        var learningPathStatisticsService = scope.ServiceProvider.GetRequiredService<ILearningPathStatisticsService>();
+        Log.Information("Starting learning path statistics update on startup");
+        await learningPathStatisticsService.UpdateAllLearningPathStatisticsAsync();
+        Log.Information("Learning path statistics updated successfully on startup");
     }
     catch (Exception ex)
     {
-        Log.Error(ex, "An error occurred while updating course statistics on startup");
+        Log.Error(ex, "An error occurred while updating statistics on startup");
     }
 });
 
@@ -295,4 +314,5 @@ void InjectSeeders()
     builder.Services.AddScoped<IEntitySeeder, InstructorProfileSeeder>();
     builder.Services.AddScoped<IEntitySeeder, RecommendationSeeder>();
     builder.Services.AddScoped<IEntitySeeder, CourseSeeder>();
+    builder.Services.AddScoped<IEntitySeeder, LearningPathSeeder>();
 }
