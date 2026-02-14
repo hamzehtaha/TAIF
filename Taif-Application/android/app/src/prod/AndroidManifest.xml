@@ -1,0 +1,6 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Production environment - no debug features -->
+    <application
+        android:allowBackup="false">
+    </application>
+</manifest>
