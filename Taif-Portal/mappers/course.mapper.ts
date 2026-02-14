@@ -17,7 +17,7 @@ export class CourseMapper {
       lessons: [],
       rating: dto.rating || 5,
       reviewCount: dto.reviewCount,
-      durationInMinutes: dto.totalDurationInSeconds,
+      durationInMinutes: dto.totalDurationInSeconds ? Math.floor(dto.totalDurationInSeconds / 60) : 0,
       totalEnrolled: dto.totalEnrolled,
       isRecommended: dto.isRecommended || false,
       progress: dto.progress,

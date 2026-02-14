@@ -13,6 +13,12 @@ export interface LessonItemProgressDto {
 
 export interface SetLessonItemAsCompletedRequest {
   courseId: string;
+  lessonId: string;
+  lessonItemId: string;
+}
+
+export interface UpdateLastLessonItemRequest {
+  courseId: string;
   lessonItemId: string;
 }
 

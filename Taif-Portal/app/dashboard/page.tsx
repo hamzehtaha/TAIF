@@ -34,7 +34,27 @@ export default function DashboardHome() {
         courseService.getRecommendedCourses(),
         categoryService.getCategories()
       ]);
-      const enrichedCourses = await courseService.enrichCoursesWithCategories(courses, categories);
+      
+      // Fetch progress for each enrolled course
+      const coursesWithProgress = await Promise.all(
+        courses.map(async (course) => {
+          try {
+            const enrollment = await enrollmentService.getEnrollmentDetailsWithProgress(course.id);
+            if (enrollment && enrollment.completedDurationInSeconds !== undefined && course.durationInMinutes) {
+              const totalDurationSeconds = course.durationInMinutes * 60;
+              const progress = totalDurationSeconds > 0 
+                ? Math.min(100, Math.round((enrollment.completedDurationInSeconds / totalDurationSeconds) * 100))
+                : 0;
+              return { ...course, progress };
+            }
+          } catch {
+            // Ignore individual progress fetch errors
+          }
+          return course;
+        })
+      );
+      
+      const enrichedCourses = await courseService.enrichCoursesWithCategories(coursesWithProgress, categories);
       const enrichedRecommendedCourses = await courseService.enrichCoursesWithCategories(recommendedCourses, categories);
       setMyCourses(enrichedCourses ?? []);
       setRecommendedCourses(enrichedRecommendedCourses ?? []);

@@ -1,16 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle, XCircle, HelpCircle, Loader2 } from "lucide-react";
+import { CheckCircle, XCircle, HelpCircle, Loader2, RotateCcw, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { 
-  lessonItemService, 
-  QuestionContent, 
-  QuizQuestion,
-  QuizResultResponse 
-} from "@/services/lesson-item.service";
+import { QuestionContent } from "@/services/lesson-item.service";
+import { quizService } from "@/services/quiz.service";
+import { QuizResultResponse, QuizSubmissionDto, QuizAnswerPayload } from "@/dtos/quiz.dto";
 
 interface QuizContentProps {
   lessonItemId: string;
@@ -26,7 +23,6 @@ interface NormalizedQuestion {
 }
 
 function normalizeQuestions(content: QuestionContent): NormalizedQuestion[] {
-  // Handle array of questions
   if (content.questions && content.questions.length > 0) {
     return content.questions.map((q, idx) => ({
       id: q.id || `q${idx}`,
@@ -36,7 +32,6 @@ function normalizeQuestions(content: QuestionContent): NormalizedQuestion[] {
     }));
   }
   
-  // Handle single question format
   if (content.question && content.options) {
     return [{
       id: "q1",
@@ -53,11 +48,44 @@ export function QuizContent({ lessonItemId, content, onComplete }: QuizContentPr
   const questions = normalizeQuestions(content);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [result, setResult] = useState<QuizResultResponse | null>(null);
+  const [lastSubmission, setLastSubmission] = useState<QuizSubmissionDto | null>(null);
+  const [viewingLastAttempt, setViewingLastAttempt] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    const loadLastSubmission = async () => {
+      try {
+        const submission = await quizService.getLastSubmission(lessonItemId);
+        if (submission) {
+          setLastSubmission(submission);
+          if (submission.score === 100) {
+            const parsedAnswers = quizService.parseAnswersJson(submission.answersJson);
+            const answersMap: Record<string, number> = {};
+            const results: { questionId: string; isCorrect: boolean }[] = [];
+            parsedAnswers.forEach((a: QuizAnswerPayload) => {
+              answersMap[a.questionId] = a.answerIndex;
+              results.push({ questionId: a.questionId, isCorrect: a.isCorrect });
+            });
+            setAnswers(answersMap);
+            setResult({ results, score: submission.score });
+            setViewingLastAttempt(true);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load last submission:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadLastSubmission();
+  }, [lessonItemId]);
+
   const handleSelectAnswer = (questionId: string, answerIndex: number) => {
-    if (result) return; // Already submitted
+    if (result && !viewingLastAttempt) return;
+    if (viewingLastAttempt) return;
     setAnswers(prev => ({
       ...prev,
       [questionId]: answerIndex,
@@ -74,15 +102,18 @@ export function QuizContent({ lessonItemId, content, onComplete }: QuizContentPr
     setError(null);
 
     try {
-      const response = await lessonItemService.submitQuiz({
+      const response = await quizService.submitQuiz(
         lessonItemId,
-        answers: Object.entries(answers).map(([questionId, answerIndex]) => ({
+        Object.entries(answers).map(([questionId, answerIndex]) => ({
           questionId,
           answerIndex,
-        })),
-      });
+        }))
+      );
       setResult(response);
-      onComplete?.();
+      
+      if (response.score === 100) {
+        onComplete?.();
+      }
     } catch (err) {
       console.error("Failed to submit quiz:", err);
       setError("Failed to submit quiz. Please try again.");
@@ -91,16 +122,39 @@ export function QuizContent({ lessonItemId, content, onComplete }: QuizContentPr
     }
   };
 
-  const handleRetry = () => {
+  const handleTryAgain = () => {
     setAnswers({});
     setResult(null);
     setError(null);
+    setViewingLastAttempt(false);
+  };
+
+  const handleViewLastAttempt = () => {
+    if (!lastSubmission) return;
+    const parsedAnswers = quizService.parseAnswersJson(lastSubmission.answersJson);
+    const answersMap: Record<string, number> = {};
+    const results: { questionId: string; isCorrect: boolean }[] = [];
+    parsedAnswers.forEach((a: QuizAnswerPayload) => {
+      answersMap[a.questionId] = a.answerIndex;
+      results.push({ questionId: a.questionId, isCorrect: a.isCorrect });
+    });
+    setAnswers(answersMap);
+    setResult({ results, score: lastSubmission.score });
+    setViewingLastAttempt(true);
   };
 
   const getQuestionResult = (questionId: string) => {
     if (!result) return null;
     return result.results.find(r => r.questionId === questionId);
   };
+
+  if (loading) {
+    return (
+      <div className="p-6 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (questions.length === 0) {
     return (
@@ -114,20 +168,47 @@ export function QuizContent({ lessonItemId, content, onComplete }: QuizContentPr
   return (
     <div className="p-6 space-y-6">
       {/* Quiz Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <h3 className="text-lg font-semibold flex items-center gap-2">
           <HelpCircle className="w-5 h-5 text-primary" />
           Quiz ({questions.length} question{questions.length > 1 ? "s" : ""})
         </h3>
-        {result && (
-          <div className={cn(
-            "px-4 py-2 rounded-full font-semibold text-sm",
-            result.score >= 70 ? "bg-success/20 text-success" : "bg-destructive/20 text-destructive"
-          )}>
-            Score: {result.score}%
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          {lastSubmission && !result && (
+            <Button variant="outline" size="sm" onClick={handleViewLastAttempt}>
+              View Last Attempt ({lastSubmission.score}%)
+            </Button>
+          )}
+          {result && (
+            <div className={cn(
+              "px-4 py-2 rounded-full font-semibold text-sm flex items-center gap-2",
+              result.score === 100 ? "bg-success/20 text-success" : 
+              result.score >= 70 ? "bg-warning/20 text-warning" : "bg-destructive/20 text-destructive"
+            )}>
+              {result.score === 100 && <Trophy className="w-4 h-4" />}
+              Score: {result.score}%
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Perfect Score Message */}
+      {result && result.score === 100 && (
+        <div className="p-4 bg-success/10 border border-success text-success rounded-lg flex items-center gap-3">
+          <Trophy className="w-6 h-6" />
+          <div>
+            <p className="font-semibold">Perfect Score!</p>
+            <p className="text-sm opacity-90">Congratulations! You answered all questions correctly.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Viewing Last Attempt Notice */}
+      {viewingLastAttempt && (
+        <div className="p-3 bg-muted border rounded-lg text-sm text-muted-foreground">
+          Viewing your last attempt. {result && result.score < 100 && "Click \"Try Again\" to retake the quiz."}
+        </div>
+      )}
 
       {/* Questions */}
       <div className="space-y-6">
@@ -159,7 +240,7 @@ export function QuizContent({ lessonItemId, content, onComplete }: QuizContentPr
                       <button
                         key={optIdx}
                         onClick={() => handleSelectAnswer(question.id, optIdx)}
-                        disabled={!!result}
+                        disabled={!!result || viewingLastAttempt}
                         className={cn(
                           "w-full text-left p-3 rounded-lg border-2 transition-all flex items-center gap-3",
                           !result && isSelected && "border-primary bg-primary/10",
@@ -199,7 +280,7 @@ export function QuizContent({ lessonItemId, content, onComplete }: QuizContentPr
       )}
 
       {/* Actions */}
-      <div className="flex gap-4">
+      <div className="flex gap-4 flex-wrap">
         {!result ? (
           <Button 
             onClick={handleSubmit} 
@@ -215,15 +296,22 @@ export function QuizContent({ lessonItemId, content, onComplete }: QuizContentPr
               "Submit Quiz"
             )}
           </Button>
-        ) : (
-          <Button variant="outline" onClick={handleRetry}>
+        ) : result.score < 100 ? (
+          <Button onClick={handleTryAgain} className="gap-2">
+            <RotateCcw className="w-4 h-4" />
             Try Again
           </Button>
-        )}
+        ) : null}
         
         {!result && (
           <p className="text-sm text-muted-foreground self-center">
             {Object.keys(answers).length} of {questions.length} answered
+          </p>
+        )}
+
+        {result && result.score < 100 && (
+          <p className="text-sm text-muted-foreground self-center">
+            You got {result.results.filter(r => r.isCorrect).length} of {questions.length} correct. Try again to get 100%!
           </p>
         )}
       </div>

@@ -55,20 +55,44 @@ export default function Courses() {
           enrollmentService.getUserFavouriteCourses().catch(() => []),
         ]);
 
-        // Create sets for quick lookup
+        // Create sets and maps for quick lookup
         const enrolledIds = new Set(enrolledData.map(c => c.id));
         const favouriteIds = new Set(favouritesData.map(c => c.id));
+        
+        // Create a map of enrolled courses with their duration for progress calculation
+        const enrolledCourseMap = new Map<string, Course>(enrolledData.map(c => [c.id, c] as [string, Course]));
         
         setEnrolledCourseIds(enrolledIds);
         setFavouriteCourseIds(favouriteIds);
         setCategories(categoriesData);
 
-        // Enrich courses with enrollment and favourite status
+        // Fetch enrollment progress for enrolled courses
+        const enrollmentProgressMap = new Map<string, number>();
+        await Promise.all(
+          Array.from(enrolledIds).map(async (courseId) => {
+            try {
+              const enrollment = await enrollmentService.getEnrollmentDetailsWithProgress(courseId);
+              if (enrollment && enrollment.completedDurationInSeconds !== undefined) {
+                const enrolledCourse = enrolledCourseMap.get(courseId);
+                const totalDuration = enrolledCourse?.durationInMinutes ? enrolledCourse.durationInMinutes * 60 : 0;
+                if (totalDuration > 0) {
+                  const progress = Math.min(100, Math.round((enrollment.completedDurationInSeconds / totalDuration) * 100));
+                  enrollmentProgressMap.set(courseId, progress);
+                }
+              }
+            } catch {
+              // Ignore errors for individual progress fetches
+            }
+          })
+        );
+
+        // Enrich courses with enrollment, favourite status, and progress
         const enrichedCourses = await courseService.enrichCoursesWithCategories(
           coursesData.map(course => ({
             ...course,
             isEnrolled: enrolledIds.has(course.id),
             isFavourite: favouriteIds.has(course.id),
+            progress: enrollmentProgressMap.get(course.id) || 0,
           })),
           categoriesData.map(c => ({ id: c.id, name: c.name }))
         );

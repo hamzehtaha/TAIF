@@ -13,10 +13,6 @@ export interface LessonDto {
   duration?: number;
 }
 
-export interface LessonsResponseDto {
-  lessons: LessonDto[];
-}
-
 export interface CreateLessonRequest {
   title: string;
   photo?: string;
