@@ -10,5 +10,6 @@ namespace TAIF.Application.Interfaces.Repositories
     public interface ILessonItemProgressRepository : IRepository<LessonItemProgress>
     {
         Task<double> GetCompletedDurationSumAsync(Guid userId, Guid courseId);
+        Task<double> GetCompletedDurationSumForCoursesAsync(Guid userId, List<Guid> courseIds);
     }
 }
