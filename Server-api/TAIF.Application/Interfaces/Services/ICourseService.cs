@@ -11,5 +11,6 @@ namespace TAIF.Application.Interfaces.Services
     {
         Task<List<Course>> GetByCategoryIdAsync(Guid categoryId);
         Task<List<Course>> GetRecommendedCoursesAsync(Guid userId, int count = 10);
+        Task<List<Course>> GetByUserIdAsync(Guid userId);
     }
 }

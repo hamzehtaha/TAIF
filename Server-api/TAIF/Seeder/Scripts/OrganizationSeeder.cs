@@ -22,54 +22,73 @@ namespace TAIF.API.Seeder.Scripts
         [Obsolete]
         public async Task SeedAsync()
         {
+            // First, ensure Public Organization exists (required for all users)
+            if (!_context.Organizations.Any(o => o.Identity == "default"))
+            {
+                var publicOrg = new Organization
+                {
+                    Name = "TAIF Public",
+                    Slug = "taif-public",
+                    Identity = "default",
+                    Type = OrganizationType.Public,
+                    Description = "Default public organization for all self-registered users",
+                    IsActive = true
+                };
+                _context.Organizations.Add(publicOrg);
+                Console.WriteLine(" Public Organization created with Identity='default'");
+            }
+
+            // Then seed from JSON file if exists
             string seedName = "Organization";
             var filePath = Path.Combine(_env.ContentRootPath, "Seeder", "Data", seedName + ".seed.json");
 
-            if (!File.Exists(filePath))
-                throw new FileNotFoundException($"Seed file not found: {filePath}");
-
-            var json = await File.ReadAllTextAsync(filePath);
-            var options = new JsonSerializerOptions
+            if (File.Exists(filePath))
             {
-                PropertyNameCaseInsensitive = true,
-                Converters = { new JsonStringEnumConverter() }
-            };
-            var organizations = JsonSerializer.Deserialize<List<OrganizationJson>>(json, options)
-                               ?? throw new InvalidOperationException("Invalid organization JSON");
-
-            foreach (var org in organizations)
-            {
-                if (!_context.Organizations.Any(o => o.Name == org.Name))
+                var json = await File.ReadAllTextAsync(filePath);
+                var options = new JsonSerializerOptions
                 {
-                    var newOrg = new Organization
+                    PropertyNameCaseInsensitive = true,
+                    Converters = { new JsonStringEnumConverter() }
+                };
+                var organizations = JsonSerializer.Deserialize<List<OrganizationJson>>(json, options)
+                                   ?? new List<OrganizationJson>();
+
+                foreach (var org in organizations)
+                {
+                    if (!_context.Organizations.Any(o => o.Name == org.Name))
                     {
-                        Id = org.Id,
-                        Name = org.Name,
-                        Logo = org.Logo,
-                        Description = org.Description,
-                        Email = org.Email,
-                        Phone = org.Phone,
-                        IsActive = org.IsActive,
-                        IsPublic = org.IsPublic
-                    };
-                    _context.Organizations.Add(newOrg);
+                        var newOrg = new Organization
+                        {
+                            Id = org.Id,
+                            Name = org.Name,
+                            Slug = org.Slug ?? org.Name.ToLower().Replace(" ", "-"),
+                            Type = org.Type,
+                            Logo = org.Logo,
+                            Description = org.Description,
+                            Email = org.Email,
+                            Phone = org.Phone,
+                            IsActive = org.IsActive
+                        };
+                        _context.Organizations.Add(newOrg);
+                    }
                 }
             }
 
             await _context.SaveChangesAsync();
-            Console.WriteLine("✅ Organizations seeded successfully");
+            Console.WriteLine(" Organizations seeded successfully");
         }
 
         private class OrganizationJson
         {
             public Guid Id { get; set; }
             public string Name { get; set; } = null!;
+            public string? Slug { get; set; }
+            public OrganizationType Type { get; set; } = OrganizationType.Private;
             public string? Logo { get; set; }
             public string? Description { get; set; }
             public string? Email { get; set; }
             public string? Phone { get; set; }
             public bool IsActive { get; set; } = true;
-            public bool IsPublic { get; set; } = true;
         }
     }
 }

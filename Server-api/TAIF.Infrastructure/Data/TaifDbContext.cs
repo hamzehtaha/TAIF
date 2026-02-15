@@ -38,7 +38,7 @@ namespace TAIF.Infrastructure.Data
             modelBuilder.Entity<InstructorProfile>(entity =>
             {
                 entity.HasOne(ip => ip.User)
-                      .WithOne()
+                      .WithOne(u => u.InstructorProfile)
                       .HasForeignKey<InstructorProfile>(ip => ip.UserId)
                       .OnDelete(DeleteBehavior.Cascade);
 
@@ -51,12 +51,35 @@ namespace TAIF.Infrastructure.Data
 
                 entity.Property(ip => ip.Rating)
                       .HasPrecision(5, 2);
+
+                entity.Property(ip => ip.Expertises)
+                      .HasConversion(
+                          v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
+                          v => System.Text.Json.JsonSerializer.Deserialize<List<string>>(v, (System.Text.Json.JsonSerializerOptions?)null) ?? new List<string>()
+                      );
             });
 
             // Organization configuration
             modelBuilder.Entity<Organization>(entity =>
             {
                 entity.HasIndex(o => o.Name).IsUnique();
+                entity.HasIndex(o => o.Slug).IsUnique();
+                entity.HasIndex(o => o.Identity).IsUnique();
+                entity.HasIndex(o => o.Type);
+            });
+
+            // User-Organization configuration
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.HasIndex(u => u.Email).IsUnique();
+                entity.HasIndex(u => u.OrganizationId);
+                entity.HasIndex(u => u.Role);
+                entity.HasIndex(u => new { u.OrganizationId, u.Role, u.IsActive });
+
+                entity.HasOne(u => u.Organization)
+                      .WithMany(o => o.Users)
+                      .HasForeignKey(u => u.OrganizationId)
+                      .OnDelete(DeleteBehavior.SetNull);
             });
 
             // Course configuration
@@ -71,6 +94,25 @@ namespace TAIF.Infrastructure.Data
                       .WithMany()
                       .HasForeignKey(c => c.CategoryId)
                       .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(c => c.Organization)
+                      .WithMany()
+                      .HasForeignKey(c => c.OrganizationId)
+                      .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasIndex(c => c.OrganizationId);
+                entity.HasIndex(c => new { c.OrganizationId, c.UserId });
+            });
+
+            // Category configuration
+            modelBuilder.Entity<Category>(entity =>
+            {
+                entity.HasOne(c => c.Organization)
+                      .WithMany()
+                      .HasForeignKey(c => c.OrganizationId)
+                      .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasIndex(c => c.OrganizationId);
             });
 
             // Lesson configuration

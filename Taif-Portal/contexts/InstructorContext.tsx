@@ -33,6 +33,7 @@ import {
   CreateQuestionInput,
   UpdateQuestionInput,
 } from '@/services/instructor/dataService';
+import { instructorProfileService, InstructorProfileResponse } from '@/services/instructor-profile.service';
 
 // ============================================
 // State Types
@@ -489,7 +490,18 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
   const loadInstructor = useCallback(async () => {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
-      const instructor = await dataService.getInstructor();
+      const profile = await instructorProfileService.getCurrentProfile();
+      // Convert InstructorProfileResponse to Instructor type for compatibility
+      const instructor: Instructor = {
+        id: profile.id,
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        email: profile.email,
+        avatar: undefined, // Not available in profile response
+        bio: profile.bio,
+        expertise: profile.expertises,
+        createdAt: profile.createdAt,
+      };
       dispatch({ type: 'SET_INSTRUCTOR', payload: instructor });
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to load instructor profile' });

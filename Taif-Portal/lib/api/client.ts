@@ -29,7 +29,7 @@ export interface PaginationFilter {
 // API Configuration
 const API_CONFIG = {
   baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
-  useMock: process.env.NEXT_PUBLIC_USE_MOCK === 'true' || true, // Default to mock for development
+  useMock: process.env.NEXT_PUBLIC_USE_MOCK === 'true', // Set to false to use real API
   timeout: 10000,
 };
 

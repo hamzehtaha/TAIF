@@ -8,5 +8,6 @@ namespace TAIF.Application.Interfaces.Repositories
     public interface ICourseRepository : IRepository<Course>
     {
         Task<List<Course>> GetByCategoryIdAsync(Guid categoryId, bool withDeleted = false);
+        Task<List<Course>> GetByUserIdAsync(Guid userId);
     }
 }

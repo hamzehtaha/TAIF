@@ -79,6 +79,24 @@ namespace TAIF.Controllers
             return Ok(ApiResponse<List<Course>>.SuccessResponse(courses));
         }
 
+        [HttpGet("my-courses")]
+        [Authorize(Policy = "InstructorOrCompanyOrAdmin")]
+        public async Task<IActionResult> GetMyCourses()
+        {
+            var courses = await _courseService.GetByUserIdAsync(this.UserId);
+            if (courses is null) return NotFound();
+            return Ok(ApiResponse<List<Course>>.SuccessResponse(courses));
+        }
+
+        [HttpGet("my-courses/count")]
+        [Authorize(Policy = "InstructorOrCompanyOrAdmin")]
+        public async Task<IActionResult> GetMyCoursesCount()
+        {
+            var courses = await _courseService.GetByUserIdAsync(this.UserId);
+            var count = courses?.Count ?? 0;
+            return Ok(ApiResponse<int>.SuccessResponse(count));
+        }
+
         [HttpPost("")]
         [Authorize(Policy = "InstructorOrCompanyOrAdmin")]
         public async Task<IActionResult> Create([FromBody] CreateCourseRequest request)

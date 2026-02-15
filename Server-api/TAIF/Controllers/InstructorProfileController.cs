@@ -53,14 +53,23 @@ namespace TAIF.Controllers
         [HttpGet("current-profile")]
         public async Task<IActionResult> GetCurrentProfile()
         {
-            var instructors = await _instructorProfileService.FindNoTrackingAsync(
-                predicate: ip => ip.UserId == UserId
-            );
+            var profile = await _instructorProfileService.GetProfileByUserIdAsync(UserId);
 
-            if (instructors is null || instructors.Count == 0)
+            if (profile is null)
                 return NotFound();
 
-            return Ok(ApiResponse<InstructorProfile>.SuccessResponse(instructors[0]));
+            return Ok(ApiResponse<InstructorProfileResponse>.SuccessResponse(profile));
+        }
+
+        [HttpPut("current-profile")]
+        public async Task<IActionResult> UpdateCurrentProfile([FromBody] UpdateInstructorProfileRequest request)
+        {
+            var profile = await _instructorProfileService.UpdateProfileAsync(UserId, request);
+
+            if (profile is null)
+                return NotFound("Instructor profile not found");
+
+            return Ok(ApiResponse<InstructorProfileResponse>.SuccessResponse(profile));
         }
         [HttpGet("user/{userId}")]
         public async Task<IActionResult> GetByUserId([FromRoute] Guid userId)
@@ -80,7 +89,6 @@ namespace TAIF.Controllers
             var instructor = new InstructorProfile
             {
                 UserId = UserId,
-                WebsiteUrl = request.WebsiteUrl,
                 YearsOfExperience = request.YearsOfExperience,
                 Rating = 0m,
                 CoursesCount = 0
@@ -108,7 +116,7 @@ namespace TAIF.Controllers
 
             // Instructor can only delete their own profile
             // Admin can delete anyone's profile
-            if (UserRoleType != UserRoleType.Admin && instructor.UserId != this.UserId)
+            if (UserRoleType != UserRoleType.SystemAdmin && instructor.UserId != this.UserId)
                 return Forbid();
 
             var result = await _instructorProfileService.DeleteAsync(id);

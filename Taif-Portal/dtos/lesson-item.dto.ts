@@ -15,17 +15,18 @@ export interface LessonItemDto {
 
 export interface CreateLessonItemRequest {
   name: string;
-  url: string;
   content: string;
   type: number;
   lessonId: string;
+  durationInSeconds: number;
 }
 
 export interface UpdateLessonItemRequest {
   name?: string;
-  url?: string;
   content?: string;
   type?: number;
+  lessonId?: string;
+  durationInSeconds?: number;
 }
 
 export interface LessonItemWithProgressDto {

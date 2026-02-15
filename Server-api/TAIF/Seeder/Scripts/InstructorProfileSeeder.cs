@@ -22,6 +22,9 @@ namespace TAIF.API.Seeder.Scripts
         [Obsolete]
         public async Task SeedAsync()
         {
+            // Get default (Public) Organization for assigning to instructor profiles
+            var publicOrg = _context.Organizations.FirstOrDefault(o => o.Identity == "default");
+            
             string seedName = "InstructorProfile";
             var filePath = Path.Combine(_env.ContentRootPath, "Seeder", "Data", seedName + ".seed.json");
 
@@ -44,8 +47,7 @@ namespace TAIF.API.Seeder.Scripts
                     var newProfile = new InstructorProfile
                     {
                         UserId = profile.UserId,
-                        OrganizationId = profile.OrganizationId,
-                        WebsiteUrl = profile.WebsiteUrl,
+                        OrganizationId = profile.OrganizationId ?? publicOrg?.Id,
                         YearsOfExperience = profile.YearsOfExperience,
                         Rating = profile.Rating,
                         CoursesCount = profile.CoursesCount

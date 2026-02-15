@@ -16,7 +16,7 @@ namespace TAIF.Application.Services
         public async Task<List<Organization>> GetAllPublicAsync()
         {
             return await _repository.FindNoTrackingAsync(
-                predicate: o => o.IsPublic && !o.IsDeleted,
+                predicate: o => o.Type == OrganizationType.Public && !o.IsDeleted,
                 orderBy: o => o.Name,
                 orderByDescending: false
             );

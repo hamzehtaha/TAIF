@@ -9,6 +9,6 @@ namespace TAIF.Application.Interfaces.Services
 {
     public interface IUserService : IService<User>
     {
-
+        Task<User?> GetByIdWithOrganizationAsync(Guid id);
     }
 }

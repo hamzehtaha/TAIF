@@ -42,6 +42,15 @@ class CourseService {
     return httpService.delete<boolean>(`${this.serviceBaseUrl}/${id}`);
   }
 
+  async getMyCourses(): Promise<Course[]> {
+    const dtos = await httpService.get<CourseDto[]>(`${this.serviceBaseUrl}/my-courses`);
+    return dtos.map(CourseMapper.map);
+  }
+
+  async getMyCoursesCount(): Promise<number> {
+    return httpService.get<number>(`${this.serviceBaseUrl}/my-courses/count`);
+  }
+
   // TODO::Backend
   async enrichCoursesWithCategories(
     courses: Course[],

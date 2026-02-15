@@ -17,5 +17,10 @@ namespace TAIF.Infrastructure.Repositories
         {
             return await FindNoTrackingAsync(((course) => course.CategoryId.Equals(categoryId)), withDeleted);
         }
+
+        public async Task<List<Course>> GetByUserIdAsync(Guid userId)
+        {
+            return await FindNoTrackingAsync(course => course.UserId == userId);
+        }
     }
 }

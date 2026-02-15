@@ -7,6 +7,9 @@ export interface UserDto {
   isActive: boolean;
   isCompleted: boolean;
   interests?: string[];
+  role: number;
+  organizationId?: string;
+  organizationName?: string;
   createdAt?: string;
   updatedAt?: string;
 }

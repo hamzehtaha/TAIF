@@ -2,7 +2,7 @@
 
 namespace TAIF.Domain.Entities
 {
-    public class Course : Base
+    public class Course : OrganizationBase
     {
         public string? Name { get; set; } = null;
         public string? Description { get; set; }

@@ -16,9 +16,11 @@ namespace TAIF.Application.DTOs.Responses
         public DateOnly Birthday { get; set; }
         public bool IsActive { get; set; } = true;
         public bool IsCompleted { get; set; } = false;
+        public UserRoleType Role { get; set; }
         public UserRoleType UserRoleType { get; set; }
+        public Guid? OrganizationId { get; set; }
+        public string? OrganizationName { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
-
     }
 }

@@ -1,9 +1,10 @@
 import { httpService } from "@/services/http.service";
-import { LoginRequest, RegisterRequest, AuthResponse, RefreshTokenRequest } from "@/dtos/auth";
+import { LoginRequest, RegisterRequest, RegisterInstructorRequest, AuthResponse, RefreshTokenRequest } from "@/dtos/auth";
 import { UserDto } from "@/dtos/user.dto";
 import { UserMapper } from "@/mappers/user.mapper";
 import { User } from "@/models/user.model";
 import { StorageService } from "@/services/storage.service";
+import { UserRole, isInstructor, canCreateCourses } from "@/enums/user-role.enum";
 
 
 class AuthService {
@@ -17,6 +18,28 @@ class AuthService {
         lastName: request.lastName,
         email: request.email,
         password: request.password,
+      }
+    );
+
+    httpService.setAuthTokens(response);
+    
+    // Fetch user profile after registration
+    await this.getUserProfile();
+    
+    return response;
+  }
+
+  async registerInstructor(request: RegisterInstructorRequest): Promise<AuthResponse> {
+    const response = await httpService.post<AuthResponse>(
+      `${this.serviceBaseUrl}/register/instructor`,
+      {
+        firstName: request.firstName,
+        lastName: request.lastName,
+        email: request.email,
+        password: request.password,
+        birthday: request.birthday,
+        websiteUrl: request.websiteUrl,
+        yearsOfExperience: request.yearsOfExperience || 0,
       }
     );
 
@@ -130,6 +153,26 @@ class AuthService {
   hasInterests(): boolean {
     const user = this.getUser();
     return user?.interests != null && user.interests.length > 0;
+  }
+
+  getUserRole(): UserRole | null {
+    const user = this.getUser();
+    return user?.role ?? null;
+  }
+
+  isInstructor(): boolean {
+    const role = this.getUserRole();
+    return role !== null && isInstructor(role);
+  }
+
+  canCreateCourses(): boolean {
+    const role = this.getUserRole();
+    return role !== null && canCreateCourses(role);
+  }
+
+  getOrganizationId(): string | null {
+    const user = this.getUser();
+    return user?.organizationId ?? null;
   }
 }
 

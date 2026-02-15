@@ -46,9 +46,12 @@ namespace TAIF.API.Seeder.Scripts
             // Build tag name to ID map for course tag resolution
             var tagNameToId = _context.Tags.ToDictionary(t => t.Name, t => t.Id, StringComparer.OrdinalIgnoreCase);
 
+            // Get default (Public) Organization for assigning to courses
+            var publicOrg = _context.Organizations.FirstOrDefault(o => o.Identity == "default");
+
             // Get instructors (users with Instructor role)
             var instructors = _context.Users
-                .Where(u => u.UserRoleType == UserRoleType.Instructor)
+                .Where(u => u.Role == UserRoleType.Instructor)
                 .ToList();
 
             if (instructors.Count == 0)
@@ -99,7 +102,8 @@ namespace TAIF.API.Seeder.Scripts
                         Photo = courseData.Photo,
                         CategoryId = category.Id,
                         Tags = tagIds,
-                        UserId = instructor.Id
+                        UserId = instructor.Id,
+                        OrganizationId = publicOrg?.Id
                     };
 
                     _context.Courses.Add(course);

@@ -1,15 +1,56 @@
 "use client";
 
-import { InstructorProvider } from "@/contexts/InstructorContext";
+import { useEffect, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { authService } from "@/services/auth.service";
+import { UserRole } from "@/enums/user-role.enum";
 
 export default function InstructorRootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <InstructorProvider>
-      {children}
-    </InstructorProvider>
-  );
+  const router = useRouter();
+  const pathname = usePathname();
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Allow access to login and signup pages without auth
+    if (pathname === "/instructor/login" || pathname === "/instructor/signup") {
+      setIsAuthorized(true);
+      setIsLoading(false);
+      return;
+    }
+
+    // Check if user is authenticated and has instructor role
+    const user = authService.getUser();
+    if (!user) {
+      router.push("/instructor/login");
+      return;
+    }
+
+    if (user.role !== UserRole.Instructor && user.role !== UserRole.OrgAdmin && user.role !== UserRole.SystemAdmin) {
+      // Not an instructor, redirect to student dashboard
+      router.push("/dashboard");
+      return;
+    }
+
+    setIsAuthorized(true);
+    setIsLoading(false);
+  }, [pathname, router]);
+
+  if (isLoading && pathname !== "/instructor/login" && pathname !== "/instructor/signup") {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthorized && pathname !== "/instructor/login" && pathname !== "/instructor/signup") {
+    return null;
+  }
+
+  return <>{children}</>;
 }

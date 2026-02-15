@@ -16,5 +16,10 @@ namespace TAIF.Application.Services
         {
             _userRepository = repository;
         }
+
+        public async Task<User?> GetByIdWithOrganizationAsync(Guid id)
+        {
+            return await _userRepository.GetByIdWithOrganizationAsync(id);
+        }
     }
 }
