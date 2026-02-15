@@ -31,7 +31,11 @@ namespace TAIF.Infrastructure.Data
         public DbSet<InterestTagMapping> InterestTagMappings { get; set; }
         public DbSet<UserCourseBehavior> UserCourseBehaviors { get; set; }
         public DbSet<QuizSubmission> QuizSubmissions => Set<QuizSubmission>();
-        
+        public DbSet<LearningPath> LearningPaths { get; set; }
+        public DbSet<LearningPathSection> LearningPathSections { get; set; }
+        public DbSet<LearningPathCourse> LearningPathCourses { get; set; }
+        public DbSet<UserLearningPathProgress> UserLearningPathProgress { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // InstructorProfile configuration
@@ -243,6 +247,68 @@ namespace TAIF.Infrastructure.Data
                       .WithMany()
                       .HasForeignKey(itm => itm.TagId)
                       .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // LearningPath configuration
+            modelBuilder.Entity<LearningPath>(entity =>
+            {
+                entity.HasOne(lp => lp.Creator)
+                      .WithMany()
+                      .HasForeignKey(lp => lp.CreatorId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // LearningPathSection configuration
+            modelBuilder.Entity<LearningPathSection>(entity =>
+            {
+                entity.HasOne(lps => lps.LearningPath)
+                      .WithMany(lp => lp.Sections)
+                      .HasForeignKey(lps => lps.LearningPathId)
+                      .OnDelete(DeleteBehavior.Cascade);
+    
+                entity.HasIndex(lps => new { lps.LearningPathId, lps.Order });
+            });
+
+            // LearningPathCourse configuration (many-to-many with ordering)
+            modelBuilder.Entity<LearningPathCourse>(entity =>
+            {
+                entity.HasOne(lpc => lpc.Section)
+                      .WithMany(lps => lps.Courses)
+                      .HasForeignKey(lpc => lpc.LearningPathSectionId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(lpc => lpc.Course)
+                      .WithMany()
+                      .HasForeignKey(lpc => lpc.CourseId)
+                      .OnDelete(DeleteBehavior.Restrict);
+    
+                entity.HasIndex(lpc => new { lpc.LearningPathSectionId, lpc.Order });
+            });
+
+            // UserLearningPathProgress configuration
+            modelBuilder.Entity<UserLearningPathProgress>(entity =>
+            {
+                entity.HasIndex(e => new { e.UserId, e.LearningPathId }).IsUnique();
+
+                entity.HasOne(ulpp => ulpp.User)
+                      .WithMany()
+                      .HasForeignKey(ulpp => ulpp.UserId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(ulpp => ulpp.LearningPath)
+                      .WithMany()
+                      .HasForeignKey(ulpp => ulpp.LearningPathId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(ulpp => ulpp.CurrentSection)
+                      .WithMany()
+                      .HasForeignKey(ulpp => ulpp.CurrentSectionId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(ulpp => ulpp.CurrentCourse)
+                      .WithMany()
+                      .HasForeignKey(ulpp => ulpp.CurrentCourseId)
+                      .OnDelete(DeleteBehavior.Restrict);
             });
 
             // Value converters

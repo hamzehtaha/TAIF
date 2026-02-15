@@ -1,0 +1,181 @@
+[
+  {
+    "name": "Complete Sign Language Mastery",
+    "description": "Comprehensive learning path to master sign language from fundamentals to advanced communication for deaf and hard of hearing individuals",
+    "photo": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800",
+    "sections": [
+      {
+        "name": "Sign Language Foundations",
+        "description": "Start your journey with basic sign language skills and communication techniques",
+        "order": 1,
+        "courses": [
+          {
+            "courseName": "Sign Language Fundamentals",
+            "order": 1,
+            "isRequired": true
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Braille Literacy Pathway",
+    "description": "Master Braille reading and writing for complete literacy independence and daily communication",
+    "photo": "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=800",
+    "sections": [
+      {
+        "name": "Braille Reading and Writing Skills",
+        "description": "Learn to read and write in Braille from alphabet basics to advanced text composition",
+        "order": 1,
+        "courses": [
+          {
+            "courseName": "Braille Reading and Writing",
+            "order": 1,
+            "isRequired": true
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Assistive Technology Specialist Track",
+    "description": "Become proficient in using assistive technology for daily living and professional development",
+    "photo": "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800",
+    "sections": [
+      {
+        "name": "Assistive Technology Essentials",
+        "description": "Master screen readers, voice control, and adaptive devices for enhanced independence",
+        "order": 1,
+        "courses": [
+          {
+            "courseName": "Assistive Technology for Daily Living",
+            "order": 1,
+            "isRequired": true
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Sensory Support & Self-Regulation",
+    "description": "Learn therapeutic techniques for sensory processing and emotional regulation for individuals with autism, ADHD, and sensory processing disorders",
+    "photo": "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800",
+    "sections": [
+      {
+        "name": "Understanding Sensory Processing",
+        "description": "Foundation knowledge for sensory integration and self-regulation strategies",
+        "order": 1,
+        "courses": [
+          {
+            "courseName": "Sensory Integration and Self-Regulation",
+            "order": 1,
+            "isRequired": true
+          }
+        ]
+      },
+      {
+        "name": "Assistive Tools for Regulation",
+        "description": "Use technology to support sensory needs and enhance daily functioning",
+        "order": 2,
+        "courses": [
+          {
+            "courseName": "Assistive Technology for Daily Living",
+            "order": 1,
+            "isRequired": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Communication & Accessibility Skills",
+    "description": "Comprehensive learning path covering multiple communication methods for individuals with special needs - visual, tactile, and technology-assisted",
+    "photo": "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800",
+    "sections": [
+      {
+        "name": "Visual Communication",
+        "description": "Learn sign language for deaf and hard of hearing communication",
+        "order": 1,
+        "courses": [
+          {
+            "courseName": "Sign Language Fundamentals",
+            "order": 1,
+            "isRequired": true
+          }
+        ]
+      },
+      {
+        "name": "Tactile Communication",
+        "description": "Master Braille for visually impaired literacy and communication",
+        "order": 2,
+        "courses": [
+          {
+            "courseName": "Braille Reading and Writing",
+            "order": 1,
+            "isRequired": true
+          }
+        ]
+      },
+      {
+        "name": "Technology-Assisted Communication",
+        "description": "Utilize assistive technology for enhanced independence and daily living",
+        "order": 3,
+        "courses": [
+          {
+            "courseName": "Assistive Technology for Daily Living",
+            "order": 1,
+            "isRequired": true
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Full Accessibility & Special Needs Certification",
+    "description": "Complete learning path for individuals seeking comprehensive special needs education and assistive technology mastery - covers all communication methods and self-regulation techniques",
+    "photo": "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800",
+    "sections": [
+      {
+        "name": "Foundation Communication Skills",
+        "description": "Build core communication skills through sign language and Braille",
+        "order": 1,
+        "courses": [
+          {
+            "courseName": "Sign Language Fundamentals",
+            "order": 1,
+            "isRequired": true
+          },
+          {
+            "courseName": "Braille Reading and Writing",
+            "order": 2,
+            "isRequired": true
+          }
+        ]
+      },
+      {
+        "name": "Technology Integration",
+        "description": "Master assistive technology tools for daily independence",
+        "order": 2,
+        "courses": [
+          {
+            "courseName": "Assistive Technology for Daily Living",
+            "order": 1,
+            "isRequired": true
+          }
+        ]
+      },
+      {
+        "name": "Advanced Support Techniques",
+        "description": "Learn therapeutic and self-regulation strategies for comprehensive support",
+        "order": 3,
+        "courses": [
+          {
+            "courseName": "Sensory Integration and Self-Regulation",
+            "order": 1,
+            "isRequired": true
+          }
+        ]
+      }
+    ]
+  }
+]
