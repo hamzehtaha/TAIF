@@ -26,7 +26,7 @@ namespace TAIF.Application.Services
 
         public async Task<List<LearningPathResponseDTO>> GetUserEnrolledLearningPathsAsync(Guid userId)
         {
-            var userProgress = await _progressRepository.GetUserLearningPathsAsync(userId);
+            var userProgress = await _progressRepository.GetUserLearningPathsWithDetailsAsync(userId);
 
             return userProgress.Select(up => new LearningPathResponseDTO
             {

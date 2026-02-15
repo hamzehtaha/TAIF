@@ -10,5 +10,6 @@ namespace TAIF.Application.Interfaces.Services
         Task<QuizResultResponse> SubmitQuizAsync(Guid userId, SubmitQuizRequest request);
         Task<List<LessonItemResponse>> GetLessonItemsProgressAsync(Guid UserId, Guid lessonId, bool withDeleted = false);
         Task<double> GetUserCourseCompletedDurationAsync(Guid userId, Guid courseId);
+        Task<double> GetUserCompletedDurationForLearningPathAsync(Guid userId, Guid learningPathId);
     }
 }

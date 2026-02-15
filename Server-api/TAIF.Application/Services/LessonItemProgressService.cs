@@ -15,15 +15,18 @@ namespace TAIF.Application.Services
         private readonly ILessonItemProgressRepository _lessonItemProgressRepository;
         private readonly ILessonItemService _lessonItemService;
         private readonly IQuizSubmissionService _quizSubmissionService;
+        private readonly ILearningPathRepository _learningPathRepository;
 
         public LessonItemProgressService(
             ILessonItemProgressRepository repository, 
             ILessonItemService lessonItemService, 
-            IQuizSubmissionService quizSubmissionService) : base(repository)
+            IQuizSubmissionService quizSubmissionService,
+            ILearningPathRepository learningPathRepository) : base(repository)
         {
             _lessonItemProgressRepository = repository;
             _lessonItemService = lessonItemService;
             _quizSubmissionService = quizSubmissionService;
+            _learningPathRepository = learningPathRepository;
         }
         
         public async Task<QuizResultResponse> SubmitQuizAsync(Guid userId, SubmitQuizRequest request)
@@ -154,6 +157,20 @@ namespace TAIF.Application.Services
         public async Task<double> GetUserCourseCompletedDurationAsync(Guid userId, Guid courseId)
         {
             return await _lessonItemProgressRepository.GetCompletedDurationSumAsync(userId, courseId);
+        }
+
+        /// <summary>
+        /// Gets the total completed duration in seconds for a user's progress in a learning path
+        /// </summary>
+        public async Task<double> GetUserCompletedDurationForLearningPathAsync(Guid userId, Guid learningPathId)
+        {
+            var courseIds = await _learningPathRepository.GetCourseIdsInLearningPathAsync(learningPathId);
+            
+            if (!courseIds.Any())
+                return 0;
+
+            // Single grouped query instead of N+1
+            return await _lessonItemProgressRepository.GetCompletedDurationSumForCoursesAsync(userId, courseIds);
         }
     }
 }

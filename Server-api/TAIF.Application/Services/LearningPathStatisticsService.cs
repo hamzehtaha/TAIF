@@ -33,13 +33,15 @@ namespace TAIF.Application.Services
                 return;
             }
 
+            // Fetch enrollment counts and durations in bulk (single query each)
             var enrollmentCounts = await _progressRepository.GetEnrollmentCountsPerLearningPathAsync();
+            var durations = await _learningPathRepository.GetAllLearningPathDurationsAsync();
 
             int updatedCount = 0;
             foreach (var learningPath in learningPaths)
             {
                 var enrollmentCount = enrollmentCounts.GetValueOrDefault(learningPath.Id);
-                var totalDuration = await CalculateTotalDurationAsync(learningPath.Id);
+                var totalDuration = durations.GetValueOrDefault(learningPath.Id);
 
                 if (learningPath.TotalEnrolled != enrollmentCount ||
                     Math.Abs(learningPath.DurationInSeconds - totalDuration) > 0.001)
@@ -103,14 +105,35 @@ namespace TAIF.Application.Services
 
         private async Task<double> CalculateTotalDurationAsync(Guid learningPathId)
         {
-            var learningPath = await _learningPathRepository.GetWithSectionsAndCoursesAsync(learningPathId);
+            try
+            {
+                var learningPath = await _learningPathRepository.GetWithSectionsAndCoursesAsync(learningPathId);
 
-            if (learningPath == null)
+                if (learningPath == null)
+                {
+                    _logger.LogWarning("Learning path {LearningPathId} not found during duration calculation", learningPathId);
+                    return 0;
+                }
+
+                if (learningPath.Sections == null || !learningPath.Sections.Any())
+                {
+                    _logger.LogWarning("Learning path {LearningPathId} has no sections", learningPathId);
+                    return 0;
+                }
+
+                var totalDuration = learningPath.Sections
+                    .Where(s => s.Courses != null)
+                    .SelectMany(s => s.Courses)
+                    .Where(lpc => lpc.Course != null)
+                    .Sum(lpc => lpc.Course.TotalDurationInSeconds);
+
+                return totalDuration;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error calculating duration for learning path {LearningPathId}", learningPathId);
                 return 0;
-
-            return learningPath.Sections
-                .SelectMany(s => s.Courses)
-                .Sum(lpc => lpc.Course.TotalDurationInSeconds);
+            }
         }
     }
 }

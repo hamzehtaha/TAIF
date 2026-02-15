@@ -20,5 +20,13 @@ namespace TAIF.Infrastructure.Repositories
                 .Where(p => p.UserId == userId && p.CourseID == courseId)
                 .SumAsync(p => p.CompletedDurationInSeconds);
         }
+
+        public async Task<double> GetCompletedDurationSumForCoursesAsync(Guid userId, List<Guid> courseIds)
+        {
+            return await _dbSet
+                .AsNoTracking()
+                .Where(lip => lip.UserId == userId && courseIds.Contains(lip.CourseID) && !lip.IsDeleted)
+                .SumAsync(lip => lip.CompletedDurationInSeconds);
+        }
     }
 }

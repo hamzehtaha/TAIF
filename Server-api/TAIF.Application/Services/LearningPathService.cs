@@ -20,7 +20,7 @@ namespace TAIF.Application.Services
 
         public async Task<List<LearningPathResponseDTO>> GetAllLearningPathsAsync(Guid userId)
         {
-            var learningPaths = await _learningPathRepository.GetAllNoTrackingAsync();
+            var learningPaths = await _learningPathRepository.GetAllWithSectionsAndCoursesAsync();
 
             var enrolledProgress = await _progressRepository.FindNoTrackingAsync(
                 predicate: p => p.UserId == userId,

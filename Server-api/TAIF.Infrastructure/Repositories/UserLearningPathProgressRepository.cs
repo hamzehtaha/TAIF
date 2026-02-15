@@ -11,23 +11,31 @@ namespace TAIF.Infrastructure.Repositories
         {
         }
 
-        public async Task<UserLearningPathProgress?> GetUserProgressAsync(Guid userId, Guid learningPathId, bool withDeleted = false)
+        public async Task<List<UserLearningPathProgress>> GetUserLearningPathsWithDetailsAsync(Guid userId)
         {
-            IQueryable<UserLearningPathProgress> query = _dbSet
+            return await _dbSet
                 .AsNoTracking()
+                .Where(ulpp => ulpp.UserId == userId && !ulpp.IsDeleted && !ulpp.LearningPath.IsDeleted)
                 .Include(ulpp => ulpp.LearningPath)
                     .ThenInclude(lp => lp.Sections)
                         .ThenInclude(s => s.Courses)
-                            .ThenInclude(c => c.Course);
+                .ToListAsync();
+        }
 
-            if (!withDeleted)
-                query = query.Where(e => !e.IsDeleted);
-
-            var progress = await query
-                .FirstOrDefaultAsync(ulpp => ulpp.UserId == userId && ulpp.LearningPathId == learningPathId);
+        public async Task<UserLearningPathProgress?> GetUserProgressWithDetailsAsync(Guid userId, Guid learningPathId)
+        {
+            var progress = await _dbSet
+                .AsNoTracking()
+                .Where(ulpp => ulpp.UserId == userId && ulpp.LearningPathId == learningPathId && !ulpp.IsDeleted)
+                .Include(ulpp => ulpp.LearningPath)
+                    .ThenInclude(lp => lp.Sections)
+                        .ThenInclude(s => s.Courses)
+                            .ThenInclude(c => c.Course)
+                .FirstOrDefaultAsync();
 
             if (progress?.LearningPath != null)
             {
+                // Order in memory
                 progress.LearningPath.Sections = progress.LearningPath.Sections.OrderBy(s => s.Order).ToList();
                 foreach (var section in progress.LearningPath.Sections)
                 {
@@ -40,21 +48,38 @@ namespace TAIF.Infrastructure.Repositories
 
         public async Task<List<UserLearningPathProgress>> GetUserLearningPathsAsync(Guid userId, bool withDeleted = false)
         {
-            return await FindWithIncludesNoTrackingAsync(
-                predicate: ulpp => ulpp.UserId == userId,
-                withDeleted: withDeleted,
-                orderBy: ulpp => ulpp.EnrolledAt,
-                orderByDescending: true,
-                includes: ulpp => ulpp.LearningPath
-            );
+            var query = _dbSet
+                .AsNoTracking()
+                .Where(ulpp => ulpp.UserId == userId && !ulpp.LearningPath.IsDeleted);
+
+            if (!withDeleted)
+                query = query.Where(ulpp => !ulpp.IsDeleted);
+
+            return await query
+                .Include(ulpp => ulpp.LearningPath)
+                .ToListAsync();
+        }
+
+        public async Task<UserLearningPathProgress?> GetUserProgressAsync(Guid userId, Guid learningPathId, bool withDeleted = false)
+        {
+            var query = _dbSet
+                .AsNoTracking()
+                .Where(ulpp => ulpp.UserId == userId && ulpp.LearningPathId == learningPathId);
+
+            if (!withDeleted)
+                query = query.Where(ulpp => !ulpp.IsDeleted);
+
+            return await query
+                .Include(ulpp => ulpp.LearningPath)
+                .FirstOrDefaultAsync();
         }
 
         public async Task<Dictionary<Guid, int>> GetEnrollmentCountsPerLearningPathAsync()
         {
             return await _dbSet
                 .AsNoTracking()
-                .Where(p => !p.IsDeleted)
-                .GroupBy(p => p.LearningPathId)
+                .Where(ulpp => !ulpp.IsDeleted)
+                .GroupBy(ulpp => ulpp.LearningPathId)
                 .Select(g => new { LearningPathId = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.LearningPathId, x => x.Count);
         }
