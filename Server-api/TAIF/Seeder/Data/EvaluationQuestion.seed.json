@@ -1,0 +1,552 @@
+[
+  {
+    "Text": "How familiar are you with inclusive education principles?",
+    "Order": 1,
+    "Answers": [
+      {
+        "Text": "Not familiar",
+        "Score": 1
+      },
+      {
+        "Text": "Basic understanding",
+        "Score": 2
+      },
+      {
+        "Text": "Good understanding",
+        "Score": 3
+      },
+      {
+        "Text": "Expert level",
+        "Score": 4
+      }
+    ]
+  },
+  {
+    "Text": "How confident are you in supporting students with learning disabilities?",
+    "Order": 2,
+    "Answers": [
+      {
+        "Text": "Not confident",
+        "Score": 1
+      },
+      {
+        "Text": "Somewhat confident",
+        "Score": 2
+      },
+      {
+        "Text": "Confident",
+        "Score": 3
+      },
+      {
+        "Text": "Very confident",
+        "Score": 4
+      }
+    ]
+  },
+  {
+    "Text": "How experienced are you with Individualized Education Plans (IEPs)?",
+    "Order": 3,
+    "Answers": [
+      {
+        "Text": "No experience",
+        "Score": 1
+      },
+      {
+        "Text": "Limited experience",
+        "Score": 2
+      },
+      {
+        "Text": "Moderate experience",
+        "Score": 3
+      },
+      {
+        "Text": "Extensive experience",
+        "Score": 4
+      }
+    ]
+  },
+  {
+    "Text": "How well do you adapt teaching methods for diverse learners?",
+    "Order": 4,
+    "Answers": [
+      {
+        "Text": "Rarely adapt",
+        "Score": 1
+      },
+      {
+        "Text": "Sometimes adapt",
+        "Score": 2
+      },
+      {
+        "Text": "Often adapt",
+        "Score": 3
+      },
+      {
+        "Text": "Always adapt effectively",
+        "Score": 4
+      }
+    ]
+  },
+  {
+    "Text": "How knowledgeable are you about autism spectrum support strategies?",
+    "Order": 5,
+    "Answers": [
+      {
+        "Text": "Not knowledgeable",
+        "Score": 1
+      },
+      {
+        "Text": "Basic knowledge",
+        "Score": 2
+      },
+      {
+        "Text": "Good knowledge",
+        "Score": 3
+      },
+      {
+        "Text": "Advanced knowledge",
+        "Score": 4
+      }
+    ]
+  },
+  {
+    "Text": "How confident are you in managing classroom behavior challenges?",
+    "Order": 6,
+    "Answers": [
+      {
+        "Text": "Not confident",
+        "Score": 1
+      },
+      {
+        "Text": "Somewhat confident",
+        "Score": 2
+      },
+      {
+        "Text": "Confident",
+        "Score": 3
+      },
+      {
+        "Text": "Highly confident",
+        "Score": 4
+      }
+    ]
+  },
+  {
+    "Text": "How experienced are you in differentiated instruction?",
+    "Order": 7,
+    "Answers": [
+      {
+        "Text": "No experience",
+        "Score": 1
+      },
+      {
+        "Text": "Limited experience",
+        "Score": 2
+      },
+      {
+        "Text": "Moderate experience",
+        "Score": 3
+      },
+      {
+        "Text": "Extensive experience",
+        "Score": 4
+      }
+    ]
+  },
+  {
+    "Text": "How comfortable are you using assistive technologies in education?",
+    "Order": 8,
+    "Answers": [
+      {
+        "Text": "Not comfortable",
+        "Score": 1
+      },
+      {
+        "Text": "Somewhat comfortable",
+        "Score": 2
+      },
+      {
+        "Text": "Comfortable",
+        "Score": 3
+      },
+      {
+        "Text": "Very comfortable",
+        "Score": 4
+      }
+    ]
+  },
+  {
+    "Text": "How well do you collaborate with parents in special education settings?",
+    "Order": 9,
+    "Answers": [
+      {
+        "Text": "Rarely collaborate",
+        "Score": 1
+      },
+      {
+        "Text": "Sometimes collaborate",
+        "Score": 2
+      },
+      {
+        "Text": "Frequently collaborate",
+        "Score": 3
+      },
+      {
+        "Text": "Always collaborate effectively",
+        "Score": 4
+      }
+    ]
+  },
+  {
+    "Text": "How confident are you in supporting students with ADHD?",
+    "Order": 10,
+    "Answers": [
+      {
+        "Text": "Not confident",
+        "Score": 1
+      },
+      {
+        "Text": "Somewhat confident",
+        "Score": 2
+      },
+      {
+        "Text": "Confident",
+        "Score": 3
+      },
+      {
+        "Text": "Highly confident",
+        "Score": 4
+      }
+    ]
+  },
+  {
+    "Text": "How skilled are you in creating inclusive classroom environments?",
+    "Order": 11,
+    "Answers": [
+      {
+        "Text": "Beginner",
+        "Score": 1
+      },
+      {
+        "Text": "Intermediate",
+        "Score": 2
+      },
+      {
+        "Text": "Advanced",
+        "Score": 3
+      },
+      {
+        "Text": "Expert",
+        "Score": 4
+      }
+    ]
+  },
+  {
+    "Text": "How familiar are you with emotional and social learning strategies?",
+    "Order": 12,
+    "Answers": [
+      {
+        "Text": "Not familiar",
+        "Score": 1
+      },
+      {
+        "Text": "Basic familiarity",
+        "Score": 2
+      },
+      {
+        "Text": "Good familiarity",
+        "Score": 3
+      },
+      {
+        "Text": "Strong expertise",
+        "Score": 4
+      }
+    ]
+  },
+  {
+    "Text": "How well do you assess learning needs in special education?",
+    "Order": 13,
+    "Answers": [
+      {
+        "Text": "Poorly",
+        "Score": 1
+      },
+      {
+        "Text": "Adequately",
+        "Score": 2
+      },
+      {
+        "Text": "Well",
+        "Score": 3
+      },
+      {
+        "Text": "Very well",
+        "Score": 4
+      }
+    ]
+  },
+  {
+    "Text": "How confident are you in supporting students with speech and language difficulties?",
+    "Order": 14,
+    "Answers": [
+      {
+        "Text": "Not confident",
+        "Score": 1
+      },
+      {
+        "Text": "Somewhat confident",
+        "Score": 2
+      },
+      {
+        "Text": "Confident",
+        "Score": 3
+      },
+      {
+        "Text": "Highly confident",
+        "Score": 4
+      }
+    ]
+  },
+  {
+    "Text": "How experienced are you in multidisciplinary teamwork for special education?",
+    "Order": 15,
+    "Answers": [
+      {
+        "Text": "No experience",
+        "Score": 1
+      },
+      {
+        "Text": "Limited experience",
+        "Score": 2
+      },
+      {
+        "Text": "Moderate experience",
+        "Score": 3
+      },
+      {
+        "Text": "Extensive experience",
+        "Score": 4
+      }
+    ]
+  },
+  {
+    "Text": "What is your primary goal in special education?",
+    "Order": 16,
+    "Answers": [
+      {
+        "Text": "Support students academically",
+        "Score": 1
+      },
+      {
+        "Text": "Improve behavior management skills",
+        "Score": 2
+      },
+      {
+        "Text": "Specialize in autism support",
+        "Score": 3
+      },
+      {
+        "Text": "Obtain professional certification",
+        "Score": 4
+      }
+    ]
+  },
+  {
+    "Text": "Which age group do you primarily work with?",
+    "Order": 17,
+    "Answers": [
+      {
+        "Text": "Early childhood",
+        "Score": 1
+      },
+      {
+        "Text": "Elementary school",
+        "Score": 2
+      },
+      {
+        "Text": "Middle school",
+        "Score": 3
+      },
+      {
+        "Text": "High school or adults",
+        "Score": 4
+      }
+    ]
+  },
+  {
+    "Text": "What is your biggest challenge in special education?",
+    "Order": 18,
+    "Answers": [
+      {
+        "Text": "Classroom behavior management",
+        "Score": 1
+      },
+      {
+        "Text": "Communication difficulties",
+        "Score": 2
+      },
+      {
+        "Text": "Learning adaptation strategies",
+        "Score": 3
+      },
+      {
+        "Text": "Parent collaboration and engagement",
+        "Score": 4
+      }
+    ]
+  },
+  {
+    "Text": "How many years of experience do you have in special education?",
+    "Order": 19,
+    "Answers": [
+      {
+        "Text": "No experience",
+        "Score": 1
+      },
+      {
+        "Text": "1–3 years",
+        "Score": 2
+      },
+      {
+        "Text": "4–7 years",
+        "Score": 3
+      },
+      {
+        "Text": "8+ years",
+        "Score": 4
+      }
+    ]
+  },
+  {
+    "Text": "Which specialization interests you most?",
+    "Order": 20,
+    "Answers": [
+      {
+        "Text": "Autism Spectrum Disorders",
+        "Score": 3
+      },
+      {
+        "Text": "ADHD Support Strategies",
+        "Score": 2
+      },
+      {
+        "Text": "Speech & Language Support",
+        "Score": 2
+      },
+      {
+        "Text": "Emotional & Social Development",
+        "Score": 4
+      }
+    ]
+  },
+  {
+    "Text": "What is your preferred learning format?",
+    "Order": 21,
+    "Answers": [
+      {
+        "Text": "Video-based lessons",
+        "Score": 2
+      },
+      {
+        "Text": "Case studies and real scenarios",
+        "Score": 4
+      },
+      {
+        "Text": "Practical workshops",
+        "Score": 3
+      },
+      {
+        "Text": "Reading and research materials",
+        "Score": 1
+      }
+    ]
+  },
+  {
+    "Text": "How much time can you dedicate weekly to learning?",
+    "Order": 22,
+    "Answers": [
+      {
+        "Text": "1–2 hours",
+        "Score": 1
+      },
+      {
+        "Text": "3–5 hours",
+        "Score": 2
+      },
+      {
+        "Text": "6–10 hours",
+        "Score": 3
+      },
+      {
+        "Text": "Intensive program (10+ hours)",
+        "Score": 4
+      }
+    ]
+  },
+  {
+    "Text": "Do you currently create individualized learning plans?",
+    "Order": 23,
+    "Answers": [
+      {
+        "Text": "Never",
+        "Score": 1
+      },
+      {
+        "Text": "Occasionally",
+        "Score": 2
+      },
+      {
+        "Text": "Frequently",
+        "Score": 3
+      },
+      {
+        "Text": "Always",
+        "Score": 4
+      }
+    ]
+  },
+  {
+    "Text": "How comfortable are you using assistive technologies in education?",
+    "Order": 24,
+    "Answers": [
+      {
+        "Text": "Not comfortable",
+        "Score": 1
+      },
+      {
+        "Text": "Somewhat comfortable",
+        "Score": 2
+      },
+      {
+        "Text": "Comfortable",
+        "Score": 3
+      },
+      {
+        "Text": "Expert level",
+        "Score": 4
+      }
+    ]
+  },
+  {
+    "Text": "Are you seeking professional advancement in special education?",
+    "Order": 25,
+    "Answers": [
+      {
+        "Text": "No, personal development only",
+        "Score": 1
+      },
+      {
+        "Text": "Yes, career promotion",
+        "Score": 3
+      },
+      {
+        "Text": "Yes, professional certification",
+        "Score": 4
+      },
+      {
+        "Text": "Yes, leadership or department head role",
+        "Score": 4
+      }
+    ]
+  }
+]

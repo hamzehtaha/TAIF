@@ -35,6 +35,9 @@ namespace TAIF.Infrastructure.Data
         public DbSet<LearningPathSection> LearningPathSections { get; set; }
         public DbSet<LearningPathCourse> LearningPathCourses { get; set; }
         public DbSet<UserLearningPathProgress> UserLearningPathProgress { get; set; }
+        public DbSet<EvaluationQuestion> EvaluationQuestions => Set<EvaluationQuestion>();
+        public DbSet<EvaluationAnswer> EvaluationAnswers => Set<EvaluationAnswer>();
+        public DbSet<UserEvaluation> UserEvaluations => Set<UserEvaluation>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

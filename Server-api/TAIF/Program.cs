@@ -10,6 +10,7 @@ using System.Text;
 using TAIF.API.Middleware;
 using TAIF.API.Seeder;
 using TAIF.API.Seeder.Scripts;
+using TAIF.Application.DTOs;
 using TAIF.Application.Interfaces.Repositories;
 using TAIF.Application.Interfaces.Services;
 using TAIF.Application.Services;
@@ -105,6 +106,17 @@ builder.Services.AddScoped<ILearningPathSectionService, LearningPathSectionServi
 builder.Services.AddScoped<ILearningPathCourseService, LearningPathCourseService>();
 builder.Services.AddScoped<IUserLearningPathProgressService, UserLearningPathProgressService>();
 builder.Services.AddScoped<ILearningPathStatisticsService, LearningPathStatisticsService>();
+builder.Services.AddSingleton<IAiHelperService, OllamaAiHelperService>();
+
+builder.Services.AddScoped<IEvaluationQuestionRepository, EvaluationQuestionRepository>();
+builder.Services.AddScoped<IEvaluationAnswerRepository, EvaluationAnswerRepository>();
+
+builder.Services.AddScoped<IEvaluationQuestionService, EvaluationQuestionService>();
+builder.Services.AddScoped<IEvaluationAnswerService, EvaluationAnswerService>();
+
+builder.Services.AddScoped<IUserEvaluationRepository, UserEvaluationRepository>();
+builder.Services.AddScoped<IUserEvaluationService, UserEvaluationService>();
+
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -315,4 +327,6 @@ void InjectSeeders()
     builder.Services.AddScoped<IEntitySeeder, RecommendationSeeder>();
     builder.Services.AddScoped<IEntitySeeder, CourseSeeder>();
     builder.Services.AddScoped<IEntitySeeder, LearningPathSeeder>();
+    builder.Services.AddScoped<IEntitySeeder, EvaluationQuestionSeeder>();
+
 }
