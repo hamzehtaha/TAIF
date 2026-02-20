@@ -38,26 +38,34 @@ namespace TAIF.Application.Services
 
             // Database-side aggregation - no memory loading
             var enrollmentCounts = await _enrollmentRepository.GetEnrollmentCountsPerCourseAsync();
-            var courseDurations = await _lessonRepository.GetTotalDurationPerCourseAsync();
+            
+            // Single query for BOTH duration and lesson item count
+            var courseStatistics = await _lessonRepository.GetCourseStatisticsAsync();
 
             // Update each course
             int updatedCount = 0;
             foreach (var course in courses)
             {
-                // Using GetValueOrDefault (1 lookup instead of 2)
                 var enrollmentCount = enrollmentCounts.GetValueOrDefault(course.Id);
-                var totalDuration = courseDurations.GetValueOrDefault(course.Id);
+                var stats = courseStatistics.GetValueOrDefault(course.Id);
+
+                // Extract values with null-safe access
+                var totalDuration = stats?.TotalDuration ?? 0;
+                var totalLessonItems = stats?.TotalLessonItems ?? 0;
 
                 if (course.TotalEnrolled != enrollmentCount || 
-                    Math.Abs(course.TotalDurationInSeconds - totalDuration) > 0.001)
+                    Math.Abs(course.TotalDurationInSeconds - totalDuration) > 0.001 ||
+                    course.TotalLessonItems != totalLessonItems) 
                 {
                     course.TotalEnrolled = enrollmentCount;
                     course.TotalDurationInSeconds = totalDuration;
+                    course.TotalLessonItems = totalLessonItems;
 
                     _courseRepository.Update(
                         course,
                         c => c.TotalEnrolled,
-                        c => c.TotalDurationInSeconds);
+                        c => c.TotalDurationInSeconds,
+                        c => c.TotalLessonItems);
                     
                     updatedCount++;
                 }
@@ -90,24 +98,29 @@ namespace TAIF.Application.Services
                 .FindNoTrackingAsync(e => e.CourseId == courseId);
             var enrollmentCount = enrollments.Count;
 
-            // Calculate total duration
-            var allDurations = await _lessonRepository.GetTotalDurationPerCourseAsync();
-            var totalDuration = allDurations.GetValueOrDefault(courseId);
+            // UPDATED: Get both duration and lesson item count in single query
+            var allStatistics = await _lessonRepository.GetCourseStatisticsAsync();
+            var stats = allStatistics.GetValueOrDefault(courseId);
+            
+            var totalDuration = stats?.TotalDuration ?? 0;
+            var totalLessonItems = stats?.TotalLessonItems ?? 0;
 
             // Update course statistics
             course.TotalEnrolled = enrollmentCount;
             course.TotalDurationInSeconds = totalDuration;
+            course.TotalLessonItems = totalLessonItems; 
 
             _courseRepository.Update(
                 course,
                 c => c.TotalEnrolled,
-                c => c.TotalDurationInSeconds);
+                c => c.TotalDurationInSeconds,
+                c => c.TotalLessonItems);
 
             await _courseRepository.SaveChangesAsync();
 
             _logger.LogInformation(
-                "Successfully updated course {CourseId}: {EnrollmentCount} enrollments, {Duration} seconds",
-                courseId, enrollmentCount, totalDuration);
+                "Successfully updated course {CourseId}: {EnrollmentCount} enrollments, {Duration} seconds, {ItemCount} lesson items",
+                courseId, enrollmentCount, totalDuration, totalLessonItems);
 
             return true;
         }

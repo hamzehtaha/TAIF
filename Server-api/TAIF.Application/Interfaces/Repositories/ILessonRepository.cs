@@ -1,4 +1,5 @@
-﻿using TAIF.Domain.Entities;
+﻿using TAIF.Application.DTOs;
+using TAIF.Domain.Entities;
 
 namespace TAIF.Application.Interfaces.Repositories
 {
@@ -7,8 +8,9 @@ namespace TAIF.Application.Interfaces.Repositories
         Task<List<Lesson>> GetByCourseIdAsync(Guid courseId, bool withDeleted = false);
         
         /// <summary>
-        /// Gets total duration per course by joining lessons with their lesson items
+        /// Gets total duration and lesson item count per course by joining lessons with their lesson items.
+        /// Combines both aggregations in a single optimized query.
         /// </summary>
-        Task<Dictionary<Guid, double>> GetTotalDurationPerCourseAsync();
+        Task<Dictionary<Guid, CourseStatisticsDTO>> GetCourseStatisticsAsync();
     }
 }
