@@ -21,7 +21,7 @@ class AppRoutes {
 /// Uses GoRouter for declarative routing with deep link support
 class AppRouter {
   static GoRouter createRouter() => GoRouter(
-        initialLocation: AppRoutes.home,
+        initialLocation: AppRoutes.login,
         debugLogDiagnostics: true,
         routes: [
           // Home
