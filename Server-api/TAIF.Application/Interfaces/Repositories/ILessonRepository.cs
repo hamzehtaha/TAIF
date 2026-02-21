@@ -12,5 +12,6 @@ namespace TAIF.Application.Interfaces.Repositories
         /// Combines both aggregations in a single optimized query.
         /// </summary>
         Task<Dictionary<Guid, CourseStatisticsDTO>> GetCourseStatisticsAsync();
+        Task<CourseStatisticsDTO?> GetCourseStatisticsForSingleCourseAsync(Guid courseId);
     }
 }

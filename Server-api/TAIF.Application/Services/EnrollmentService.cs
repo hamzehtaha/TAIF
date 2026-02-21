@@ -119,20 +119,20 @@ namespace TAIF.Application.Services
                 };
             }
 
-            bool allItemsCompleted = await _repo.HasUserCompletedAllLessonItemsAsync(
-                userId, courseId, course.TotalLessonItems);
+            var (completedCount, totalItems) = await _lessonItemProgressRepository
+                .GetCompletionStatsAsync(userId, courseId, course.TotalLessonItems);
 
-            var completedCount = await GetCompletedItemCountAsync(userId, courseId);
+            bool isEligible = completedCount == totalItems;
 
             return new CourseCompletionEligibilityResponse
             {
-                IsEligible = allItemsCompleted,
-                TotalItems = course.TotalLessonItems,
+                IsEligible = isEligible,
+                TotalItems = totalItems,
                 CompletedItems = completedCount,
-                CompletionPercentage = (double)completedCount / course.TotalLessonItems * 100,
-                Message = allItemsCompleted 
+                CompletionPercentage = (double)completedCount / totalItems * 100,
+                Message = isEligible 
                     ? "Ready to complete!" 
-                    : $"Complete {course.TotalLessonItems - completedCount} more items"
+                    : $"Complete {totalItems - completedCount} more items"
             };
         }
 
@@ -246,16 +246,6 @@ namespace TAIF.Application.Services
             var courseIdToTotalItems = courses.ToDictionary(c => c.Id, c => c.TotalLessonItems);
 
             return await _repo.CheckMultipleCourseCompletionsAsync(userId, courseIdToTotalItems);
-        }
-
-        private async Task<int> GetCompletedItemCountAsync(Guid userId, Guid courseId)
-        {
-            var completedItems = await _lessonItemProgressRepository.FindNoTrackingAsync(
-                lip => lip.UserId == userId && 
-                       lip.CourseID == courseId && 
-                       lip.IsCompleted);
-            
-            return completedItems.Count;
         }
     }
 }

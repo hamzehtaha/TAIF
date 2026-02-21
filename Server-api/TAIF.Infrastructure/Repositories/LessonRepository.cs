@@ -46,5 +46,32 @@ namespace TAIF.Infrastructure.Repositories
                         TotalLessonItems = x.TotalLessonItems
                     });
         }
+
+        public async Task<CourseStatisticsDTO?> GetCourseStatisticsForSingleCourseAsync(Guid courseId)
+        {
+            var result = await _context.lessons
+                .Where(l => !l.IsDeleted && l.CourseId == courseId)
+                .Join(_context.LessonItems.Where(li => !li.IsDeleted),
+                    lesson => lesson.Id,
+                    lessonItem => lessonItem.LessonId,
+                    (lesson, lessonItem) => new { lesson.CourseId, lessonItem.DurationInSeconds })
+                .GroupBy(x => x.CourseId)
+                .Select(g => new 
+                { 
+                    CourseId = g.Key, 
+                    TotalDuration = g.Sum(x => x.DurationInSeconds),
+                    TotalLessonItems = g.Count()
+                })
+                .FirstOrDefaultAsync();
+
+            if (result == null)
+                return null;
+
+            return new CourseStatisticsDTO 
+            { 
+                TotalDuration = result.TotalDuration,
+                TotalLessonItems = result.TotalLessonItems
+            };
+        }
     }
 }

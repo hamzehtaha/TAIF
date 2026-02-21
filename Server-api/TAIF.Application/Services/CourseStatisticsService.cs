@@ -93,22 +93,18 @@ namespace TAIF.Application.Services
                 return false;
             }
 
+            // FIXED: Get statistics for single course only
+            var stats = await _lessonRepository.GetCourseStatisticsForSingleCourseAsync(courseId);
+
             // Calculate enrollment count
             var enrollments = await _enrollmentRepository
                 .FindNoTrackingAsync(e => e.CourseId == courseId);
             var enrollmentCount = enrollments.Count;
 
-            // UPDATED: Get both duration and lesson item count in single query
-            var allStatistics = await _lessonRepository.GetCourseStatisticsAsync();
-            var stats = allStatistics.GetValueOrDefault(courseId);
-            
-            var totalDuration = stats?.TotalDuration ?? 0;
-            var totalLessonItems = stats?.TotalLessonItems ?? 0;
-
             // Update course statistics
             course.TotalEnrolled = enrollmentCount;
-            course.TotalDurationInSeconds = totalDuration;
-            course.TotalLessonItems = totalLessonItems; 
+            course.TotalDurationInSeconds = stats?.TotalDuration ?? 0;
+            course.TotalLessonItems = stats?.TotalLessonItems ?? 0;
 
             _courseRepository.Update(
                 course,
@@ -119,8 +115,8 @@ namespace TAIF.Application.Services
             await _courseRepository.SaveChangesAsync();
 
             _logger.LogInformation(
-                "Successfully updated course {CourseId}: {EnrollmentCount} enrollments, {Duration} seconds, {ItemCount} lesson items",
-                courseId, enrollmentCount, totalDuration, totalLessonItems);
+                "Successfully updated course {CourseId}: {EnrollmentCount} enrollments, {Duration} seconds, {ItemCount} items",
+                courseId, enrollmentCount, stats?.TotalDuration ?? 0, stats?.TotalLessonItems ?? 0);
 
             return true;
         }

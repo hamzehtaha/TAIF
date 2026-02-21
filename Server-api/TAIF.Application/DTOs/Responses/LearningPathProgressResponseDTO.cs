@@ -1,5 +1,3 @@
-using TAIF.Domain.Entities;
-
 namespace TAIF.Application.DTOs.Responses
 {
     public class LearningPathProgressResponseDTO

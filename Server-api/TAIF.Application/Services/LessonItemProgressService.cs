@@ -242,12 +242,7 @@ namespace TAIF.Application.Services
         /// </summary>
         public async Task<int> GetCompletedItemCountAsync(Guid userId, Guid courseId)
         {
-            var completedItems = await _lessonItemProgressRepository.FindNoTrackingAsync(
-                lip => lip.UserId == userId && 
-                       lip.CourseID == courseId && 
-                       lip.IsCompleted);
-            
-            return completedItems.Count;
+            return await _lessonItemProgressRepository.GetCompletedItemCountAsync(userId, courseId);
         }
     }
 }
