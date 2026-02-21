@@ -9,18 +9,18 @@ namespace TAIF.Application.Services
     public class EnrollmentService : ServiceBase<Enrollment>, IEnrollmentService
     {
         private readonly IEnrollmentRepository _repo;
-        private readonly ILessonItemProgressService _lessonItemProgressService;
+        private readonly ILessonItemProgressRepository _lessonItemProgressRepository;
         private readonly ICourseRepository _courseRepository;
         private readonly ILogger<EnrollmentService> _logger;
         
         public EnrollmentService(
             IEnrollmentRepository repository, 
-            ILessonItemProgressService lessonItemProgressService,
+            ILessonItemProgressRepository lessonItemProgressRepository,
             ICourseRepository courseRepository,
             ILogger<EnrollmentService> logger) : base(repository)
         {
             _repo = repository;
-            _lessonItemProgressService = lessonItemProgressService;
+            _lessonItemProgressRepository = lessonItemProgressRepository;
             _courseRepository = courseRepository;
             _logger = logger;
         }
@@ -66,7 +66,7 @@ namespace TAIF.Application.Services
                 return null;
             }
 
-            var completedDuration = await _lessonItemProgressService.GetUserCourseCompletedDurationAsync(userId, courseId);
+            var completedDuration = await _lessonItemProgressRepository.GetCompletedDurationSumAsync(userId, courseId);
             
             return new EnrollmentDetailsResponse
             {
@@ -96,7 +96,6 @@ namespace TAIF.Application.Services
             _logger.LogInformation("Checking course completion eligibility for user {UserId} and course {CourseId}", 
                 userId, courseId);
 
-            // Get course with cached TotalLessonItems
             var course = await _courseRepository.GetByIdAsync(courseId);
             
             if (course == null)
@@ -120,12 +119,10 @@ namespace TAIF.Application.Services
                 };
             }
 
-            // Efficient check using cached count (only 1 query!)
             bool allItemsCompleted = await _repo.HasUserCompletedAllLessonItemsAsync(
                 userId, courseId, course.TotalLessonItems);
 
-            // Get actual completed count for response details
-            var completedCount = await _lessonItemProgressService.GetCompletedItemCountAsync(userId, courseId);
+            var completedCount = await GetCompletedItemCountAsync(userId, courseId);
 
             return new CourseCompletionEligibilityResponse
             {
@@ -144,13 +141,11 @@ namespace TAIF.Application.Services
             _logger.LogInformation("Attempting to complete course {CourseId} for user {UserId}", 
                 courseId, userId);
 
-            // Get course with cached TotalLessonItems
             var course = await _courseRepository.GetByIdAsync(courseId);
             
             if (course == null)
                 throw new InvalidOperationException("Course not found");
 
-            // Check eligibility (efficient - uses cached count)
             bool isEligible = await _repo.HasUserCompletedAllLessonItemsAsync(
                 userId, courseId, course.TotalLessonItems);
             
@@ -162,7 +157,6 @@ namespace TAIF.Application.Services
                     "Cannot complete course: not all lesson items are completed");
             }
 
-            // Get enrollment
             var enrollment = await _repo.FindOneAsync(
                 e => e.UserId == userId && e.CourseId == courseId);
 
@@ -172,7 +166,6 @@ namespace TAIF.Application.Services
             if (enrollment.IsCompleted)
                 throw new InvalidOperationException("Course already completed");
 
-            // Mark as completed
             enrollment.IsCompleted = true;
             enrollment.CompletedAt = DateTime.UtcNow;
 
@@ -192,7 +185,6 @@ namespace TAIF.Application.Services
             var enrollment = await _repo.FindOneAsync(
                 e => e.UserId == userId && e.CourseId == courseId);
 
-            // Skip if no enrollment or already completed
             if (enrollment == null)
             {
                 _logger.LogDebug("No enrollment found for user {UserId} in course {CourseId}", 
@@ -207,7 +199,6 @@ namespace TAIF.Application.Services
                 return;
             }
 
-            // Get course with cached TotalLessonItems
             var course = await _courseRepository.GetByIdAsync(courseId);
             
             if (course == null || course.TotalLessonItems == 0)
@@ -216,7 +207,6 @@ namespace TAIF.Application.Services
                 return;
             }
 
-            // Efficient check using cached count
             bool isEligible = await _repo.HasUserCompletedAllLessonItemsAsync(
                 userId, courseId, course.TotalLessonItems);
 
@@ -252,12 +242,20 @@ namespace TAIF.Application.Services
             if (!courseIds.Any())
                 return new Dictionary<Guid, bool>();
 
-            // Get courses with their TotalLessonItems
             var courses = await _courseRepository.FindNoTrackingAsync(c => courseIds.Contains(c.Id));
             var courseIdToTotalItems = courses.ToDictionary(c => c.Id, c => c.TotalLessonItems);
 
-            // Batch check
             return await _repo.CheckMultipleCourseCompletionsAsync(userId, courseIdToTotalItems);
+        }
+
+        private async Task<int> GetCompletedItemCountAsync(Guid userId, Guid courseId)
+        {
+            var completedItems = await _lessonItemProgressRepository.FindNoTrackingAsync(
+                lip => lip.UserId == userId && 
+                       lip.CourseID == courseId && 
+                       lip.IsCompleted);
+            
+            return completedItems.Count;
         }
     }
 }

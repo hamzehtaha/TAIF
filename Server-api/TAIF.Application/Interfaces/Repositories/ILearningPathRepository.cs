@@ -8,5 +8,6 @@ namespace TAIF.Application.Interfaces.Repositories
         Task<LearningPath?> GetWithSectionsAndCoursesAsync(Guid id, bool withDeleted = false);
         Task<Dictionary<Guid, double>> GetAllLearningPathDurationsAsync();
         Task<List<Guid>> GetCourseIdsInLearningPathAsync(Guid learningPathId);
+        Task<List<Guid>> GetRequiredCourseIdsInLearningPathAsync(Guid learningPathId);
     }
 }

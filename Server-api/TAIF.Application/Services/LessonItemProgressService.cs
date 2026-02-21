@@ -17,7 +17,8 @@ namespace TAIF.Application.Services
         private readonly ILessonItemService _lessonItemService;
         private readonly IQuizSubmissionService _quizSubmissionService;
         private readonly ILearningPathRepository _learningPathRepository;
-        private readonly IEnrollmentService _enrollmentService;
+        private readonly IEnrollmentRepository _enrollmentRepository;
+        private readonly ICourseRepository _courseRepository;
         private readonly ILogger<LessonItemProgressService> _logger;
 
         public LessonItemProgressService(
@@ -25,14 +26,16 @@ namespace TAIF.Application.Services
             ILessonItemService lessonItemService, 
             IQuizSubmissionService quizSubmissionService,
             ILearningPathRepository learningPathRepository,
-            IEnrollmentService enrollmentService,
+            IEnrollmentRepository enrollmentRepository,
+            ICourseRepository courseRepository,
             ILogger<LessonItemProgressService> logger) : base(repository)
         {
             _lessonItemProgressRepository = repository;
             _lessonItemService = lessonItemService;
             _quizSubmissionService = quizSubmissionService;
             _learningPathRepository = learningPathRepository;
-            _enrollmentService = enrollmentService;
+            _enrollmentRepository = enrollmentRepository;
+            _courseRepository = courseRepository;
             _logger = logger;
         }
         
@@ -147,9 +150,6 @@ namespace TAIF.Application.Services
                 throw new Exception("Lesson item not found");
             }
 
-            // ============================================
-            // STEP 1: Mark Lesson Item as Complete
-            // ============================================
             LessonItemProgress lessonItemProgress = new LessonItemProgress
             {
                 UserId = UserId,
@@ -166,20 +166,53 @@ namespace TAIF.Application.Services
             _logger.LogInformation("Lesson item {LessonItemId} marked as completed for user {UserId}", 
                 dto.LessonItemId, UserId);
 
-            // ============================================
-            // STEP 2: AUTO-CHECK Course Completion
-            // ============================================
             try
             {
-                await _enrollmentService.TryAutoCompleteCourseAsync(UserId, dto.CourseId);
+                await TryAutoCompleteCourseAsync(UserId, dto.CourseId);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during auto-completion check for course {CourseId}", dto.CourseId);
-                // Don't throw - lesson item is already saved
             }
 
             return lessonItemProgress;
+        }
+
+        private async Task TryAutoCompleteCourseAsync(Guid userId, Guid courseId)
+        {
+            _logger.LogDebug("Trying auto-completion for course {CourseId} and user {UserId}", 
+                courseId, userId);
+
+            var enrollment = await _enrollmentRepository.FindOneAsync(
+                e => e.UserId == userId && e.CourseId == courseId);
+
+            if (enrollment == null || enrollment.IsCompleted)
+            {
+                _logger.LogDebug("Course {CourseId} already completed or no enrollment for user {UserId}", 
+                    courseId, userId);
+                return;
+            }
+
+            var course = await _courseRepository.GetByIdAsync(courseId);
+            
+            if (course == null || course.TotalLessonItems == 0)
+            {
+                _logger.LogDebug("Course {CourseId} not found or has no items", courseId);
+                return;
+            }
+
+            bool isEligible = await _enrollmentRepository.HasUserCompletedAllLessonItemsAsync(
+                userId, courseId, course.TotalLessonItems);
+
+            if (isEligible)
+            {
+                enrollment.IsCompleted = true;
+                enrollment.CompletedAt = DateTime.UtcNow;
+                await _enrollmentRepository.SaveChangesAsync();
+
+                _logger.LogInformation("Auto-completed course {CourseId} for user {UserId}", 
+                    courseId, userId);
+            }
         }
 
         /// <summary>

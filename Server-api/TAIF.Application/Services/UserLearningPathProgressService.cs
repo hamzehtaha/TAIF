@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using TAIF.Application.DTOs.Responses;
 using TAIF.Application.Interfaces.Repositories;
 using TAIF.Application.Interfaces.Services;
@@ -11,17 +12,20 @@ namespace TAIF.Application.Services
         private readonly ILearningPathRepository _learningPathRepository;
         private readonly IEnrollmentService _enrollmentService;
         private readonly ILessonItemProgressService _lessonItemProgressService;
+        private readonly ILogger<UserLearningPathProgressService> _logger;
 
         public UserLearningPathProgressService(
             IUserLearningPathProgressRepository repository,
             ILearningPathRepository learningPathRepository,
             IEnrollmentService enrollmentService,
-            ILessonItemProgressService lessonItemProgressService) : base(repository)
+            ILessonItemProgressService lessonItemProgressService,
+            ILogger<UserLearningPathProgressService> logger) : base(repository)
         {
             _progressRepository = repository;
             _learningPathRepository = learningPathRepository;
             _enrollmentService = enrollmentService;
             _lessonItemProgressService = lessonItemProgressService;
+            _logger = logger;
         }
 
         public async Task<List<LearningPathResponseDTO>> GetUserEnrolledLearningPathsAsync(Guid userId)
@@ -51,6 +55,9 @@ namespace TAIF.Application.Services
             if (progress == null)
                 return null;
 
+            // Check and auto-complete if eligible (before returning response)
+            await CheckAndAutoCompleteAsync(progress, userId, learningPathId);
+
             var lp = progress.LearningPath;
 
             var completedDuration = await CalculateUserCompletedDurationAsync(userId, learningPathId);
@@ -70,6 +77,8 @@ namespace TAIF.Application.Services
                 CompletedDuration = completedDuration,
                 CurrentSectionId = progress.CurrentSectionId,
                 CurrentCourseId = progress.CurrentCourseId,
+                IsCompleted = progress.IsCompleted,
+                CompletedAt = progress.CompletedAt,
                 Sections = lp.Sections.Select(s => new LearningPathSectionProgressDTO
                 {
                     Id = s.Id,
@@ -168,6 +177,67 @@ namespace TAIF.Application.Services
 
             _progressRepository.Update(progress);
             await _progressRepository.SaveChangesAsync();
+        }
+
+        // Check and auto-complete learning path if all required courses are done
+        private async Task CheckAndAutoCompleteAsync(
+            UserLearningPathProgress progress,
+            Guid userId,
+            Guid learningPathId)
+        {
+            // Skip if already completed
+            if (progress.IsCompleted)
+            {
+                _logger.LogDebug("Learning path {LearningPathId} already completed for user {UserId}",
+                    learningPathId, userId);
+                return;
+            }
+
+            _logger.LogDebug("Checking learning path {LearningPathId} completion eligibility for user {UserId}",
+                learningPathId, userId);
+
+            // Get all required course IDs in this learning path
+            var requiredCourseIds = await _learningPathRepository
+                .GetRequiredCourseIdsInLearningPathAsync(learningPathId);
+
+            if (!requiredCourseIds.Any())
+            {
+                _logger.LogWarning("Learning path {LearningPathId} has no required courses",
+                    learningPathId);
+                return;
+            }
+
+            // Batch check: Are all required courses completed?
+            var completionStatus = await _enrollmentService
+                .CheckMultipleCourseCompletionsAsync(userId, requiredCourseIds);
+
+            bool allRequiredCoursesComplete = requiredCourseIds.All(courseId =>
+                completionStatus.GetValueOrDefault(courseId, false));
+
+            if (allRequiredCoursesComplete)
+            {
+                _logger.LogInformation(
+                    "Auto-completing learning path {LearningPathId} for user {UserId}. " +
+                    "All {Count} required courses are complete.",
+                    learningPathId, userId, requiredCourseIds.Count);
+
+                progress.IsCompleted = true;
+                progress.CompletedAt = DateTime.UtcNow;
+
+                _progressRepository.Update(progress);
+                await _progressRepository.SaveChangesAsync();
+
+                _logger.LogInformation("Learning path {LearningPathId} marked complete for user {UserId} at {CompletedAt}",
+                    learningPathId, userId, progress.CompletedAt);
+            }
+            else
+            {
+                var completedCount = completionStatus.Count(kvp => kvp.Value);
+                _logger.LogDebug(
+                    "Learning path {LearningPathId} not yet complete for user {UserId}. " +
+                    "{CompletedCount} of {TotalCount} required courses completed.",
+                    learningPathId, userId, completedCount, requiredCourseIds.Count);
+            }
         }
     }
 }

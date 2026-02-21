@@ -87,6 +87,8 @@ namespace TAIF.Infrastructure.Data
                       .WithMany()
                       .HasForeignKey(l => l.CourseId)
                       .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(l => new { l.CourseId, l.IsDeleted });
             });
 
             // LessonItem configuration
@@ -96,6 +98,8 @@ namespace TAIF.Infrastructure.Data
                       .WithMany()
                       .HasForeignKey(li => li.LessonId)
                       .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(li => new { li.LessonId, li.IsDeleted });
             });
 
             // Enrollment configuration
@@ -107,13 +111,16 @@ namespace TAIF.Infrastructure.Data
                 entity.HasOne(e => e.User)
                       .WithMany()
                       .HasForeignKey(e => e.UserId)
-                      .OnDelete(DeleteBehavior.Restrict); // Change to Restrict
+                      .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(e => e.Course)
                       .WithMany()
                       .HasForeignKey(e => e.CourseId)
                       .OnDelete(DeleteBehavior.Cascade);
 
+                entity.HasIndex(e => new { e.UserId, e.IsCompleted });
+
+                entity.HasIndex(e => new { e.CourseId, e.IsDeleted });
             });
 
             // LessonItemProgress configuration
@@ -125,12 +132,18 @@ namespace TAIF.Infrastructure.Data
                 entity.HasOne(lip => lip.User)
                       .WithMany()
                       .HasForeignKey(lip => lip.UserId)
-                      .OnDelete(DeleteBehavior.Restrict); // Change to Restrict
+                      .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(lip => lip.LessonItem)
                       .WithMany()
                       .HasForeignKey(lip => lip.LessonItemId)
                       .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(lip => new { lip.UserId, lip.CourseID, lip.IsDeleted, lip.IsCompleted });
+
+                entity.HasIndex(lip => new { lip.LessonID, lip.IsDeleted });
+
+                entity.HasIndex(lip => new { lip.UserId, lip.LessonID, lip.IsCompleted });
             });
 
             // Review configuration
@@ -162,15 +175,14 @@ namespace TAIF.Infrastructure.Data
                 entity.HasOne(ucb => ucb.User)
                       .WithMany()
                       .HasForeignKey(ucb => ucb.UserId)
-                      .OnDelete(DeleteBehavior.Restrict); // Change to Restrict
+                      .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(ucb => ucb.Course)
                       .WithMany()
                       .HasForeignKey(ucb => ucb.CourseId)
-                      .OnDelete(DeleteBehavior.Cascade); // Keep Cascade
+                      .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // QuizSubmission configuration - FIXED: No User navigation property
             modelBuilder.Entity<QuizSubmission>(entity =>
             {
                 entity.HasIndex(x => new { x.UserId, x.LessonItemId })
@@ -244,6 +256,8 @@ namespace TAIF.Infrastructure.Data
                       .OnDelete(DeleteBehavior.Restrict);
     
                 entity.HasIndex(lpc => new { lpc.LearningPathSectionId, lpc.Order });
+
+                entity.HasIndex(lpc => new { lpc.LearningPathSectionId, lpc.IsRequired, lpc.IsDeleted });
             });
 
             // UserLearningPathProgress configuration
@@ -270,6 +284,10 @@ namespace TAIF.Infrastructure.Data
                       .WithMany()
                       .HasForeignKey(ulpp => ulpp.CurrentCourseId)
                       .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(ulpp => new { ulpp.UserId, ulpp.IsCompleted });
+
+                entity.HasIndex(ulpp => new { ulpp.LearningPathId, ulpp.IsDeleted });
             });
 
             // Value converters
