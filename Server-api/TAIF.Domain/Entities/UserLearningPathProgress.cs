@@ -14,5 +14,8 @@ namespace TAIF.Domain.Entities
         public Guid? CurrentCourseId { get; set; }
         public Course? CurrentCourse { get; set; }
         public double CompletedDuration { get; set; } = 0.0;
+        
+        public bool IsCompleted { get; set; } = false;
+        public DateTime? CompletedAt { get; set; }
     }
 }

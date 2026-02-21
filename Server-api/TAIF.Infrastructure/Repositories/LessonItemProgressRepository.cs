@@ -28,5 +28,29 @@ namespace TAIF.Infrastructure.Repositories
                 .Where(lip => lip.UserId == userId && courseIds.Contains(lip.CourseID) && !lip.IsDeleted)
                 .SumAsync(lip => lip.CompletedDurationInSeconds);
         }
+
+        // Add this method
+        public async Task<(int CompletedCount, int TotalItems)> GetCompletionStatsAsync(Guid userId, Guid courseId, int totalLessonItems)
+        {
+            var completedCount = await _taifContext.LessonItemProgress
+                .Where(lip => lip.UserId == userId && 
+                              lip.CourseID == courseId && 
+                              lip.IsCompleted && 
+                              !lip.IsDeleted)
+                .CountAsync();
+
+            return (completedCount, totalLessonItems);
+        }
+
+        // OPTIMIZED: Use CountAsync directly
+        public async Task<int> GetCompletedItemCountAsync(Guid userId, Guid courseId)
+        {
+            return await _taifContext.LessonItemProgress
+                .Where(lip => lip.UserId == userId && 
+                              lip.CourseID == courseId && 
+                              lip.IsCompleted &&
+                              !lip.IsDeleted)
+                .CountAsync();
+        }
     }
 }

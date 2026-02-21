@@ -11,6 +11,11 @@ namespace TAIF.Application.Interfaces.Services
         Task<List<User>> GetCourseUsersAsync(Guid courseId);
         Task<List<Course>> GetUserFavouriteCourses(Guid userId);
         Task<bool> ToggleCourseFavourite(Guid userId, Guid courseId);
-        Task UpdateLastLessonItemId(Guid userId, Guid courseId, Guid lessonItemId);
+        Task UpdateLastLessonItemId(Guid userId, Guid courseId, Guid lessonItemId);        
+        Task<CourseCompletionEligibilityResponse> CheckCourseCompletionEligibilityAsync(Guid userId, Guid courseId);
+        Task<bool> CompleteCourseAsync(Guid userId, Guid courseId);
+        Task TryAutoCompleteCourseAsync(Guid userId, Guid courseId);
+        Task<List<Course>> GetUserCompletedCoursesAsync(Guid userId);
+        Task<Dictionary<Guid, bool>> CheckMultipleCourseCompletionsAsync(Guid userId, List<Guid> courseIds);
     }
 }

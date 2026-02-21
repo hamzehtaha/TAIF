@@ -16,6 +16,7 @@ namespace TAIF.Domain.Entities
         public bool IsFavourite { get; set; } = false;
         public Guid? LastLessonItemId { get; set; }
         public LessonItem? LastLessonItem { get; set; }
-
+        public bool IsCompleted { get; set; } = false;
+        public DateTime? CompletedAt { get; set; }
     }
 }

@@ -9,5 +9,7 @@ namespace TAIF.Application.DTOs.Responses
         public bool IsFavourite { get; set; }
         public Guid? LastLessonItemId { get; set; }
         public double CompletedDurationInSeconds { get; set; }
+        public bool IsCompleted { get; set; }
+        public DateTime? CompletedAt { get; set; }
     }
 }
