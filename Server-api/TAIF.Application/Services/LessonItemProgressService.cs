@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using TAIF.Application.DTOs;
 using TAIF.Application.DTOs.Payloads;
 using TAIF.Application.DTOs.Requests;
@@ -16,17 +17,23 @@ namespace TAIF.Application.Services
         private readonly ILessonItemService _lessonItemService;
         private readonly IQuizSubmissionService _quizSubmissionService;
         private readonly ILearningPathRepository _learningPathRepository;
+        private readonly IEnrollmentService _enrollmentService;
+        private readonly ILogger<LessonItemProgressService> _logger;
 
         public LessonItemProgressService(
             ILessonItemProgressRepository repository, 
             ILessonItemService lessonItemService, 
             IQuizSubmissionService quizSubmissionService,
-            ILearningPathRepository learningPathRepository) : base(repository)
+            ILearningPathRepository learningPathRepository,
+            IEnrollmentService enrollmentService,
+            ILogger<LessonItemProgressService> logger) : base(repository)
         {
             _lessonItemProgressRepository = repository;
             _lessonItemService = lessonItemService;
             _quizSubmissionService = quizSubmissionService;
             _learningPathRepository = learningPathRepository;
+            _enrollmentService = enrollmentService;
+            _logger = logger;
         }
         
         public async Task<QuizResultResponse> SubmitQuizAsync(Guid userId, SubmitQuizRequest request)
@@ -131,12 +138,18 @@ namespace TAIF.Application.Services
         
         public async Task<LessonItemProgress> SetLessonItemAsCompleted(Guid UserId, SetLessonItemAsCompletedRequest dto)
         {
+            _logger.LogInformation("Setting lesson item {LessonItemId} as completed for user {UserId}", 
+                dto.LessonItemId, UserId);
+
             var lessonItem = await _lessonItemService.GetByIdAsync(dto.LessonItemId);
             if (lessonItem is null)
             {
                 throw new Exception("Lesson item not found");
             }
 
+            // ============================================
+            // STEP 1: Mark Lesson Item as Complete
+            // ============================================
             LessonItemProgress lessonItemProgress = new LessonItemProgress
             {
                 UserId = UserId,
@@ -146,8 +159,26 @@ namespace TAIF.Application.Services
                 IsCompleted = true,
                 CompletedDurationInSeconds = lessonItem.DurationInSeconds
             };
+            
             await _lessonItemProgressRepository.AddAsync(lessonItemProgress);
             await _repository.SaveChangesAsync();
+
+            _logger.LogInformation("Lesson item {LessonItemId} marked as completed for user {UserId}", 
+                dto.LessonItemId, UserId);
+
+            // ============================================
+            // STEP 2: AUTO-CHECK Course Completion
+            // ============================================
+            try
+            {
+                await _enrollmentService.TryAutoCompleteCourseAsync(UserId, dto.CourseId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during auto-completion check for course {CourseId}", dto.CourseId);
+                // Don't throw - lesson item is already saved
+            }
+
             return lessonItemProgress;
         }
 
@@ -171,6 +202,19 @@ namespace TAIF.Application.Services
 
             // Single grouped query instead of N+1
             return await _lessonItemProgressRepository.GetCompletedDurationSumForCoursesAsync(userId, courseIds);
+        }
+
+        /// <summary>
+        /// Gets count of completed lesson items for a user in a course
+        /// </summary>
+        public async Task<int> GetCompletedItemCountAsync(Guid userId, Guid courseId)
+        {
+            var completedItems = await _lessonItemProgressRepository.FindNoTrackingAsync(
+                lip => lip.UserId == userId && 
+                       lip.CourseID == courseId && 
+                       lip.IsCompleted);
+            
+            return completedItems.Count;
         }
     }
 }
