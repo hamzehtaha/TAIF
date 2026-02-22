@@ -245,6 +245,33 @@ namespace TAIF.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "LearningPaths",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Photo = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatorId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TotalEnrolled = table.Column<int>(type: "int", nullable: false),
+                    DurationInSeconds = table.Column<double>(type: "float", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LearningPaths", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_LearningPaths_Users_CreatorId",
+                        column: x => x.CreatorId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "lessons",
                 columns: table => new
                 {
@@ -332,6 +359,31 @@ namespace TAIF.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "LearningPathSections",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    LearningPathId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Order = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LearningPathSections", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_LearningPathSections_LearningPaths_LearningPathId",
+                        column: x => x.LearningPathId,
+                        principalTable: "LearningPaths",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "LessonItems",
                 columns: table => new
                 {
@@ -356,6 +408,82 @@ namespace TAIF.Infrastructure.Migrations
                         principalTable: "lessons",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "LearningPathCourses",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    LearningPathSectionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CourseId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Order = table.Column<int>(type: "int", nullable: false),
+                    IsRequired = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LearningPathCourses", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_LearningPathCourses_Courses_CourseId",
+                        column: x => x.CourseId,
+                        principalTable: "Courses",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_LearningPathCourses_LearningPathSections_LearningPathSectionId",
+                        column: x => x.LearningPathSectionId,
+                        principalTable: "LearningPathSections",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserLearningPathProgress",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    LearningPathId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    EnrolledAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CurrentSectionId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    CurrentCourseId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    CompletedDuration = table.Column<double>(type: "float", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserLearningPathProgress", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserLearningPathProgress_Courses_CurrentCourseId",
+                        column: x => x.CurrentCourseId,
+                        principalTable: "Courses",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_UserLearningPathProgress_LearningPathSections_CurrentSectionId",
+                        column: x => x.CurrentSectionId,
+                        principalTable: "LearningPathSections",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_UserLearningPathProgress_LearningPaths_LearningPathId",
+                        column: x => x.LearningPathId,
+                        principalTable: "LearningPaths",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_UserLearningPathProgress_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -535,6 +663,26 @@ namespace TAIF.Infrastructure.Migrations
                 column: "TagId1");
 
             migrationBuilder.CreateIndex(
+                name: "IX_LearningPathCourses_CourseId",
+                table: "LearningPathCourses",
+                column: "CourseId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LearningPathCourses_LearningPathSectionId_Order",
+                table: "LearningPathCourses",
+                columns: new[] { "LearningPathSectionId", "Order" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LearningPaths_CreatorId",
+                table: "LearningPaths",
+                column: "CreatorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LearningPathSections_LearningPathId_Order",
+                table: "LearningPathSections",
+                columns: new[] { "LearningPathId", "Order" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_LessonItemProgress_LessonItemId",
                 table: "LessonItemProgress",
                 column: "LessonItemId");
@@ -624,6 +772,27 @@ namespace TAIF.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_UserLearningPathProgress_CurrentCourseId",
+                table: "UserLearningPathProgress",
+                column: "CurrentCourseId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserLearningPathProgress_CurrentSectionId",
+                table: "UserLearningPathProgress",
+                column: "CurrentSectionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserLearningPathProgress_LearningPathId",
+                table: "UserLearningPathProgress",
+                column: "LearningPathId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserLearningPathProgress_UserId_LearningPathId",
+                table: "UserLearningPathProgress",
+                columns: new[] { "UserId", "LearningPathId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Users_Email",
                 table: "Users",
                 column: "Email",
@@ -658,6 +827,9 @@ namespace TAIF.Infrastructure.Migrations
                 name: "InterestTagMappings");
 
             migrationBuilder.DropTable(
+                name: "LearningPathCourses");
+
+            migrationBuilder.DropTable(
                 name: "LessonItemProgress");
 
             migrationBuilder.DropTable(
@@ -670,6 +842,9 @@ namespace TAIF.Infrastructure.Migrations
                 name: "UserCourseBehaviors");
 
             migrationBuilder.DropTable(
+                name: "UserLearningPathProgress");
+
+            migrationBuilder.DropTable(
                 name: "Interests");
 
             migrationBuilder.DropTable(
@@ -679,7 +854,13 @@ namespace TAIF.Infrastructure.Migrations
                 name: "LessonItems");
 
             migrationBuilder.DropTable(
+                name: "LearningPathSections");
+
+            migrationBuilder.DropTable(
                 name: "lessons");
+
+            migrationBuilder.DropTable(
+                name: "LearningPaths");
 
             migrationBuilder.DropTable(
                 name: "Courses");

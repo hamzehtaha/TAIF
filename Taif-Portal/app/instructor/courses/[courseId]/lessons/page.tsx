@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -52,17 +52,24 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
-import { useInstructor } from "@/contexts/InstructorContext";
-import { 
-  InstructorLesson, 
-  InstructorLessonItem, 
-  LessonItemType,
-  VideoContent,
-  RichContent,
-  QuestionWithAnswers,
-} from "@/types/instructor";
+import { courseService } from "@/services/course.service";
+import { lessonService } from "@/services/lesson.service";
+import { lessonItemService } from "@/services/lesson-item.service";
+import { Course } from "@/models/course.model";
+import { Lesson } from "@/models/lesson.model";
+import { LessonItem } from "@/models/lesson-item.model";
 import { cn } from "@/lib/utils";
 import { PuzzleLoader } from "@/components/PuzzleLoader";
+
+type LessonItemType = 'video' | 'text' | 'question' | 'rich-content';
+
+interface CourseLesson {
+  id: string;
+  title: string;
+  description?: string;
+  order: number;
+  items: LessonItem[];
+}
 
 export default function LessonsPage() {
   const params = useParams();
@@ -71,46 +78,61 @@ export default function LessonsPage() {
   const courseId = params.courseId as string;
   const selectedLessonId = searchParams.get("lessonId");
 
-  const {
-    currentCourse,
-    loadCourse,
-    updateLesson,
-    deleteLesson,
-    createLessonItem,
-    deleteLessonItem,
-    reorderLessonItems,
-    videos,
-    richContents,
-    questions,
-    loadVideos,
-    loadRichContents,
-    loadQuestions,
-    isLoading,
-  } = useInstructor();
+  const [currentCourse, setCurrentCourse] = useState<Course | null>(null);
+  const [courseLessons, setCourseLessons] = useState<CourseLesson[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [selectedLesson, setSelectedLesson] = useState<InstructorLesson | null>(null);
+  const [selectedLesson, setSelectedLesson] = useState<CourseLesson | null>(null);
   const [isEditingLesson, setIsEditingLesson] = useState(false);
   const [lessonEditForm, setLessonEditForm] = useState({ title: "", description: "" });
   const [addItemDialogOpen, setAddItemDialogOpen] = useState(false);
   const [selectedItemType, setSelectedItemType] = useState<LessonItemType | null>(null);
   const [deleteItemId, setDeleteItemId] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadCourse(courseId);
-    loadVideos();
-    loadRichContents();
-    loadQuestions();
-  }, [courseId, loadCourse, loadVideos, loadRichContents, loadQuestions]);
+  const loadCourseData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const [course, rawLessons] = await Promise.all([
+        courseService.getCourseById(courseId),
+        lessonService.getLessonsByCourse(courseId),
+      ]);
+      
+      setCurrentCourse(course);
+      
+      const lessonsWithItems: CourseLesson[] = await Promise.all(
+        rawLessons.map(async (lesson) => {
+          const items = await lessonItemService.getItemsByLesson(lesson.id);
+          return {
+            id: lesson.id,
+            title: lesson.title,
+            description: lesson.description,
+            order: lesson.order || 0,
+            items,
+          };
+        })
+      );
+      
+      setCourseLessons(lessonsWithItems);
+    } catch (error) {
+      console.error('Failed to load course:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [courseId]);
 
   useEffect(() => {
-    if (currentCourse && selectedLessonId) {
-      const lesson = currentCourse.lessons.find((l) => l.id === selectedLessonId);
+    loadCourseData();
+  }, [loadCourseData]);
+
+  useEffect(() => {
+    if (courseLessons.length > 0 && selectedLessonId) {
+      const lesson = courseLessons.find((l) => l.id === selectedLessonId);
       setSelectedLesson(lesson || null);
       if (lesson) {
         setLessonEditForm({ title: lesson.title, description: lesson.description || "" });
       }
     }
-  }, [currentCourse, selectedLessonId]);
+  }, [courseLessons, selectedLessonId]);
 
   if (isLoading || !currentCourse) {
     return (
@@ -122,84 +144,85 @@ export default function LessonsPage() {
 
   const handleSaveLesson = async () => {
     if (!selectedLesson) return;
-    await updateLesson(courseId, selectedLesson.id, lessonEditForm);
-    setIsEditingLesson(false);
+    try {
+      await lessonService.updateLesson(selectedLesson.id, {
+        title: lessonEditForm.title,
+      });
+      await loadCourseData();
+      setIsEditingLesson(false);
+    } catch (error) {
+      console.error('Failed to update lesson:', error);
+    }
   };
 
   const handleDeleteLesson = async () => {
     if (!selectedLesson) return;
-    await deleteLesson(courseId, selectedLesson.id);
-    router.push(`/instructor/courses/${courseId}`);
+    try {
+      await lessonService.deleteLesson(selectedLesson.id);
+      router.push(`/instructor/courses/${courseId}`);
+    } catch (error) {
+      console.error('Failed to delete lesson:', error);
+    }
   };
 
-  const handleSelectContent = async (contentId: string) => {
-    if (!selectedLesson || !selectedItemType) return;
+  const handleCreateItem = async (type: LessonItemType, name: string, content: string = '') => {
+    if (!selectedLesson) return;
     
-    let title = "New Item";
-    
-    if (selectedItemType === "video") {
-      const video = videos.find(v => v.id === contentId);
-      title = video?.title || "Video";
-    } else if (selectedItemType === "rich-content") {
-      const content = richContents.find(r => r.id === contentId);
-      title = content?.title || "Content";
-    } else if (selectedItemType === "question") {
-      const question = questions.find(q => q.id === contentId);
-      title = question?.text?.slice(0, 50) || "Question";
+    try {
+      const typeMap = { 'video': 0, 'text': 1, 'rich-content': 1, 'question': 2 };
+      await lessonItemService.createLessonItem({
+        name,
+        content,
+        type: typeMap[type],
+        lessonId: selectedLesson.id,
+        durationInSeconds: 0,
+      });
+      
+      await loadCourseData();
+      setAddItemDialogOpen(false);
+      setSelectedItemType(null);
+    } catch (error) {
+      console.error('Failed to create item:', error);
     }
-
-    await createLessonItem(courseId, selectedLesson.id, {
-      title,
-      type: selectedItemType,
-      lessonId: selectedLesson.id,
-      videoContentId: selectedItemType === "video" ? contentId : undefined,
-      richContentId: selectedItemType === "rich-content" ? contentId : undefined,
-      questionId: selectedItemType === "question" ? contentId : undefined,
-    });
-    
-    setAddItemDialogOpen(false);
-    setSelectedItemType(null);
   };
 
   const handleDeleteItem = async () => {
     if (!selectedLesson || !deleteItemId) return;
-    await deleteLessonItem(courseId, selectedLesson.id, deleteItemId);
-    setDeleteItemId(null);
+    try {
+      await lessonItemService.deleteLessonItem(deleteItemId);
+      await loadCourseData();
+      setDeleteItemId(null);
+    } catch (error) {
+      console.error('Failed to delete item:', error);
+    }
   };
 
-  const handleReorderItems = (newItems: InstructorLessonItem[]) => {
+  const handleReorderItems = (newItems: LessonItem[]) => {
     if (!selectedLesson) return;
-    reorderLessonItems(courseId, selectedLesson.id, newItems.map(i => i.id));
+    // TODO: Backend doesn't support reordering yet
+    console.warn('Reordering not supported by backend yet');
   };
 
-  const getItemIcon = (type: LessonItemType) => {
+  const getItemIcon = (type: string) => {
     switch (type) {
       case "video":
         return <Video className="h-4 w-4 text-primary" />;
+      case "text":
       case "rich-content":
         return <FileText className="h-4 w-4 text-secondary" />;
       case "question":
         return <HelpCircle className="h-4 w-4 text-warning" />;
+      default:
+        return <FileText className="h-4 w-4" />;
     }
   };
 
-  const getContentInfo = (item: InstructorLessonItem) => {
-    if (item.type === "video") {
-      const video = (videos || []).find(v => v.id === item.videoContentId);
-      return video ? `${video.title} (${video.duration ? Math.floor(video.duration / 60) + "min" : "—"})` : "Video not found";
-    }
-    if (item.type === "rich-content") {
-      const content = (richContents || []).find(r => r.id === item.richContentId);
-      return content?.title || "Content not found";
-    }
-    if (item.type === "question") {
-      const question = (questions || []).find(q => q.id === item.questionId);
-      return question?.text?.slice(0, 60) + (question && question.text.length > 60 ? "..." : "") || "Question not found";
-    }
-    return "";
+  const getContentInfo = (item: LessonItem) => {
+    const content = typeof item.content === 'string' ? item.content : '';
+    return content ? content.slice(0, 60) + (content.length > 60 ? '...' : '') : 'No content';
   };
 
-  const sortedLessons = [...currentCourse.lessons].sort((a, b) => a.order - b.order);
+  const sortedLessons = [...courseLessons].sort((a, b) => a.order - b.order);
 
   return (
     <InstructorLayout
@@ -385,7 +408,7 @@ export default function LessonsPage() {
                                   {getItemIcon(item.type)}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="font-medium truncate">{item.title}</p>
+                                  <p className="font-medium truncate">{item.name}</p>
                                   <p className="text-sm text-muted-foreground truncate">
                                     {getContentInfo(item)}
                                   </p>
@@ -436,88 +459,53 @@ export default function LessonsPage() {
 
       {/* Add Content Dialog */}
       <Dialog open={addItemDialogOpen} onOpenChange={setAddItemDialogOpen}>
-        <DialogContent className="sm:max-w-lg max-h-[80vh]">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>
-              Select {selectedItemType === "video" ? "Video" : selectedItemType === "rich-content" ? "Rich Content" : "Question"}
+              Add {selectedItemType === "video" ? "Video" : selectedItemType === "rich-content" ? "Rich Content" : selectedItemType === "text" ? "Text Content" : "Question"}
             </DialogTitle>
             <DialogDescription>
-              Choose content from your library to add to this lesson
+              Create a new lesson item
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="max-h-96">
-            <div className="space-y-2 pr-4">
-              {selectedItemType === "video" && videos.map((video) => (
-                <Card
-                  key={video.id}
-                  className="cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleSelectContent(video.id)}
-                >
-                  <CardContent className="p-3 flex items-center gap-3">
-                    <Video className="h-5 w-5 text-primary" />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{video.title}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {video.duration ? `${Math.floor(video.duration / 60)}:${String(video.duration % 60).padStart(2, "0")}` : "No duration"}
-                      </p>
-                    </div>
-                    <Check className="h-4 w-4 text-muted-foreground" />
-                  </CardContent>
-                </Card>
-              ))}
-              {selectedItemType === "rich-content" && richContents.map((content) => (
-                <Card
-                  key={content.id}
-                  className="cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleSelectContent(content.id)}
-                >
-                  <CardContent className="p-3 flex items-center gap-3">
-                    <FileText className="h-5 w-5 text-secondary" />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{content.title}</p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {content.description || "No description"}
-                      </p>
-                    </div>
-                    <Check className="h-4 w-4 text-muted-foreground" />
-                  </CardContent>
-                </Card>
-              ))}
-              {selectedItemType === "question" && questions.map((question) => (
-                <Card
-                  key={question.id}
-                  className="cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleSelectContent(question.id)}
-                >
-                  <CardContent className="p-3 flex items-center gap-3">
-                    <HelpCircle className="h-5 w-5 text-warning" />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{question.text}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {question.type} • {question.answers.length} answers
-                      </p>
-                    </div>
-                    <Check className="h-4 w-4 text-muted-foreground" />
-                  </CardContent>
-                </Card>
-              ))}
-              {((selectedItemType === "video" && videos.length === 0) ||
-                (selectedItemType === "rich-content" && richContents.length === 0) ||
-                (selectedItemType === "question" && questions.length === 0)) && (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground mb-4">No content available</p>
-                  <Button variant="outline" asChild>
-                    <Link href={`/instructor/${selectedItemType === "video" ? "videos" : selectedItemType === "rich-content" ? "rich-content" : "questions"}`}>
-                      Create {selectedItemType === "video" ? "Video" : selectedItemType === "rich-content" ? "Content" : "Question"}
-                    </Link>
-                  </Button>
-                </div>
-              )}
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="item-name">Name</Label>
+              <Input
+                id="item-name"
+                placeholder="Enter item name..."
+                onChange={(e) => {
+                  const input = e.target as HTMLInputElement;
+                  input.dataset.value = e.target.value;
+                }}
+              />
             </div>
-          </ScrollArea>
+            <div className="space-y-2">
+              <Label htmlFor="item-content">Content</Label>
+              <Textarea
+                id="item-content"
+                placeholder="Enter content..."
+                className="min-h-24"
+                onChange={(e) => {
+                  const input = e.target as HTMLTextAreaElement;
+                  input.dataset.value = e.target.value;
+                }}
+              />
+            </div>
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddItemDialogOpen(false)}>
               Cancel
+            </Button>
+            <Button onClick={() => {
+              const nameInput = document.getElementById('item-name') as HTMLInputElement;
+              const contentInput = document.getElementById('item-content') as HTMLTextAreaElement;
+              if (selectedItemType && nameInput?.value) {
+                handleCreateItem(selectedItemType, nameInput.value, contentInput?.value || '');
+              }
+            }}>
+              <Plus className="mr-2 h-4 w-4" />
+              Create Item
             </Button>
           </DialogFooter>
         </DialogContent>

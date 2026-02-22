@@ -1195,5 +1195,31 @@ class MockDataService implements IDataService {
 // Export Singleton Instance
 // ============================================
 
-export const dataService = new MockDataService();
+// Toggle between real API and mock service
+const USE_REAL_API = true;
+
+// Lazy import to avoid circular dependency
+let _realDataService: IDataService | null = null;
+const getRealDataService = async (): Promise<IDataService> => {
+  if (!_realDataService) {
+    const { realDataService } = await import('./realDataService');
+    _realDataService = realDataService;
+  }
+  return _realDataService;
+};
+
+// Keep MockDataService available for testing/fallback
+export const mockDataService = new MockDataService();
+
+// Export dataService - use mock for now, can switch to real when ready
+// To use real API: set USE_REAL_API = true and use dataServiceAsync
+export const dataService: IDataService = mockDataService;
+
+// Async getter for real data service (use when real API integration is needed)
+export const getDataService = async (): Promise<IDataService> => {
+  if (USE_REAL_API) {
+    return getRealDataService();
+  }
+  return mockDataService;
+};
 

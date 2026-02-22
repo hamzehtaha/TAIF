@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -25,7 +25,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useInstructor } from "@/contexts/InstructorContext";
+import { courseService } from "@/services/course.service";
+import { categoryService } from "@/services/category.service";
+import { Category } from "@/models/category.model";
 import { cn } from "@/lib/utils";
 
 const steps = [
@@ -36,7 +38,8 @@ const steps = [
 
 export default function NewCoursePage() {
   const router = useRouter();
-  const { categories, createCourse, isLoading } = useInstructor();
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     title: "",
@@ -45,6 +48,18 @@ export default function NewCoursePage() {
     thumbnail: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const cats = await categoryService.getCategories();
+        setCategories(cats);
+      } catch (error) {
+        console.error('Failed to load categories:', error);
+      }
+    };
+    loadCategories();
+  }, []);
 
   const validateStep = (step: number): boolean => {
     const newErrors: Record<string, string> = {};
@@ -85,15 +100,23 @@ export default function NewCoursePage() {
   const handleCreate = async () => {
     if (!validateStep(currentStep)) return;
 
-    const course = await createCourse({
-      title: formData.title,
-      description: formData.description,
-      categoryId: formData.categoryId,
-      thumbnail: formData.thumbnail || undefined,
-    });
+    setIsLoading(true);
+    try {
+      const course = await courseService.createCourse({
+        name: formData.title,
+        description: formData.description,
+        categoryId: formData.categoryId,
+        photo: formData.thumbnail || '',
+        tags: [],
+      });
 
-    if (course) {
-      router.push(`/instructor/courses/${course.id}`);
+      if (course) {
+        router.push(`/instructor/courses/${course.id}`);
+      }
+    } catch (error) {
+      console.error('Failed to create course:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 

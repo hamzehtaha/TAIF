@@ -59,6 +59,9 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 // Organization context - request scoped
 builder.Services.AddScoped<TAIF.Application.Interfaces.IOrganizationContext, TAIF.Application.Services.OrganizationContext>();
 
+// Tenant provider for automatic multi-tenancy filtering in DbContext
+builder.Services.AddScoped<TAIF.Application.Interfaces.ITenantProvider, TAIF.Application.Services.TenantProvider>();
+
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<ICourseRepository, CourseRepository>();
 builder.Services.AddScoped<ILessonRepository, LessonRepository>();

@@ -4,17 +4,28 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using TAIF.Application.Interfaces;
 using TAIF.Domain.Entities;
 
 namespace TAIF.Infrastructure.Data
 {
     public class TaifDbContext : DbContext
     {
+        private readonly ITenantProvider? _tenantProvider;
+
         public TaifDbContext(DbContextOptions<TaifDbContext> options)
             : base(options)
         {
+        }
+
+        public TaifDbContext(DbContextOptions<TaifDbContext> options, ITenantProvider tenantProvider)
+            : base(options)
+        {
+            _tenantProvider = tenantProvider;
         }
         public DbSet<User> Users { get; set; }
         public DbSet<Organization> Organizations { get; set; }
@@ -336,6 +347,105 @@ namespace TAIF.Infrastructure.Data
                 .Property(e => e.Interests)
                 .HasConversion(guidCollectionConverter)
                 .Metadata.SetValueComparer(guidCollectionComparer);
+
+            // Apply global query filters for multi-tenancy
+            ApplyTenantQueryFilters(modelBuilder);
+        }
+
+        /// <summary>
+        /// Dynamically applies global query filters to all entities inheriting from OrganizationBase.
+        /// SystemAdmin users bypass filtering (handled by checking IsSystemAdmin at query time).
+        /// </summary>
+        private void ApplyTenantQueryFilters(ModelBuilder modelBuilder)
+        {
+            // Get all entity types that inherit from OrganizationBase
+            var organizationBasedEntities = modelBuilder.Model.GetEntityTypes()
+                .Where(e => typeof(OrganizationBase).IsAssignableFrom(e.ClrType) && !e.ClrType.IsAbstract)
+                .ToList();
+
+            foreach (var entityType in organizationBasedEntities)
+            {
+                var method = typeof(TaifDbContext)
+                    .GetMethod(nameof(ApplyTenantFilter), BindingFlags.NonPublic | BindingFlags.Instance)!
+                    .MakeGenericMethod(entityType.ClrType);
+
+                method.Invoke(this, new object[] { modelBuilder });
+            }
+        }
+
+        /// <summary>
+        /// Applies tenant filter to a specific entity type.
+        /// The filter checks if tenant filtering should be applied and if the OrganizationId matches.
+        /// </summary>
+        private void ApplyTenantFilter<TEntity>(ModelBuilder modelBuilder) where TEntity : OrganizationBase
+        {
+            modelBuilder.Entity<TEntity>().HasQueryFilter(e =>
+                _tenantProvider == null ||
+                !_tenantProvider.ShouldApplyTenantFilter ||
+                e.OrganizationId == _tenantProvider.OrganizationId);
+        }
+
+        /// <summary>
+        /// Override SaveChanges to automatically set OrganizationId on new entities.
+        /// </summary>
+        public override int SaveChanges()
+        {
+            ApplyTenantOnInsert();
+            return base.SaveChanges();
+        }
+
+        /// <summary>
+        /// Override SaveChanges to automatically set OrganizationId on new entities.
+        /// </summary>
+        public override int SaveChanges(bool acceptAllChangesOnSuccess)
+        {
+            ApplyTenantOnInsert();
+            return base.SaveChanges(acceptAllChangesOnSuccess);
+        }
+
+        /// <summary>
+        /// Override SaveChangesAsync to automatically set OrganizationId on new entities.
+        /// </summary>
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            ApplyTenantOnInsert();
+            return base.SaveChangesAsync(cancellationToken);
+        }
+
+        /// <summary>
+        /// Override SaveChangesAsync to automatically set OrganizationId on new entities.
+        /// </summary>
+        public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+        {
+            ApplyTenantOnInsert();
+            return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        }
+
+        /// <summary>
+        /// Automatically sets OrganizationId on new entities that inherit from OrganizationBase.
+        /// Only applies if:
+        /// - Entity inherits from OrganizationBase
+        /// - Entity is being added (not modified)
+        /// - OrganizationId is not already set
+        /// - TenantProvider has an OrganizationId available
+        /// </summary>
+        private void ApplyTenantOnInsert()
+        {
+            if (_tenantProvider?.OrganizationId == null)
+                return;
+
+            var addedEntities = ChangeTracker.Entries<OrganizationBase>()
+                .Where(e => e.State == EntityState.Added)
+                .ToList();
+
+            foreach (var entry in addedEntities)
+            {
+                // Only set if not already set (allows explicit override)
+                if (entry.Entity.OrganizationId == null || entry.Entity.OrganizationId == Guid.Empty)
+                {
+                    entry.Entity.OrganizationId = _tenantProvider.OrganizationId;
+                }
+            }
         }
     }
 }

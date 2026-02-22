@@ -19,7 +19,9 @@ import {
   X,
   Eye,
 } from "lucide-react";
-import { useInstructor } from "@/contexts/InstructorContext";
+import { courseService } from "@/services/course.service";
+import { lessonService } from "@/services/lesson.service";
+import { lessonItemService } from "@/services/lesson-item.service";
 import { InstructorLayout } from "@/components/instructor/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,40 +43,62 @@ import {
 } from "@/components/ui/dialog";
 import { PuzzleLoader } from "@/components/PuzzleLoader";
 import { cn } from "@/lib/utils";
-import {
-  InstructorLessonItem,
-  VideoContent,
-  RichContent,
-  QuestionWithAnswers,
-} from "@/types/instructor";
+import { Course } from "@/models/course.model";
+import { Lesson } from "@/models/lesson.model";
+import { LessonItem } from "@/models/lesson-item.model";
+
+interface CourseLesson {
+  id: string;
+  title: string;
+  description?: string;
+  order: number;
+  items: LessonItem[];
+}
 
 export default function CoursePreviewPage() {
   const params = useParams();
   const router = useRouter();
   const courseId = params.courseId as string;
 
-  const {
-    currentCourse,
-    loadCourse,
-    videos,
-    richContents,
-    questions,
-    loadVideos,
-    loadRichContents,
-    loadQuestions,
-    isLoading,
-  } = useInstructor();
+  const [currentCourse, setCurrentCourse] = useState<Course | null>(null);
+  const [courseLessons, setCourseLessons] = useState<CourseLesson[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [selectedItem, setSelectedItem] = useState<InstructorLessonItem | null>(null);
+  const [selectedItem, setSelectedItem] = useState<LessonItem | null>(null);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const [completedItems, setCompletedItems] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    loadCourse(courseId);
-    loadVideos();
-    loadRichContents();
-    loadQuestions();
-  }, [courseId, loadCourse, loadVideos, loadRichContents, loadQuestions]);
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        const [course, rawLessons] = await Promise.all([
+          courseService.getCourseById(courseId),
+          lessonService.getLessonsByCourse(courseId),
+        ]);
+        setCurrentCourse(course);
+        
+        const lessonsWithItems: CourseLesson[] = await Promise.all(
+          rawLessons.map(async (lesson) => {
+            const items = await lessonItemService.getItemsByLesson(lesson.id);
+            return {
+              id: lesson.id,
+              title: lesson.title,
+              description: lesson.description,
+              order: lesson.order || 0,
+              items,
+            };
+          })
+        );
+        setCourseLessons(lessonsWithItems);
+      } catch (error) {
+        console.error('Failed to load course:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadData();
+  }, [courseId]);
 
   if (isLoading || !currentCourse) {
     return (
@@ -84,28 +108,16 @@ export default function CoursePreviewPage() {
     );
   }
 
-  const sortedLessons = [...currentCourse.lessons].sort((a, b) => a.order - b.order);
+  const sortedLessons = [...courseLessons].sort((a, b) => a.order - b.order);
   const totalItems = sortedLessons.reduce((sum, l) => sum + l.items.length, 0);
   const completedCount = completedItems.size;
   const progressPercent = totalItems > 0 ? Math.round((completedCount / totalItems) * 100) : 0;
-
-  const getItemContent = (item: InstructorLessonItem) => {
-    if (item.type === "video") {
-      return (videos || []).find((v) => v.id === item.videoContentId);
-    }
-    if (item.type === "rich-content") {
-      return (richContents || []).find((r) => r.id === item.richContentId);
-    }
-    if (item.type === "question") {
-      return (questions || []).find((q) => q.id === item.questionId);
-    }
-    return null;
-  };
 
   const getItemIcon = (type: string) => {
     switch (type) {
       case "video":
         return <Video className="h-4 w-4" />;
+      case "text":
       case "rich-content":
         return <FileText className="h-4 w-4" />;
       case "question":
@@ -115,7 +127,7 @@ export default function CoursePreviewPage() {
     }
   };
 
-  const handleItemClick = (item: InstructorLessonItem) => {
+  const handleItemClick = (item: LessonItem) => {
     setSelectedItem(item);
     setPreviewDialogOpen(true);
   };
@@ -133,19 +145,17 @@ export default function CoursePreviewPage() {
 
   const renderItemPreview = () => {
     if (!selectedItem) return null;
-    const content = getItemContent(selectedItem);
+    const content = typeof selectedItem.content === 'string' ? selectedItem.content : '';
 
     if (selectedItem.type === "video") {
-      const video = content as VideoContent | undefined;
       return (
         <div className="space-y-4">
           <div className="aspect-video bg-black rounded-lg flex items-center justify-center">
-            {video?.videoUrl ? (
+            {selectedItem.url ? (
               <video
                 controls
                 className="w-full h-full rounded-lg"
-                src={video.videoUrl}
-                poster={video.thumbnailUrl}
+                src={selectedItem.url}
               >
                 Your browser does not support the video tag.
               </video>
@@ -157,13 +167,10 @@ export default function CoursePreviewPage() {
             )}
           </div>
           <div>
-            <h3 className="font-semibold text-lg">{video?.title || selectedItem.title}</h3>
-            {video?.description && (
-              <p className="text-muted-foreground mt-1">{video.description}</p>
-            )}
-            {video?.duration && (
+            <h3 className="font-semibold text-lg">{selectedItem.name}</h3>
+            {selectedItem.durationInSeconds && (
               <p className="text-sm text-muted-foreground mt-2">
-                Duration: {formatDuration(video.duration)}
+                Duration: {formatDuration(selectedItem.durationInSeconds)}
               </p>
             )}
           </div>
@@ -171,51 +178,30 @@ export default function CoursePreviewPage() {
       );
     }
 
-    if (selectedItem.type === "rich-content") {
-      const richContent = content as RichContent | undefined;
+    if (selectedItem.type === "text") {
       return (
         <div className="space-y-4">
-          <h3 className="font-semibold text-lg">{richContent?.title || selectedItem.title}</h3>
-          {richContent?.description && (
-            <p className="text-muted-foreground">{richContent.description}</p>
-          )}
+          <h3 className="font-semibold text-lg">{selectedItem.name}</h3>
           <Separator />
           <div
             className="prose prose-sm max-w-none dark:prose-invert"
-            dangerouslySetInnerHTML={{ __html: richContent?.htmlContent || "<p>No content</p>" }}
+            dangerouslySetInnerHTML={{ __html: content || "<p>No content</p>" }}
           />
         </div>
       );
     }
 
     if (selectedItem.type === "question") {
-      const question = content as QuestionWithAnswers | undefined;
       return (
         <div className="space-y-4">
           <div className="p-4 bg-muted rounded-lg">
-            <h3 className="font-semibold text-lg">{question?.text || "Question"}</h3>
-            {question?.description && (
-              <p className="text-muted-foreground mt-1">{question.description}</p>
-            )}
+            <h3 className="font-semibold text-lg">{selectedItem.name}</h3>
           </div>
-          <div className="space-y-2">
-            {question?.answers.map((answer, index) => (
-              <button
-                key={answer.id}
-                className={cn(
-                  "w-full p-3 text-left rounded-lg border transition-colors",
-                  "hover:border-primary hover:bg-primary/5"
-                )}
-              >
-                <span className="font-medium mr-2">
-                  {String.fromCharCode(65 + index)}.
-                </span>
-                {answer.text}
-              </button>
-            ))}
+          <div className="prose prose-sm">
+            <p>{content || 'No question content'}</p>
           </div>
           <p className="text-xs text-muted-foreground text-center">
-            (In student view, correct answers would be validated after submission)
+            (Question preview - full quiz functionality coming soon)
           </p>
         </div>
       );
@@ -296,7 +282,7 @@ export default function CoursePreviewPage() {
                               ) : (
                                 <span className="flex-shrink-0">{getItemIcon(item.type)}</span>
                               )}
-                              <span className="truncate">{item.title}</span>
+                              <span className="truncate">{item.name}</span>
                             </button>
                           );
                         })}
@@ -332,7 +318,7 @@ export default function CoursePreviewPage() {
                     {getItemIcon(selectedItem.type)}
                   </div>
                   <div>
-                    <h1 className="text-xl font-bold">{selectedItem.title}</h1>
+                    <h1 className="text-xl font-bold">{selectedItem.name}</h1>
                     <p className="text-sm text-muted-foreground capitalize">
                       {selectedItem.type.replace("-", " ")}
                     </p>

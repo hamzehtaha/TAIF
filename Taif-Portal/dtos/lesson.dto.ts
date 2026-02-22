@@ -15,11 +15,14 @@ export interface LessonDto {
 
 export interface CreateLessonRequest {
   title: string;
+  url: string;
   photo?: string;
   courseId: string;
 }
 
 export interface UpdateLessonRequest {
   title?: string;
+  url?: string;
   photo?: string;
+  courseId?: string;
 }

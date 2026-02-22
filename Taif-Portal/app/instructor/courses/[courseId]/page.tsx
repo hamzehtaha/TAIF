@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -71,35 +71,37 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useInstructor } from "@/contexts/InstructorContext";
-import { InstructorLesson, InstructorLessonItem, CourseStatus } from "@/types/instructor";
+import { courseService } from "@/services/course.service";
+import { lessonService } from "@/services/lesson.service";
+import { lessonItemService } from "@/services/lesson-item.service";
+import { categoryService } from "@/services/category.service";
+import { Course } from "@/models/course.model";
+import { Lesson } from "@/models/lesson.model";
+import { LessonItem } from "@/models/lesson-item.model";
+import { Category } from "@/models/category.model";
 import { cn } from "@/lib/utils";
 import { PuzzleLoader } from "@/components/PuzzleLoader";
+
+type CourseStatus = 'draft' | 'published' | 'archived';
+
+interface CourseLesson {
+  id: string;
+  title: string;
+  description?: string;
+  order: number;
+  items: LessonItem[];
+}
 
 export default function CourseDetailPage() {
   const params = useParams();
   const router = useRouter();
   const courseId = params.courseId as string;
 
-  const {
-    currentCourse,
-    categories,
-    lessons,
-    loadCourse,
-    loadLessons,
-    updateCourse,
-    deleteCourse,
-    publishCourse,
-    archiveCourse,
-    unpublishCourse,
-    createLesson,
-    updateLesson,
-    deleteLesson,
-    reorderLessons,
-    addLessonsToCourse,
-    removeLessonFromCourse,
-    isLoading,
-  } = useInstructor();
+  const [currentCourse, setCurrentCourse] = useState<Course | null>(null);
+  const [courseLessons, setCourseLessons] = useState<CourseLesson[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [courseStatus, setCourseStatus] = useState<CourseStatus>('draft');
 
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -114,35 +116,54 @@ export default function CourseDetailPage() {
   const [newLessonDescription, setNewLessonDescription] = useState("");
   const [deleteLessonId, setDeleteLessonId] = useState<string | null>(null);
   const [selectedLessonIds, setSelectedLessonIds] = useState<string[]>([]);
-  const [reorderedLessons, setReorderedLessons] = useState<InstructorLesson[]>([]);
+  const [reorderedLessons, setReorderedLessons] = useState<CourseLesson[]>([]);
 
-  useEffect(() => {
-    loadCourse(courseId);
-    loadLessons();
-  }, [courseId, loadCourse, loadLessons]);
-
-  // Keep reordered lessons in sync with current course
-  useEffect(() => {
-    if (currentCourse) {
-      setReorderedLessons([...currentCourse.lessons].sort((a, b) => a.order - b.order));
-    }
-  }, [currentCourse]);
-
-  useEffect(() => {
-    if (currentCourse) {
+  const loadCourseData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const [course, rawLessons, cats] = await Promise.all([
+        courseService.getCourseById(courseId),
+        lessonService.getLessonsByCourse(courseId),
+        categoryService.getCategories(),
+      ]);
+      
+      setCurrentCourse(course);
+      setCategories(cats);
+      
+      // Load lesson items for each lesson
+      const lessonsWithItems: CourseLesson[] = await Promise.all(
+        rawLessons.map(async (lesson) => {
+          const items = await lessonItemService.getItemsByLesson(lesson.id);
+          return {
+            id: lesson.id,
+            title: lesson.title,
+            description: lesson.description,
+            order: lesson.order || 0,
+            items,
+          };
+        })
+      );
+      
+      setCourseLessons(lessonsWithItems);
+      setReorderedLessons([...lessonsWithItems].sort((a, b) => a.order - b.order));
       setEditForm({
-        title: currentCourse.title,
-        description: currentCourse.description,
-        categoryId: currentCourse.categoryId,
+        title: course.title,
+        description: course.description || '',
+        categoryId: course.categoryId,
       });
+    } catch (error) {
+      console.error('Failed to load course:', error);
+    } finally {
+      setIsLoading(false);
     }
-  }, [currentCourse]);
+  }, [courseId]);
 
-  // Get available lessons (not already in course) - must be before early return
-  const availableLessons = useMemo(() => {
-    const courseLessonIds = currentCourse?.lessons.map(l => l.id) || [];
-    return (lessons || []).filter(l => !courseLessonIds.includes(l.id));
-  }, [lessons, currentCourse]);
+  useEffect(() => {
+    loadCourseData();
+  }, [loadCourseData]);
+
+  // Get available lessons - empty for now since we don't have standalone lessons concept
+  const availableLessons: CourseLesson[] = [];
 
   if (isLoading || !currentCourse) {
     return (
@@ -153,55 +174,79 @@ export default function CourseDetailPage() {
   }
 
   const handleSaveEdit = async () => {
-    await updateCourse(courseId, editForm);
-    setIsEditing(false);
+    try {
+      await courseService.updateCourse(courseId, {
+        name: editForm.title,
+        description: editForm.description,
+      });
+      await loadCourseData();
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Failed to update course:', error);
+    }
   };
 
   const handleDelete = async () => {
-    await deleteCourse(courseId);
-    router.push("/instructor/courses");
+    try {
+      await courseService.deleteCourse(courseId);
+      router.push("/instructor/courses");
+    } catch (error) {
+      console.error('Failed to delete course:', error);
+    }
   };
 
   const handlePublish = async () => {
-    await publishCourse(courseId);
+    // TODO: Backend doesn't support status yet
+    setCourseStatus('published');
   };
 
   const handleArchive = async () => {
-    await archiveCourse(courseId);
+    // TODO: Backend doesn't support status yet
+    setCourseStatus('archived');
   };
 
   const handleUnpublish = async () => {
-    await unpublishCourse(courseId);
+    // TODO: Backend doesn't support status yet
+    setCourseStatus('draft');
   };
 
   const handleCreateLesson = async () => {
     if (!newLessonTitle.trim()) return;
     
-    await createLesson({
-      title: newLessonTitle,
-      description: newLessonDescription,
-      courseId,
-    });
-    
-    setNewLessonTitle("");
-    setNewLessonDescription("");
-    setLessonDialogOpen(false);
+    try {
+      await lessonService.createLesson({
+        title: newLessonTitle,
+        url: newLessonTitle.toLowerCase().replace(/\s+/g, '-'),
+        courseId,
+      });
+      
+      setNewLessonTitle("");
+      setNewLessonDescription("");
+      setLessonDialogOpen(false);
+      await loadCourseData();
+    } catch (error) {
+      console.error('Failed to create lesson:', error);
+    }
   };
 
   const handleAddExistingLessons = async () => {
-    if (selectedLessonIds.length === 0) return;
-    await addLessonsToCourse(courseId, selectedLessonIds);
+    // Not supported by backend - lessons are tied to courses on creation
     setSelectedLessonIds([]);
     setLessonDialogOpen(false);
   };
 
-  const handleReorderLessons = async (newOrder: InstructorLesson[]) => {
+  const handleReorderLessons = async (newOrder: CourseLesson[]) => {
     setReorderedLessons(newOrder);
-    await reorderLessons(courseId, newOrder.map(l => l.id));
+    // TODO: Backend doesn't support reordering yet
   };
 
   const handleRemoveLessonFromCourse = async (lessonId: string) => {
-    await removeLessonFromCourse(courseId, lessonId);
+    try {
+      await lessonService.deleteLesson(lessonId);
+      await loadCourseData();
+    } catch (error) {
+      console.error('Failed to remove lesson:', error);
+    }
   };
 
   const toggleLessonSelection = (lessonId: string) => {
@@ -214,8 +259,13 @@ export default function CourseDetailPage() {
 
   const handleDeleteLesson = async () => {
     if (deleteLessonId) {
-      await deleteLesson(courseId, deleteLessonId);
-      setDeleteLessonId(null);
+      try {
+        await lessonService.deleteLesson(deleteLessonId);
+        setDeleteLessonId(null);
+        await loadCourseData();
+      } catch (error) {
+        console.error('Failed to delete lesson:', error);
+      }
     }
   };
 
@@ -272,7 +322,7 @@ export default function CourseDetailPage() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl font-bold">{currentCourse.title}</h1>
-                {getStatusBadge(currentCourse.status)}
+                {getStatusBadge(courseStatus)}
               </div>
               <p className="text-muted-foreground mt-1">
                 {currentCourse.categoryName}
@@ -286,13 +336,13 @@ export default function CourseDetailPage() {
                 Preview
               </Link>
             </Button>
-            {currentCourse.status === "draft" && (
+            {courseStatus === "draft" && (
               <Button onClick={handlePublish}>
                 <CheckCircle className="mr-2 h-4 w-4" />
                 Publish
               </Button>
             )}
-            {currentCourse.status === "published" && (
+            {courseStatus === "published" && (
               <Button variant="outline" onClick={handleArchive}>
                 <Archive className="mr-2 h-4 w-4" />
                 Archive
@@ -316,13 +366,13 @@ export default function CourseDetailPage() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                {currentCourse.status === "published" && (
+                {courseStatus === "published" && (
                   <DropdownMenuItem onClick={handleUnpublish}>
                     <Clock className="mr-2 h-4 w-4" />
                     Unpublish (Back to Draft)
                   </DropdownMenuItem>
                 )}
-                {currentCourse.status === "archived" && (
+                {courseStatus === "archived" && (
                   <DropdownMenuItem onClick={handleUnpublish}>
                     <CheckCircle className="mr-2 h-4 w-4" />
                     Restore to Draft
@@ -349,7 +399,7 @@ export default function CourseDetailPage() {
                 <Users className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{currentCourse.stats.totalEnrollments}</p>
+                <p className="text-2xl font-bold">{currentCourse.totalEnrolled || 0}</p>
                 <p className="text-xs text-muted-foreground">Students</p>
               </div>
             </CardContent>
@@ -360,8 +410,8 @@ export default function CourseDetailPage() {
                 <Star className="h-5 w-5 text-warning" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{currentCourse.stats.averageRating.toFixed(1)}</p>
-                <p className="text-xs text-muted-foreground">{currentCourse.stats.totalReviews} reviews</p>
+                <p className="text-2xl font-bold">{(currentCourse.rating || 0).toFixed(1)}</p>
+                <p className="text-xs text-muted-foreground">{currentCourse.reviewCount || 0} reviews</p>
               </div>
             </CardContent>
           </Card>
@@ -371,7 +421,7 @@ export default function CourseDetailPage() {
                 <BookOpen className="h-5 w-5 text-secondary" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{currentCourse.stats.totalLessons}</p>
+                <p className="text-2xl font-bold">{courseLessons.length}</p>
                 <p className="text-xs text-muted-foreground">Lessons</p>
               </div>
             </CardContent>
@@ -382,7 +432,7 @@ export default function CourseDetailPage() {
                 <FileText className="h-5 w-5 text-accent" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{currentCourse.stats.totalItems}</p>
+                <p className="text-2xl font-bold">{courseLessons.reduce((sum, l) => sum + l.items.length, 0)}</p>
                 <p className="text-xs text-muted-foreground">Items</p>
               </div>
             </CardContent>
@@ -504,7 +554,7 @@ export default function CourseDetailPage() {
                                     className="flex items-center gap-1 text-xs text-muted-foreground"
                                   >
                                     {getItemTypeIcon(item.type)}
-                                    <span className="truncate max-w-24">{item.title}</span>
+                                    <span className="truncate max-w-24">{item.name}</span>
                                   </div>
                                 ))}
                                 {lesson.items.length > 5 && (
@@ -565,13 +615,13 @@ export default function CourseDetailPage() {
                 <div>
                   <Label className="text-muted-foreground">Created</Label>
                   <p className="text-sm">
-                    {new Date(currentCourse.createdAt).toLocaleDateString()}
+                    {new Date().toLocaleDateString()}
                   </p>
                 </div>
                 <div>
                   <Label className="text-muted-foreground">Last Updated</Label>
                   <p className="text-sm">
-                    {new Date(currentCourse.updatedAt).toLocaleDateString()}
+                    {new Date().toLocaleDateString()}
                   </p>
                 </div>
               </CardContent>
@@ -590,10 +640,10 @@ export default function CourseDetailPage() {
                   <div>
                     <p className="font-medium">Course Status</p>
                     <p className="text-sm text-muted-foreground">
-                      Current status: {currentCourse.status}
+                      Current status: {courseStatus}
                     </p>
                   </div>
-                  {getStatusBadge(currentCourse.status)}
+                  {getStatusBadge(courseStatus)}
                 </div>
                 <Separator />
                 <div className="flex items-center justify-between">
