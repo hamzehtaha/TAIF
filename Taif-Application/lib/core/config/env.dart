@@ -25,7 +25,7 @@ class EnvConfig {
 
   /// Development environment
   static const EnvConfig dev = EnvConfig._(
-    apiBaseUrl: 'https://api-dev.taif.app/v1',
+    apiBaseUrl: 'https://localhost:7277/api',
     appName: 'TAIF Dev',
     enableLogging: true,
     enableAnalytics: false,
@@ -37,7 +37,7 @@ class EnvConfig {
 
   /// Staging environment
   static const EnvConfig staging = EnvConfig._(
-    apiBaseUrl: 'https://api-staging.taif.app/v1',
+    apiBaseUrl: 'https://localhost:7277/api',
     appName: 'TAIF Staging',
     enableLogging: true,
     enableAnalytics: true,
@@ -49,7 +49,7 @@ class EnvConfig {
 
   /// Production environment
   static const EnvConfig prod = EnvConfig._(
-    apiBaseUrl: 'https://api.taif.app/v1',
+    apiBaseUrl: 'https://localhost:7277/api',
     appName: 'TAIF',
     enableLogging: false,
     enableAnalytics: true,

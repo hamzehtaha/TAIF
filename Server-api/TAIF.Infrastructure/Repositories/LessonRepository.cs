@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using TAIF.Application.DTOs;
 using TAIF.Application.Interfaces.Repositories;
 using TAIF.Domain.Entities;
 using TAIF.Infrastructure.Data;
@@ -19,7 +20,10 @@ namespace TAIF.Infrastructure.Repositories
             return await FindNoTrackingAsync(((lesson) => lesson.CourseId.Equals(courseId)), withDeleted);
         }
 
-        public async Task<Dictionary<Guid, double>> GetTotalDurationPerCourseAsync()
+        /// <summary>
+        /// Gets both total duration and lesson item count per course in a single query
+        /// </summary>
+        public async Task<Dictionary<Guid, CourseStatisticsDTO>> GetCourseStatisticsAsync()
         {
             return await _context.lessons
                 .Where(l => !l.IsDeleted)
@@ -28,8 +32,46 @@ namespace TAIF.Infrastructure.Repositories
                     lessonItem => lessonItem.LessonId,
                     (lesson, lessonItem) => new { lesson.CourseId, lessonItem.DurationInSeconds })
                 .GroupBy(x => x.CourseId)
-                .Select(g => new { CourseId = g.Key, TotalDuration = g.Sum(x => x.DurationInSeconds) })
-                .ToDictionaryAsync(x => x.CourseId, x => x.TotalDuration);
+                .Select(g => new 
+                { 
+                    CourseId = g.Key, 
+                    TotalDuration = g.Sum(x => x.DurationInSeconds),
+                    TotalLessonItems = g.Count() 
+                })
+                .ToDictionaryAsync(
+                    x => x.CourseId, 
+                    x => new CourseStatisticsDTO 
+                    { 
+                        TotalDuration = x.TotalDuration,
+                        TotalLessonItems = x.TotalLessonItems
+                    });
+        }
+
+        public async Task<CourseStatisticsDTO?> GetCourseStatisticsForSingleCourseAsync(Guid courseId)
+        {
+            var result = await _context.lessons
+                .Where(l => !l.IsDeleted && l.CourseId == courseId)
+                .Join(_context.LessonItems.Where(li => !li.IsDeleted),
+                    lesson => lesson.Id,
+                    lessonItem => lessonItem.LessonId,
+                    (lesson, lessonItem) => new { lesson.CourseId, lessonItem.DurationInSeconds })
+                .GroupBy(x => x.CourseId)
+                .Select(g => new 
+                { 
+                    CourseId = g.Key, 
+                    TotalDuration = g.Sum(x => x.DurationInSeconds),
+                    TotalLessonItems = g.Count()
+                })
+                .FirstOrDefaultAsync();
+
+            if (result == null)
+                return null;
+
+            return new CourseStatisticsDTO 
+            { 
+                TotalDuration = result.TotalDuration,
+                TotalLessonItems = result.TotalLessonItems
+            };
         }
     }
 }

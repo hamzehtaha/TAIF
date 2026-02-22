@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 import '../config/env.dart';
 import '../utils/logger.dart';
 
@@ -14,7 +16,7 @@ class NetworkClient {
   NetworkClient() {
     _dio = Dio(
       BaseOptions(
-        baseUrl: EnvConfig.current.apiBaseUrl, // Centralized Base URL
+        baseUrl: EnvConfig.current.apiBaseUrl,
         connectTimeout: EnvConfig.current.apiTimeout,
         receiveTimeout: EnvConfig.current.apiReceiveTimeout,
         headers: {
@@ -23,6 +25,14 @@ class NetworkClient {
         },
       ),
     );
+
+    // Allow self-signed certificates for localhost development
+    (_dio.httpClientAdapter as IOHttpClientAdapter).onHttpClientCreate =
+        (client) {
+      client.badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
+      return client;
+    };
 
     _setupInterceptors();
   }

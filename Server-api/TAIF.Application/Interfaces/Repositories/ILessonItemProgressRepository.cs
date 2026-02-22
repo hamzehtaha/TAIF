@@ -11,5 +11,7 @@ namespace TAIF.Application.Interfaces.Repositories
     {
         Task<double> GetCompletedDurationSumAsync(Guid userId, Guid courseId);
         Task<double> GetCompletedDurationSumForCoursesAsync(Guid userId, List<Guid> courseIds);
+        Task<(int CompletedCount, int TotalItems)> GetCompletionStatsAsync(Guid userId, Guid courseId, int totalLessonItems);
+        Task<int> GetCompletedItemCountAsync(Guid userId, Guid courseId);
     }
 }

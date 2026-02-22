@@ -1,4 +1,5 @@
-﻿using TAIF.Application.DTOs.Responses;
+﻿using Microsoft.Extensions.Logging;
+using TAIF.Application.DTOs.Responses;
 using TAIF.Application.Interfaces.Repositories;
 using TAIF.Application.Interfaces.Services;
 using TAIF.Domain.Entities;
@@ -8,12 +9,20 @@ namespace TAIF.Application.Services
     public class EnrollmentService : ServiceBase<Enrollment>, IEnrollmentService
     {
         private readonly IEnrollmentRepository _repo;
-        private readonly ILessonItemProgressService _lessonItemProgressService;
+        private readonly ILessonItemProgressRepository _lessonItemProgressRepository;
+        private readonly ICourseRepository _courseRepository;
+        private readonly ILogger<EnrollmentService> _logger;
         
-        public EnrollmentService(IEnrollmentRepository repository, ILessonItemProgressService lessonItemProgressService) : base(repository)
+        public EnrollmentService(
+            IEnrollmentRepository repository, 
+            ILessonItemProgressRepository lessonItemProgressRepository,
+            ICourseRepository courseRepository,
+            ILogger<EnrollmentService> logger) : base(repository)
         {
             _repo = repository;
-            _lessonItemProgressService = lessonItemProgressService;
+            _lessonItemProgressRepository = lessonItemProgressRepository;
+            _courseRepository = courseRepository;
+            _logger = logger;
         }
         
         public async Task<List<Course>> GetUserCoursesAsync(Guid userId)
@@ -47,6 +56,7 @@ namespace TAIF.Application.Services
             var enrollment = await _repo.FindOneNoTrackingAsync((x) => x.UserId.Equals(userId) && x.CourseId.Equals(courseId));
             return enrollment;
         }
+
         public async Task<EnrollmentDetailsResponse?> GetEnrollmentDetailsWithProgressAsync(Guid userId, Guid courseId)
         {
             var enrollment = await _repo.FindOneNoTrackingAsync((x) => x.UserId.Equals(userId) && x.CourseId.Equals(courseId));
@@ -56,7 +66,7 @@ namespace TAIF.Application.Services
                 return null;
             }
 
-            var completedDuration = await _lessonItemProgressService.GetUserCourseCompletedDurationAsync(userId, courseId);
+            var completedDuration = await _lessonItemProgressRepository.GetCompletedDurationSumAsync(userId, courseId);
             
             return new EnrollmentDetailsResponse
             {
@@ -66,7 +76,9 @@ namespace TAIF.Application.Services
                 EnrolledAt = enrollment.EnrolledAt,
                 IsFavourite = enrollment.IsFavourite,
                 LastLessonItemId = enrollment.LastLessonItemId,
-                CompletedDurationInSeconds = completedDuration
+                CompletedDurationInSeconds = completedDuration,
+                IsCompleted = enrollment.IsCompleted,
+                CompletedAt = enrollment.CompletedAt
             };
         }
 
@@ -75,6 +87,165 @@ namespace TAIF.Application.Services
             Enrollment enrollment = await _repo.FindOneAsync((x) => x.UserId.Equals(userId) && x.CourseId.Equals(courseId));
             enrollment.LastLessonItemId = lessonItemId;
             await _repo.SaveChangesAsync();
+        }
+
+        public async Task<CourseCompletionEligibilityResponse> CheckCourseCompletionEligibilityAsync(
+            Guid userId, 
+            Guid courseId)
+        {
+            _logger.LogInformation("Checking course completion eligibility for user {UserId} and course {CourseId}", 
+                userId, courseId);
+
+            var course = await _courseRepository.GetByIdAsync(courseId);
+            
+            if (course == null)
+            {
+                return new CourseCompletionEligibilityResponse
+                {
+                    IsEligible = false,
+                    Message = "Course not found"
+                };
+            }
+
+            if (course.TotalLessonItems == 0)
+            {
+                return new CourseCompletionEligibilityResponse
+                {
+                    IsEligible = false,
+                    TotalItems = 0,
+                    CompletedItems = 0,
+                    CompletionPercentage = 0,
+                    Message = "Course has no lesson items"
+                };
+            }
+
+            var (completedCount, totalItems) = await _lessonItemProgressRepository
+                .GetCompletionStatsAsync(userId, courseId, course.TotalLessonItems);
+
+            bool isEligible = completedCount == totalItems;
+
+            return new CourseCompletionEligibilityResponse
+            {
+                IsEligible = isEligible,
+                TotalItems = totalItems,
+                CompletedItems = completedCount,
+                CompletionPercentage = (double)completedCount / totalItems * 100,
+                Message = isEligible 
+                    ? "Ready to complete!" 
+                    : $"Complete {totalItems - completedCount} more items"
+            };
+        }
+
+        public async Task<bool> CompleteCourseAsync(Guid userId, Guid courseId)
+        {
+            _logger.LogInformation("Attempting to complete course {CourseId} for user {UserId}", 
+                courseId, userId);
+
+            var course = await _courseRepository.GetByIdAsync(courseId);
+            
+            if (course == null)
+                throw new InvalidOperationException("Course not found");
+
+            bool isEligible = await _repo.HasUserCompletedAllLessonItemsAsync(
+                userId, courseId, course.TotalLessonItems);
+            
+            if (!isEligible)
+            {
+                _logger.LogWarning("User {UserId} is not eligible to complete course {CourseId}", 
+                    userId, courseId);
+                throw new InvalidOperationException(
+                    "Cannot complete course: not all lesson items are completed");
+            }
+
+            var enrollment = await _repo.FindOneAsync(
+                e => e.UserId == userId && e.CourseId == courseId);
+
+            if (enrollment == null)
+                throw new InvalidOperationException("Enrollment not found");
+
+            if (enrollment.IsCompleted)
+                throw new InvalidOperationException("Course already completed");
+
+            enrollment.IsCompleted = true;
+            enrollment.CompletedAt = DateTime.UtcNow;
+
+            await _repo.SaveChangesAsync();
+
+            _logger.LogInformation("Successfully completed course {CourseId} for user {UserId} at {CompletedAt}", 
+                courseId, userId, enrollment.CompletedAt);
+
+            return true;
+        }
+
+        public async Task TryAutoCompleteCourseAsync(Guid userId, Guid courseId)
+        {
+            _logger.LogDebug("Trying auto-completion for course {CourseId} and user {UserId}", 
+                courseId, userId);
+
+            var enrollment = await _repo.FindOneAsync(
+                e => e.UserId == userId && e.CourseId == courseId);
+
+            if (enrollment == null)
+            {
+                _logger.LogDebug("No enrollment found for user {UserId} in course {CourseId}", 
+                    userId, courseId);
+                return;
+            }
+
+            if (enrollment.IsCompleted)
+            {
+                _logger.LogDebug("Course {CourseId} already completed for user {UserId}", 
+                    courseId, userId);
+                return;
+            }
+
+            var course = await _courseRepository.GetByIdAsync(courseId);
+            
+            if (course == null || course.TotalLessonItems == 0)
+            {
+                _logger.LogDebug("Course {CourseId} not found or has no items", courseId);
+                return;
+            }
+
+            bool isEligible = await _repo.HasUserCompletedAllLessonItemsAsync(
+                userId, courseId, course.TotalLessonItems);
+
+            if (isEligible)
+            {
+                enrollment.IsCompleted = true;
+                enrollment.CompletedAt = DateTime.UtcNow;
+                await _repo.SaveChangesAsync();
+
+                _logger.LogInformation("Auto-completed course {CourseId} for user {UserId}", 
+                    courseId, userId);
+            }
+            else
+            {
+                _logger.LogDebug("Course {CourseId} not yet eligible for completion for user {UserId}", 
+                    courseId, userId);
+            }
+        }
+
+        public async Task<List<Course>> GetUserCompletedCoursesAsync(Guid userId)
+        {
+            var enrollments = await _repo.FindWithIncludesNoTrackingAsync(
+                e => e.UserId == userId && e.IsCompleted,
+                includes: e => e.Course);
+            
+            return enrollments.Select(e => e.Course).ToList();
+        }
+
+        public async Task<Dictionary<Guid, bool>> CheckMultipleCourseCompletionsAsync(
+            Guid userId, 
+            List<Guid> courseIds)
+        {
+            if (!courseIds.Any())
+                return new Dictionary<Guid, bool>();
+
+            var courses = await _courseRepository.FindNoTrackingAsync(c => courseIds.Contains(c.Id));
+            var courseIdToTotalItems = courses.ToDictionary(c => c.Id, c => c.TotalLessonItems);
+
+            return await _repo.CheckMultipleCourseCompletionsAsync(userId, courseIdToTotalItems);
         }
     }
 }

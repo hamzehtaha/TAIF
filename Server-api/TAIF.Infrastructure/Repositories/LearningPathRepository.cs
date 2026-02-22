@@ -91,5 +91,19 @@ namespace TAIF.Infrastructure.Repositories
                 .Distinct()
                 .ToListAsync();
         }
+
+        public async Task<List<Guid>> GetRequiredCourseIdsInLearningPathAsync(Guid learningPathId)
+        {
+            return await _dbSet
+                .AsNoTracking()
+                .Where(lp => lp.Id == learningPathId && !lp.IsDeleted)
+                .SelectMany(lp => lp.Sections)
+                .Where(s => !s.IsDeleted)
+                .SelectMany(s => s.Courses)
+                .Where(lpc => lpc.IsRequired && !lpc.IsDeleted)
+                .Select(lpc => lpc.CourseId)
+                .Distinct()
+                .ToListAsync();
+        }
     }
 }
