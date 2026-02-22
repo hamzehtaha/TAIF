@@ -12,8 +12,8 @@ using TAIF.Infrastructure.Data;
 namespace TAIF.Infrastructure.Migrations
 {
     [DbContext(typeof(TaifDbContext))]
-    [Migration("20260215232246_intial")]
-    partial class intial
+    [Migration("20260222021822_first")]
+    partial class first
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -97,6 +97,9 @@ namespace TAIF.Infrastructure.Migrations
                     b.Property<int>("TotalEnrolled")
                         .HasColumnType("int");
 
+                    b.Property<int>("TotalLessonItems")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -122,6 +125,9 @@ namespace TAIF.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<Guid>("CourseId")
                         .HasColumnType("uniqueidentifier");
 
@@ -133,6 +139,9 @@ namespace TAIF.Infrastructure.Migrations
 
                     b.Property<DateTime>("EnrolledAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsCompleted")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -151,14 +160,81 @@ namespace TAIF.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CourseId");
-
                     b.HasIndex("LastLessonItemId");
+
+                    b.HasIndex("CourseId", "IsDeleted");
 
                     b.HasIndex("UserId", "CourseId")
                         .IsUnique();
 
+                    b.HasIndex("UserId", "IsCompleted");
+
                     b.ToTable("Enrollments");
+                });
+
+            modelBuilder.Entity("TAIF.Domain.Entities.EvaluationAnswer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("EvaluationQuestionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Score")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EvaluationQuestionId");
+
+                    b.ToTable("EvaluationAnswers");
+                });
+
+            modelBuilder.Entity("TAIF.Domain.Entities.EvaluationQuestion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("EvaluationQuestions");
                 });
 
             modelBuilder.Entity("TAIF.Domain.Entities.InstructorProfile", b =>
@@ -369,6 +445,8 @@ namespace TAIF.Infrastructure.Migrations
 
                     b.HasIndex("LearningPathSectionId", "Order");
 
+                    b.HasIndex("LearningPathSectionId", "IsRequired", "IsDeleted");
+
                     b.ToTable("LearningPathCourses");
                 });
 
@@ -443,7 +521,7 @@ namespace TAIF.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CourseId");
+                    b.HasIndex("CourseId", "IsDeleted");
 
                     b.ToTable("lessons");
                 });
@@ -488,7 +566,7 @@ namespace TAIF.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("LessonId");
+                    b.HasIndex("LessonId", "IsDeleted");
 
                     b.ToTable("LessonItems");
                 });
@@ -533,8 +611,14 @@ namespace TAIF.Infrastructure.Migrations
 
                     b.HasIndex("LessonItemId");
 
+                    b.HasIndex("LessonID", "IsDeleted");
+
                     b.HasIndex("UserId", "LessonItemId")
                         .IsUnique();
+
+                    b.HasIndex("UserId", "LessonID", "IsCompleted");
+
+                    b.HasIndex("UserId", "CourseID", "IsDeleted", "IsCompleted");
 
                     b.ToTable("LessonItemProgress");
                 });
@@ -845,11 +929,52 @@ namespace TAIF.Infrastructure.Migrations
                     b.ToTable("UserCourseBehaviors");
                 });
 
+            modelBuilder.Entity("TAIF.Domain.Entities.UserEvaluation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AnswersJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("TotalScore")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserEvaluations");
+                });
+
             modelBuilder.Entity("TAIF.Domain.Entities.UserLearningPathProgress", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<double>("CompletedDuration")
                         .HasColumnType("float");
@@ -869,6 +994,9 @@ namespace TAIF.Infrastructure.Migrations
                     b.Property<DateTime>("EnrolledAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool>("IsCompleted")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -887,7 +1015,9 @@ namespace TAIF.Infrastructure.Migrations
 
                     b.HasIndex("CurrentSectionId");
 
-                    b.HasIndex("LearningPathId");
+                    b.HasIndex("LearningPathId", "IsDeleted");
+
+                    b.HasIndex("UserId", "IsCompleted");
 
                     b.HasIndex("UserId", "LearningPathId")
                         .IsUnique();
@@ -954,6 +1084,17 @@ namespace TAIF.Infrastructure.Migrations
                     b.Navigation("LastLessonItem");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("TAIF.Domain.Entities.EvaluationAnswer", b =>
+                {
+                    b.HasOne("TAIF.Domain.Entities.EvaluationQuestion", "EvaluationQuestion")
+                        .WithMany("Answers")
+                        .HasForeignKey("EvaluationQuestionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("EvaluationQuestion");
                 });
 
             modelBuilder.Entity("TAIF.Domain.Entities.InstructorProfile", b =>
@@ -1142,6 +1283,17 @@ namespace TAIF.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("TAIF.Domain.Entities.UserEvaluation", b =>
+                {
+                    b.HasOne("TAIF.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("TAIF.Domain.Entities.UserLearningPathProgress", b =>
                 {
                     b.HasOne("TAIF.Domain.Entities.Course", "CurrentCourse")
@@ -1173,6 +1325,11 @@ namespace TAIF.Infrastructure.Migrations
                     b.Navigation("LearningPath");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("TAIF.Domain.Entities.EvaluationQuestion", b =>
+                {
+                    b.Navigation("Answers");
                 });
 
             modelBuilder.Entity("TAIF.Domain.Entities.Interest", b =>

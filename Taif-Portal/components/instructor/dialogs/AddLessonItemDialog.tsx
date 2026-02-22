@@ -40,7 +40,8 @@ interface AddLessonItemDialogProps {
   onModeChange: (mode: AddItemMode) => void;
   availableItems: LessonItem[];
   excludeItemIds?: string[];
-  onCreateItem: (name: string, type: LessonItemType, content: string) => Promise<void>;
+  lessonId: string;
+  onCreateItem: (name: string, type: LessonItemType, content: string, durationInSeconds: number, lessonId: string) => Promise<void>;
   onSelectItems: (itemIds: string[]) => Promise<void>;
   isLoading?: boolean;
 }
@@ -78,6 +79,7 @@ export function AddLessonItemDialog({
   onModeChange,
   availableItems,
   excludeItemIds = [],
+  lessonId,
   onCreateItem,
   onSelectItems,
   isLoading = false,
@@ -85,6 +87,7 @@ export function AddLessonItemDialog({
   const [name, setName] = useState("");
   const [type, setType] = useState<LessonItemType>(LessonItemType.Video);
   const [content, setContent] = useState("");
+  const [durationMinutes, setDurationMinutes] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
@@ -114,7 +117,8 @@ export function AddLessonItemDialog({
 
   const handleCreate = async () => {
     if (!name.trim()) return;
-    await onCreateItem(name, type, content);
+    const durationInSeconds = parseFloat(durationMinutes || "0") * 60;
+    await onCreateItem(name, type, content, durationInSeconds, lessonId);
     handleClose();
   };
 
@@ -128,6 +132,7 @@ export function AddLessonItemDialog({
     setName("");
     setType(LessonItemType.Video);
     setContent("");
+    setDurationMinutes("");
     setSelectedIds([]);
     setSearchQuery("");
     setTypeFilter("all");
@@ -224,6 +229,18 @@ export function AddLessonItemDialog({
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 rows={4}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="item-duration">Duration (minutes)</Label>
+              <Input
+                id="item-duration"
+                type="number"
+                placeholder="e.g., 10"
+                min="0"
+                step="0.5"
+                value={durationMinutes}
+                onChange={(e) => setDurationMinutes(e.target.value)}
               />
             </div>
           </div>

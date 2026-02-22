@@ -6,6 +6,8 @@ export interface Enrollment {
     isFavourite: boolean;
     lastLessonItemId?: string;
     completedDurationInSeconds?: number;
+    isCompleted: boolean;
+    completedAt?: string;
     createdAt?: string;
     updatedAt?: string;
     isDeleted?: boolean;

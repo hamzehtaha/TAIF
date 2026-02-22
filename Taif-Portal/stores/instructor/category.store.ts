@@ -3,8 +3,8 @@
  */
 
 import { create } from 'zustand';
-import { Category } from '@/lib/api/types';
-import { categoryService } from '@/lib/api/services';
+import { Category } from '@/models/category.model';
+import { categoryService } from '@/services/category.service';
 
 interface CategoryState {
   categories: Category[];
@@ -32,12 +32,8 @@ export const useCategoryStore = create<CategoryStore>((set, get) => ({
   loadCategories: async () => {
     set({ isLoading: true, error: null });
     try {
-      const response = await categoryService.getAll();
-      if (response.success) {
-        set({ categories: response.data, isLoading: false });
-      } else {
-        set({ error: response.message, isLoading: false });
-      }
+      const categories = await categoryService.getCategories();
+      set({ categories, isLoading: false });
     } catch (error) {
       set({ error: 'Failed to load categories', isLoading: false });
     }

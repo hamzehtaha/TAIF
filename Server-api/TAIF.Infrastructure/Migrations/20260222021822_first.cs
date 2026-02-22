@@ -6,11 +6,28 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace TAIF.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class intial : Migration
+    public partial class first : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "EvaluationQuestions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Text = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Order = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_EvaluationQuestions", x => x.Id);
+                });
+
             migrationBuilder.CreateTable(
                 name: "Interests",
                 columns: table => new
@@ -67,6 +84,30 @@ namespace TAIF.Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Tags", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "EvaluationAnswers",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    EvaluationQuestionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Text = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Score = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_EvaluationAnswers", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_EvaluationAnswers_EvaluationQuestions_EvaluationQuestionId",
+                        column: x => x.EvaluationQuestionId,
+                        principalTable: "EvaluationQuestions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -181,6 +222,7 @@ namespace TAIF.Infrastructure.Migrations
                     Tags = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     TotalDurationInSeconds = table.Column<double>(type: "float", nullable: false),
                     TotalEnrolled = table.Column<int>(type: "int", nullable: false),
+                    TotalLessonItems = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -269,6 +311,31 @@ namespace TAIF.Infrastructure.Migrations
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserEvaluations",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    AnswersJson = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    TotalScore = table.Column<int>(type: "int", nullable: false),
+                    CompletedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserEvaluations", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserEvaluations_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -452,6 +519,8 @@ namespace TAIF.Infrastructure.Migrations
                     CurrentSectionId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     CurrentCourseId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     CompletedDuration = table.Column<double>(type: "float", nullable: false),
+                    IsCompleted = table.Column<bool>(type: "bit", nullable: false),
+                    CompletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -496,6 +565,8 @@ namespace TAIF.Infrastructure.Migrations
                     EnrolledAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     IsFavourite = table.Column<bool>(type: "bit", nullable: false),
                     LastLessonItemId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IsCompleted = table.Column<bool>(type: "bit", nullable: false),
+                    CompletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -609,9 +680,9 @@ namespace TAIF.Infrastructure.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Enrollments_CourseId",
+                name: "IX_Enrollments_CourseId_IsDeleted",
                 table: "Enrollments",
-                column: "CourseId");
+                columns: new[] { "CourseId", "IsDeleted" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Enrollments_LastLessonItemId",
@@ -623,6 +694,16 @@ namespace TAIF.Infrastructure.Migrations
                 table: "Enrollments",
                 columns: new[] { "UserId", "CourseId" },
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Enrollments_UserId_IsCompleted",
+                table: "Enrollments",
+                columns: new[] { "UserId", "IsCompleted" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EvaluationAnswers_EvaluationQuestionId",
+                table: "EvaluationAnswers",
+                column: "EvaluationQuestionId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_InstructorProfiles_OrganizationId",
@@ -668,6 +749,11 @@ namespace TAIF.Infrastructure.Migrations
                 column: "CourseId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_LearningPathCourses_LearningPathSectionId_IsRequired_IsDeleted",
+                table: "LearningPathCourses",
+                columns: new[] { "LearningPathSectionId", "IsRequired", "IsDeleted" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_LearningPathCourses_LearningPathSectionId_Order",
                 table: "LearningPathCourses",
                 columns: new[] { "LearningPathSectionId", "Order" });
@@ -683,9 +769,24 @@ namespace TAIF.Infrastructure.Migrations
                 columns: new[] { "LearningPathId", "Order" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_LessonItemProgress_LessonID_IsDeleted",
+                table: "LessonItemProgress",
+                columns: new[] { "LessonID", "IsDeleted" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_LessonItemProgress_LessonItemId",
                 table: "LessonItemProgress",
                 column: "LessonItemId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LessonItemProgress_UserId_CourseID_IsDeleted_IsCompleted",
+                table: "LessonItemProgress",
+                columns: new[] { "UserId", "CourseID", "IsDeleted", "IsCompleted" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LessonItemProgress_UserId_LessonID_IsCompleted",
+                table: "LessonItemProgress",
+                columns: new[] { "UserId", "LessonID", "IsCompleted" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_LessonItemProgress_UserId_LessonItemId",
@@ -694,14 +795,14 @@ namespace TAIF.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_LessonItems_LessonId",
+                name: "IX_LessonItems_LessonId_IsDeleted",
                 table: "LessonItems",
-                column: "LessonId");
+                columns: new[] { "LessonId", "IsDeleted" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_lessons_CourseId",
+                name: "IX_lessons_CourseId_IsDeleted",
                 table: "lessons",
-                column: "CourseId");
+                columns: new[] { "CourseId", "IsDeleted" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Organizations_Identity",
@@ -772,6 +873,11 @@ namespace TAIF.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_UserEvaluations_UserId",
+                table: "UserEvaluations",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_UserLearningPathProgress_CurrentCourseId",
                 table: "UserLearningPathProgress",
                 column: "CurrentCourseId");
@@ -782,9 +888,14 @@ namespace TAIF.Infrastructure.Migrations
                 column: "CurrentSectionId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserLearningPathProgress_LearningPathId",
+                name: "IX_UserLearningPathProgress_LearningPathId_IsDeleted",
                 table: "UserLearningPathProgress",
-                column: "LearningPathId");
+                columns: new[] { "LearningPathId", "IsDeleted" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserLearningPathProgress_UserId_IsCompleted",
+                table: "UserLearningPathProgress",
+                columns: new[] { "UserId", "IsCompleted" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserLearningPathProgress_UserId_LearningPathId",
@@ -821,6 +932,9 @@ namespace TAIF.Infrastructure.Migrations
                 name: "Enrollments");
 
             migrationBuilder.DropTable(
+                name: "EvaluationAnswers");
+
+            migrationBuilder.DropTable(
                 name: "InstructorProfiles");
 
             migrationBuilder.DropTable(
@@ -842,7 +956,13 @@ namespace TAIF.Infrastructure.Migrations
                 name: "UserCourseBehaviors");
 
             migrationBuilder.DropTable(
+                name: "UserEvaluations");
+
+            migrationBuilder.DropTable(
                 name: "UserLearningPathProgress");
+
+            migrationBuilder.DropTable(
+                name: "EvaluationQuestions");
 
             migrationBuilder.DropTable(
                 name: "Interests");

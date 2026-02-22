@@ -88,6 +88,15 @@ export default function LessonsPage() {
   const [addItemDialogOpen, setAddItemDialogOpen] = useState(false);
   const [selectedItemType, setSelectedItemType] = useState<LessonItemType | null>(null);
   const [deleteItemId, setDeleteItemId] = useState<string | null>(null);
+  
+  // Form states for different item types
+  const [itemName, setItemName] = useState("");
+  const [videoUrl, setVideoUrl] = useState("");
+  const [videoDuration, setVideoDuration] = useState(0);
+  const [richTextContent, setRichTextContent] = useState("");
+  const [questionText, setQuestionText] = useState("");
+  const [questionOptions, setQuestionOptions] = useState<string[]>(["", "", "", ""]);
+  const [correctOptionIndex, setCorrectOptionIndex] = useState(0);
 
   const loadCourseData = useCallback(async () => {
     setIsLoading(true);
@@ -165,22 +174,49 @@ export default function LessonsPage() {
     }
   };
 
-  const handleCreateItem = async (type: LessonItemType, name: string, content: string = '') => {
-    if (!selectedLesson) return;
+  const resetItemForm = () => {
+    setItemName("");
+    setVideoUrl("");
+    setVideoDuration(0);
+    setRichTextContent("");
+    setQuestionText("");
+    setQuestionOptions(["", "", "", ""]);
+    setCorrectOptionIndex(0);
+  };
+
+  const handleCreateItem = async () => {
+    if (!selectedLesson || !selectedItemType || !itemName.trim()) return;
     
     try {
       const typeMap = { 'video': 0, 'text': 1, 'rich-content': 1, 'question': 2 };
+      let content = "";
+      let duration = 0;
+
+      if (selectedItemType === "video") {
+        content = JSON.stringify({ url: videoUrl });
+        duration = videoDuration;
+      } else if (selectedItemType === "rich-content" || selectedItemType === "text") {
+        content = richTextContent;
+      } else if (selectedItemType === "question") {
+        content = JSON.stringify({
+          question: questionText,
+          options: questionOptions.filter(opt => opt.trim()),
+          correctIndex: correctOptionIndex,
+        });
+      }
+
       await lessonItemService.createLessonItem({
-        name,
+        name: itemName,
         content,
-        type: typeMap[type],
+        type: typeMap[selectedItemType],
         lessonId: selectedLesson.id,
-        durationInSeconds: 0,
+        durationInSeconds: duration,
       });
       
       await loadCourseData();
       setAddItemDialogOpen(false);
       setSelectedItemType(null);
+      resetItemForm();
     } catch (error) {
       console.error('Failed to create item:', error);
     }
@@ -458,54 +494,137 @@ export default function LessonsPage() {
       </div>
 
       {/* Add Content Dialog */}
-      <Dialog open={addItemDialogOpen} onOpenChange={setAddItemDialogOpen}>
+      <Dialog open={addItemDialogOpen} onOpenChange={(open) => {
+        if (!open) resetItemForm();
+        setAddItemDialogOpen(open);
+      }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>
-              Add {selectedItemType === "video" ? "Video" : selectedItemType === "rich-content" ? "Rich Content" : selectedItemType === "text" ? "Text Content" : "Question"}
+              Add {selectedItemType === "video" ? "Video" : selectedItemType === "rich-content" ? "Rich Content" : "Question"}
             </DialogTitle>
             <DialogDescription>
-              Create a new lesson item
+              {selectedItemType === "video" && "Add a video from YouTube or Vimeo"}
+              {selectedItemType === "rich-content" && "Add text or HTML content"}
+              {selectedItemType === "question" && "Create a multiple choice question"}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            {/* Common: Item Name */}
             <div className="space-y-2">
-              <Label htmlFor="item-name">Name</Label>
+              <Label htmlFor="item-name">Name *</Label>
               <Input
                 id="item-name"
                 placeholder="Enter item name..."
-                onChange={(e) => {
-                  const input = e.target as HTMLInputElement;
-                  input.dataset.value = e.target.value;
-                }}
+                value={itemName}
+                onChange={(e) => setItemName(e.target.value)}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="item-content">Content</Label>
-              <Textarea
-                id="item-content"
-                placeholder="Enter content..."
-                className="min-h-24"
-                onChange={(e) => {
-                  const input = e.target as HTMLTextAreaElement;
-                  input.dataset.value = e.target.value;
-                }}
-              />
-            </div>
+
+            {/* Video Form */}
+            {selectedItemType === "video" && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="video-url">Video URL *</Label>
+                  <Input
+                    id="video-url"
+                    placeholder="https://youtube.com/watch?v=... or https://vimeo.com/..."
+                    value={videoUrl}
+                    onChange={(e) => setVideoUrl(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Supports YouTube and Vimeo URLs
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="video-duration">Duration (minutes)</Label>
+                  <Input
+                    id="video-duration"
+                    type="number"
+                    min="0"
+                    placeholder="e.g., 15"
+                    value={videoDuration > 0 ? Math.round(videoDuration / 60) : ""}
+                    onChange={(e) => setVideoDuration(parseInt(e.target.value || "0") * 60)}
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Rich Text Form */}
+            {selectedItemType === "rich-content" && (
+              <div className="space-y-2">
+                <Label htmlFor="rich-content">Content *</Label>
+                <Textarea
+                  id="rich-content"
+                  placeholder="Enter your text content here. HTML is supported..."
+                  className="min-h-40"
+                  value={richTextContent}
+                  onChange={(e) => setRichTextContent(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  You can use HTML formatting for rich text
+                </p>
+              </div>
+            )}
+
+            {/* Question Form */}
+            {selectedItemType === "question" && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="question-text">Question *</Label>
+                  <Textarea
+                    id="question-text"
+                    placeholder="Enter your question..."
+                    value={questionText}
+                    onChange={(e) => setQuestionText(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Answer Options</Label>
+                  {questionOptions.map((option, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="correct-option"
+                        checked={correctOptionIndex === index}
+                        onChange={() => setCorrectOptionIndex(index)}
+                        className="h-4 w-4"
+                      />
+                      <Input
+                        placeholder={`Option ${index + 1}`}
+                        value={option}
+                        onChange={(e) => {
+                          const newOptions = [...questionOptions];
+                          newOptions[index] = e.target.value;
+                          setQuestionOptions(newOptions);
+                        }}
+                      />
+                    </div>
+                  ))}
+                  <p className="text-xs text-muted-foreground">
+                    Select the radio button next to the correct answer
+                  </p>
+                </div>
+              </>
+            )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAddItemDialogOpen(false)}>
+            <Button variant="outline" onClick={() => {
+              setAddItemDialogOpen(false);
+              resetItemForm();
+            }}>
               Cancel
             </Button>
-            <Button onClick={() => {
-              const nameInput = document.getElementById('item-name') as HTMLInputElement;
-              const contentInput = document.getElementById('item-content') as HTMLTextAreaElement;
-              if (selectedItemType && nameInput?.value) {
-                handleCreateItem(selectedItemType, nameInput.value, contentInput?.value || '');
+            <Button 
+              onClick={handleCreateItem}
+              disabled={!itemName.trim() || 
+                (selectedItemType === "video" && !videoUrl.trim()) ||
+                (selectedItemType === "rich-content" && !richTextContent.trim()) ||
+                (selectedItemType === "question" && (!questionText.trim() || questionOptions.filter(o => o.trim()).length < 2))
               }
-            }}>
+            >
               <Plus className="mr-2 h-4 w-4" />
-              Create Item
+              Create {selectedItemType === "video" ? "Video" : selectedItemType === "rich-content" ? "Rich Content" : "Question"}
             </Button>
           </DialogFooter>
         </DialogContent>

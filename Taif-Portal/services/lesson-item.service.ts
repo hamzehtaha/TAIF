@@ -29,8 +29,51 @@ export type {
 
 
 
+export interface LessonItemFilter {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  lessonId?: string;
+  courseId?: string;
+  type?: number;
+}
+
+export interface PagedLessonItemResult {
+  items: LessonItem[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 class LessonItemService {
   private serviceBaseUrl = "/api/LessonItem";
+
+  async getPagedItems(filter: LessonItemFilter = {}): Promise<PagedLessonItemResult> {
+    const params = new URLSearchParams();
+    if (filter.page) params.append("Page", filter.page.toString());
+    if (filter.pageSize) params.append("PageSize", filter.pageSize.toString());
+    if (filter.search) params.append("Search", filter.search);
+    if (filter.lessonId) params.append("LessonId", filter.lessonId);
+    if (filter.courseId) params.append("CourseId", filter.courseId);
+    if (filter.type !== undefined) params.append("Type", filter.type.toString());
+
+    const response = await httpService.get<{
+      items: LessonItemDto[];
+      totalCount: number;
+      page: number;
+      pageSize: number;
+      totalPages: number;
+    }>(`${this.serviceBaseUrl}/paged?${params.toString()}`);
+
+    return {
+      items: response.items.map(dto => LessonItemMapper.map(dto)),
+      totalCount: response.totalCount,
+      page: response.page,
+      pageSize: response.pageSize,
+      totalPages: response.totalPages,
+    };
+  }
 
   async getItemsByLesson(lessonId: string): Promise<LessonItem[]> {
     const dtos = await httpService.get<LessonItemDto[]>(`${this.serviceBaseUrl}/lesson/${lessonId}`);

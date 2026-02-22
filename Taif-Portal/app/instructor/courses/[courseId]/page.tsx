@@ -75,6 +75,7 @@ import { courseService } from "@/services/course.service";
 import { lessonService } from "@/services/lesson.service";
 import { lessonItemService } from "@/services/lesson-item.service";
 import { categoryService } from "@/services/category.service";
+import { tagService, Tag } from "@/services/tag.service";
 import { Course } from "@/models/course.model";
 import { Lesson } from "@/models/lesson.model";
 import { LessonItem } from "@/models/lesson-item.model";
@@ -100,6 +101,7 @@ export default function CourseDetailPage() {
   const [currentCourse, setCurrentCourse] = useState<Course | null>(null);
   const [courseLessons, setCourseLessons] = useState<CourseLesson[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [allTags, setAllTags] = useState<Tag[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [courseStatus, setCourseStatus] = useState<CourseStatus>('draft');
 
@@ -108,7 +110,10 @@ export default function CourseDetailPage() {
     title: "",
     description: "",
     categoryId: "",
+    tags: [] as string[],
   });
+  const [tagsDialogOpen, setTagsDialogOpen] = useState(false);
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [lessonDialogOpen, setLessonDialogOpen] = useState(false);
   const [lessonDialogMode, setLessonDialogMode] = useState<"create" | "select">("create");
@@ -121,14 +126,16 @@ export default function CourseDetailPage() {
   const loadCourseData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [course, rawLessons, cats] = await Promise.all([
+      const [course, rawLessons, cats, tags] = await Promise.all([
         courseService.getCourseById(courseId),
         lessonService.getLessonsByCourse(courseId),
         categoryService.getCategories(),
+        tagService.getAllTags(),
       ]);
       
       setCurrentCourse(course);
       setCategories(cats);
+      setAllTags(tags);
       
       // Load lesson items for each lesson
       const lessonsWithItems: CourseLesson[] = await Promise.all(
@@ -150,7 +157,9 @@ export default function CourseDetailPage() {
         title: course.title,
         description: course.description || '',
         categoryId: course.categoryId,
+        tags: course.tags || [],
       });
+      setSelectedTagIds(course.tags || []);
     } catch (error) {
       console.error('Failed to load course:', error);
     } finally {
@@ -178,12 +187,39 @@ export default function CourseDetailPage() {
       await courseService.updateCourse(courseId, {
         name: editForm.title,
         description: editForm.description,
+        tags: editForm.tags,
       });
       await loadCourseData();
       setIsEditing(false);
     } catch (error) {
       console.error('Failed to update course:', error);
     }
+  };
+
+  const handleSaveTags = async () => {
+    try {
+      await courseService.updateCourse(courseId, {
+        tags: selectedTagIds,
+      });
+      await loadCourseData();
+      setTagsDialogOpen(false);
+    } catch (error) {
+      console.error('Failed to update tags:', error);
+    }
+  };
+
+  const toggleTagSelection = (tagId: string) => {
+    setSelectedTagIds(prev => 
+      prev.includes(tagId) 
+        ? prev.filter(id => id !== tagId)
+        : [...prev, tagId]
+    );
+  };
+
+  const getTagNames = (tagIds: string[]) => {
+    return tagIds
+      .map(id => allTags.find(t => t.id === id)?.name)
+      .filter(Boolean) as string[];
   };
 
   const handleDelete = async () => {
@@ -613,6 +649,32 @@ export default function CourseDetailPage() {
                 </div>
                 <Separator />
                 <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label className="text-muted-foreground">Tags</Label>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => {
+                        setSelectedTagIds(currentCourse.tags || []);
+                        setTagsDialogOpen(true);
+                      }}
+                    >
+                      <Edit className="h-3 w-3 mr-1" />
+                      Edit
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {currentCourse.tags && currentCourse.tags.length > 0 ? (
+                      getTagNames(currentCourse.tags).map((tagName, idx) => (
+                        <Badge key={idx} variant="secondary">{tagName}</Badge>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No tags assigned</p>
+                    )}
+                  </div>
+                </div>
+                <Separator />
+                <div>
                   <Label className="text-muted-foreground">Created</Label>
                   <p className="text-sm">
                     {new Date().toLocaleDateString()}
@@ -858,6 +920,62 @@ export default function CourseDetailPage() {
                 Add {selectedLessonIds.length > 0 ? `(${selectedLessonIds.length})` : ""}
               </Button>
             )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Tags Dialog */}
+      <Dialog open={tagsDialogOpen} onOpenChange={setTagsDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Course Tags</DialogTitle>
+            <DialogDescription>
+              Select tags that describe your course content
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <ScrollArea className="h-64">
+              <div className="space-y-2 pr-4">
+                {allTags.length > 0 ? (
+                  allTags.map((tag) => (
+                    <div
+                      key={tag.id}
+                      className={cn(
+                        "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors",
+                        selectedTagIds.includes(tag.id)
+                          ? "border-primary bg-primary/5"
+                          : "hover:bg-muted/50"
+                      )}
+                      onClick={() => toggleTagSelection(tag.id)}
+                    >
+                      <Checkbox
+                        checked={selectedTagIds.includes(tag.id)}
+                        onCheckedChange={() => toggleTagSelection(tag.id)}
+                      />
+                      <span className="font-medium">{tag.name}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>No tags available</p>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+            {selectedTagIds.length > 0 && (
+              <p className="text-sm text-muted-foreground mt-4">
+                {selectedTagIds.length} tag(s) selected
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTagsDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveTags}>
+              <Check className="mr-2 h-4 w-4" />
+              Save Tags
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

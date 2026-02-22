@@ -29,5 +29,11 @@ namespace TAIF.Application.Services
         {
             return await _courseRepository.GetByUserIdAsync(userId);
         }
+
+        public async Task<List<Guid>> GetCourseIdsByUserAsync(Guid userId)
+        {
+            var courses = await _courseRepository.GetByUserIdAsync(userId);
+            return courses.Select(c => c.Id).ToList();
+        }
     }
 }

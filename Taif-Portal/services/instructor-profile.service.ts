@@ -29,6 +29,10 @@ export interface UpdateInstructorProfileRequest {
   yearsOfExperience?: number;
 }
 
+export interface CreateInstructorProfileRequest {
+  yearsOfExperience?: number;
+}
+
 interface ApiResponse<T> {
   data: T;
   success: boolean;
@@ -57,6 +61,26 @@ class InstructorProfileService {
     return await httpService.get<InstructorProfileResponse>(
       `${this.baseUrl}/user/${userId}`
     );
+  }
+
+  async createProfile(request: CreateInstructorProfileRequest = {}): Promise<InstructorProfileResponse> {
+    return await httpService.post<InstructorProfileResponse>(
+      this.baseUrl,
+      request
+    );
+  }
+
+  async getOrCreateCurrentProfile(): Promise<InstructorProfileResponse> {
+    try {
+      return await this.getCurrentProfile();
+    } catch (error: unknown) {
+      // If 404, create the profile
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('404')) {
+        return await this.createProfile({});
+      }
+      throw error;
+    }
   }
 }
 

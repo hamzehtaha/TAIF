@@ -16,10 +16,12 @@ namespace TAIF.Controllers
     public class LessonController : TaifControllerBase
     {
         private readonly ILessonService _lessonService;
+        private readonly ICourseService _courseService;
 
-        public LessonController(ILessonService lessonService)
+        public LessonController(ILessonService lessonService, ICourseService courseService)
         {
             _lessonService = lessonService;
+            _courseService = courseService;
         }
 
         [HttpGet("{id}")]
@@ -32,8 +34,12 @@ namespace TAIF.Controllers
         [HttpGet("paged")]
         public async Task<IActionResult> GetPaged([FromQuery] LessonFilter filter)
         {
+            // Get the instructor's course IDs to filter lessons
+            var instructorCourseIds = await _courseService.GetCourseIdsByUserAsync(this.UserId);
+
             Expression<Func<Lesson, bool>> predicate = l =>
-                (string.IsNullOrWhiteSpace(filter.Search)
+                instructorCourseIds.Contains(l.CourseId)
+                && (string.IsNullOrWhiteSpace(filter.Search)
                     || l.Title.Contains(filter.Search))
                 && (!filter.CourseId.HasValue
                     || l.CourseId == filter.CourseId)

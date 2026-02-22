@@ -1,55 +1,38 @@
 /**
  * Lesson Service - Handles all lesson-related API calls
+ * Matches backend LessonController endpoints
  */
 
 import { apiClient, ApiResponse } from '../client';
 import {
   Lesson,
-  LessonWithItems,
   CreateLessonRequest,
   UpdateLessonRequest,
-  ReorderLessonItemsRequest,
-  AddItemsToLessonRequest,
 } from '../types';
 
 export const lessonService = {
-  async getAll(): Promise<ApiResponse<Lesson[]>> {
-    return apiClient.get<Lesson[]>('/lesson');
-  },
-
+  // GET /api/lesson/{id} - Get lesson by ID
   async getById(id: string): Promise<ApiResponse<Lesson | null>> {
     return apiClient.get<Lesson>(`/lesson/${id}`);
   },
 
-  async getWithItems(id: string): Promise<ApiResponse<LessonWithItems | null>> {
-    return apiClient.get<LessonWithItems>(`/lesson/${id}/items`);
+  // GET /api/lesson/course/{courseId} - Get lessons by course ID
+  async getByCourseId(courseId: string): Promise<ApiResponse<Lesson[]>> {
+    return apiClient.get<Lesson[]>(`/lesson/course/${courseId}`);
   },
 
-  async getByCourseId(courseId: string): Promise<ApiResponse<LessonWithItems[]>> {
-    return apiClient.get<LessonWithItems[]>(`/lesson/course/${courseId}`);
-  },
-
+  // POST /api/lesson - Create a new lesson
   async create(request: CreateLessonRequest): Promise<ApiResponse<Lesson>> {
     return apiClient.post<Lesson>('/lesson', request);
   },
 
+  // PUT /api/lesson/{id} - Update a lesson
   async update(id: string, request: UpdateLessonRequest): Promise<ApiResponse<Lesson | null>> {
     return apiClient.put<Lesson>(`/lesson/${id}`, request);
   },
 
+  // DELETE /api/lesson/{id} - Delete a lesson
   async delete(id: string): Promise<ApiResponse<boolean>> {
     return apiClient.delete<boolean>(`/lesson/${id}`);
-  },
-
-  async addItems(lessonId: string, request: AddItemsToLessonRequest): Promise<ApiResponse<LessonWithItems | null>> {
-    return apiClient.post<LessonWithItems>(`/lesson/${lessonId}/items`, request);
-  },
-
-  async removeItem(lessonId: string, itemId: string): Promise<ApiResponse<LessonWithItems | null>> {
-    return apiClient.delete<LessonWithItems>(`/lesson/${lessonId}/items/${itemId}`);
-  },
-
-  async reorderItems(lessonId: string, request: ReorderLessonItemsRequest): Promise<ApiResponse<LessonWithItems | null>> {
-    return apiClient.put<LessonWithItems>(`/lesson/${lessonId}/items/reorder`, request);
   },
 };

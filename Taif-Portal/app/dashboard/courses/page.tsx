@@ -66,18 +66,26 @@ export default function Courses() {
         setFavouriteCourseIds(favouriteIds);
         setCategories(categoriesData);
 
-        // Fetch enrollment progress for enrolled courses
+        // Fetch enrollment progress and completion status for enrolled courses
         const enrollmentProgressMap = new Map<string, number>();
+        const completedCourseIds = new Set<string>();
         await Promise.all(
           Array.from(enrolledIds).map(async (courseId) => {
             try {
               const enrollment = await enrollmentService.getEnrollmentDetailsWithProgress(courseId);
-              if (enrollment && enrollment.completedDurationInSeconds !== undefined) {
-                const enrolledCourse = enrolledCourseMap.get(courseId);
-                const totalDuration = enrolledCourse?.durationInMinutes ? enrolledCourse.durationInMinutes * 60 : 0;
-                if (totalDuration > 0) {
-                  const progress = Math.min(100, Math.round((enrollment.completedDurationInSeconds / totalDuration) * 100));
-                  enrollmentProgressMap.set(courseId, progress);
+              if (enrollment) {
+                // Track completion status
+                if (enrollment.isCompleted) {
+                  completedCourseIds.add(courseId);
+                }
+                // Calculate progress
+                if (enrollment.completedDurationInSeconds !== undefined) {
+                  const enrolledCourse = enrolledCourseMap.get(courseId);
+                  const totalDuration = enrolledCourse?.durationInMinutes ? enrolledCourse.durationInMinutes * 60 : 0;
+                  if (totalDuration > 0) {
+                    const progress = Math.min(100, Math.round((enrollment.completedDurationInSeconds / totalDuration) * 100));
+                    enrollmentProgressMap.set(courseId, progress);
+                  }
                 }
               }
             } catch {
@@ -86,13 +94,14 @@ export default function Courses() {
           })
         );
 
-        // Enrich courses with enrollment, favourite status, and progress
+        // Enrich courses with enrollment, favourite status, progress, and completion
         const enrichedCourses = await courseService.enrichCoursesWithCategories(
           coursesData.map(course => ({
             ...course,
             isEnrolled: enrolledIds.has(course.id),
             isFavourite: favouriteIds.has(course.id),
             progress: enrollmentProgressMap.get(course.id) || 0,
+            isCompleted: completedCourseIds.has(course.id),
           })),
           categoriesData.map(c => ({ id: c.id, name: c.name }))
         );
@@ -227,6 +236,7 @@ export default function Courses() {
                 key={course.id}
                 course={course}
                 onEnroll={() => handleEnroll(course.id)}
+                isCompleted={course.isCompleted}
               />
             ))}
           </div>

@@ -3,8 +3,9 @@
  */
 
 import { create } from 'zustand';
-import { LessonItem, CreateLessonItemRequest, UpdateLessonItemRequest } from '@/lib/api/types';
-import { lessonItemService } from '@/lib/api/services';
+import { LessonItem } from '@/models/lesson-item.model';
+import { CreateLessonItemRequest, UpdateLessonItemRequest } from '@/dtos/lesson-item.dto';
+import { lessonItemService } from '@/services/lesson-item.service';
 
 interface LessonItemState {
   lessonItems: LessonItem[];
@@ -37,26 +38,14 @@ export const useLessonItemStore = create<LessonItemStore>((set, get) => ({
   ...initialState,
 
   loadLessonItems: async () => {
-    set({ isLoading: true, error: null });
-    try {
-      const response = await lessonItemService.getAll();
-      if (response.success) {
-        set({ lessonItems: response.data, isLoading: false });
-      } else {
-        set({ error: response.message, isLoading: false });
-      }
-    } catch (error) {
-      set({ error: 'Failed to load lesson items', isLoading: false });
-    }
+    // No global getAll in the service - this is a placeholder
+    set({ isLoading: false, error: null });
   },
 
   loadByLessonId: async (lessonId: string) => {
     try {
-      const response = await lessonItemService.getByLessonId(lessonId);
-      if (response.success) {
-        return response.data;
-      }
-      return [];
+      const items = await lessonItemService.getItemsByLesson(lessonId);
+      return items;
     } catch (error) {
       return [];
     }
@@ -65,16 +54,12 @@ export const useLessonItemStore = create<LessonItemStore>((set, get) => ({
   createLessonItem: async (request: CreateLessonItemRequest) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await lessonItemService.create(request);
-      if (response.success) {
-        set(state => ({
-          lessonItems: [...state.lessonItems, response.data],
-          isLoading: false,
-        }));
-        return response.data;
-      }
-      set({ error: response.message, isLoading: false });
-      return null;
+      const item = await lessonItemService.createLessonItem(request);
+      set(state => ({
+        lessonItems: [...state.lessonItems, item],
+        isLoading: false,
+      }));
+      return item;
     } catch (error) {
       set({ error: 'Failed to create lesson item', isLoading: false });
       return null;
@@ -84,19 +69,15 @@ export const useLessonItemStore = create<LessonItemStore>((set, get) => ({
   updateLessonItem: async (id: string, request: UpdateLessonItemRequest) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await lessonItemService.update(id, request);
-      if (response.success && response.data) {
-        set(state => ({
-          lessonItems: state.lessonItems.map(item => 
-            item.id === id ? response.data! : item
-          ),
-          selectedItem: state.selectedItem?.id === id ? response.data : state.selectedItem,
-          isLoading: false,
-        }));
-        return response.data;
-      }
-      set({ error: response.message, isLoading: false });
-      return null;
+      const updatedItem = await lessonItemService.updateLessonItem(id, request);
+      set(state => ({
+        lessonItems: state.lessonItems.map(item => 
+          item.id === id ? updatedItem : item
+        ),
+        selectedItem: state.selectedItem?.id === id ? updatedItem : state.selectedItem,
+        isLoading: false,
+      }));
+      return updatedItem;
     } catch (error) {
       set({ error: 'Failed to update lesson item', isLoading: false });
       return null;
@@ -106,17 +87,13 @@ export const useLessonItemStore = create<LessonItemStore>((set, get) => ({
   deleteLessonItem: async (id: string) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await lessonItemService.delete(id);
-      if (response.success) {
-        set(state => ({
-          lessonItems: state.lessonItems.filter(item => item.id !== id),
-          selectedItem: state.selectedItem?.id === id ? null : state.selectedItem,
-          isLoading: false,
-        }));
-        return true;
-      }
-      set({ error: response.message, isLoading: false });
-      return false;
+      await lessonItemService.deleteLessonItem(id);
+      set(state => ({
+        lessonItems: state.lessonItems.filter(item => item.id !== id),
+        selectedItem: state.selectedItem?.id === id ? null : state.selectedItem,
+        isLoading: false,
+      }));
+      return true;
     } catch (error) {
       set({ error: 'Failed to delete lesson item', isLoading: false });
       return false;
