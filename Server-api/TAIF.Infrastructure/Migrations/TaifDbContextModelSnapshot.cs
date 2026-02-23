@@ -66,6 +66,9 @@ namespace TAIF.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2");
 
@@ -97,23 +100,67 @@ namespace TAIF.Infrastructure.Migrations
                     b.Property<int>("TotalLessonItems")
                         .HasColumnType("int");
 
+                    b.Property<int>("TotalLessons")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId");
 
+                    b.HasIndex("CreatedByUserId");
+
                     b.HasIndex("OrganizationId");
 
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("OrganizationId", "UserId");
+                    b.HasIndex("OrganizationId", "CreatedByUserId");
 
                     b.ToTable("Courses");
+                });
+
+            modelBuilder.Entity("TAIF.Domain.Entities.CourseLesson", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CourseId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("LessonId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LessonId");
+
+                    b.HasIndex("OrganizationId");
+
+                    b.HasIndex("CourseId", "LessonId")
+                        .IsUnique();
+
+                    b.HasIndex("CourseId", "Order");
+
+                    b.ToTable("CourseLessons");
                 });
 
             modelBuilder.Entity("TAIF.Domain.Entities.Enrollment", b =>
@@ -149,6 +196,9 @@ namespace TAIF.Infrastructure.Migrations
                     b.Property<Guid?>("LastLessonItemId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -158,6 +208,8 @@ namespace TAIF.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("LastLessonItemId");
+
+                    b.HasIndex("OrganizationId");
 
                     b.HasIndex("CourseId", "IsDeleted");
 
@@ -304,6 +356,9 @@ namespace TAIF.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -311,6 +366,8 @@ namespace TAIF.Infrastructure.Migrations
 
                     b.HasIndex("Name")
                         .IsUnique();
+
+                    b.HasIndex("OrganizationId");
 
                     b.ToTable("Interests");
                 });
@@ -336,6 +393,9 @@ namespace TAIF.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid>("TagId")
                         .HasColumnType("uniqueidentifier");
 
@@ -351,6 +411,8 @@ namespace TAIF.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("InterestId1");
+
+                    b.HasIndex("OrganizationId");
 
                     b.HasIndex("TagId");
 
@@ -390,6 +452,9 @@ namespace TAIF.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Photo")
                         .HasColumnType("nvarchar(max)");
 
@@ -402,6 +467,8 @@ namespace TAIF.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CreatorId");
+
+                    b.HasIndex("OrganizationId");
 
                     b.ToTable("LearningPaths");
                 });
@@ -433,12 +500,17 @@ namespace TAIF.Infrastructure.Migrations
                     b.Property<int>("Order")
                         .HasColumnType("int");
 
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CourseId");
+
+                    b.HasIndex("OrganizationId");
 
                     b.HasIndex("LearningPathSectionId", "Order");
 
@@ -475,10 +547,15 @@ namespace TAIF.Infrastructure.Migrations
                     b.Property<int>("Order")
                         .HasColumnType("int");
 
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("OrganizationId");
 
                     b.HasIndex("LearningPathId", "Order");
 
@@ -491,20 +568,32 @@ namespace TAIF.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("CourseId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("InstructorBio")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("InstructorName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("InstructorPhoto")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<int>("Order")
-                        .HasColumnType("int");
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Photo")
                         .HasColumnType("nvarchar(max)");
@@ -513,12 +602,22 @@ namespace TAIF.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<double>("TotalDurationInSeconds")
+                        .HasColumnType("float");
+
+                    b.Property<int>("TotalLessonItems")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CourseId", "IsDeleted");
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("OrganizationId");
+
+                    b.HasIndex("OrganizationId", "IsDeleted");
 
                     b.ToTable("lessons");
                 });
@@ -530,14 +629,19 @@ namespace TAIF.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Content")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<double>("DurationInSeconds")
                         .HasColumnType("float");
@@ -545,15 +649,12 @@ namespace TAIF.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<Guid>("LessonId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("Order")
-                        .HasColumnType("int");
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("Type")
                         .HasColumnType("int");
@@ -563,7 +664,11 @@ namespace TAIF.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("LessonId", "IsDeleted");
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("OrganizationId");
+
+                    b.HasIndex("OrganizationId", "IsDeleted");
 
                     b.ToTable("LessonItems");
                 });
@@ -598,6 +703,9 @@ namespace TAIF.Infrastructure.Migrations
                     b.Property<Guid>("LessonItemId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -607,6 +715,8 @@ namespace TAIF.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("LessonItemId");
+
+                    b.HasIndex("OrganizationId");
 
                     b.HasIndex("LessonID", "IsDeleted");
 
@@ -618,6 +728,50 @@ namespace TAIF.Infrastructure.Migrations
                     b.HasIndex("UserId", "CourseID", "IsDeleted", "IsCompleted");
 
                     b.ToTable("LessonItemProgress");
+                });
+
+            modelBuilder.Entity("TAIF.Domain.Entities.LessonLessonItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("LessonId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("LessonItemId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LessonItemId");
+
+                    b.HasIndex("OrganizationId");
+
+                    b.HasIndex("LessonId", "LessonItemId")
+                        .IsUnique();
+
+                    b.HasIndex("LessonId", "Order");
+
+                    b.ToTable("LessonLessonItems");
                 });
 
             modelBuilder.Entity("TAIF.Domain.Entities.Organization", b =>
@@ -690,6 +844,59 @@ namespace TAIF.Infrastructure.Migrations
                     b.ToTable("Organizations");
                 });
 
+            modelBuilder.Entity("TAIF.Domain.Entities.Question", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("CorrectAnswerIndex")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Explanation")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid?>("LessonItemId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Options")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Points")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrganizationId");
+
+                    b.HasIndex("LessonItemId", "Order");
+
+                    b.ToTable("Questions");
+                });
+
             modelBuilder.Entity("TAIF.Domain.Entities.QuizSubmission", b =>
                 {
                     b.Property<Guid>("Id")
@@ -758,6 +965,9 @@ namespace TAIF.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<int>("Rating")
                         .HasPrecision(5, 2)
                         .HasColumnType("int");
@@ -775,10 +985,62 @@ namespace TAIF.Infrastructure.Migrations
 
                     b.HasIndex("CourseId");
 
+                    b.HasIndex("OrganizationId");
+
                     b.HasIndex("UserId", "CourseId")
                         .IsUnique();
 
                     b.ToTable("Reviews");
+                });
+
+            modelBuilder.Entity("TAIF.Domain.Entities.RichContent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid?>("LessonItemId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LessonItemId")
+                        .IsUnique()
+                        .HasFilter("[LessonItemId] IS NOT NULL");
+
+                    b.HasIndex("OrganizationId");
+
+                    b.ToTable("RichContents");
                 });
 
             modelBuilder.Entity("TAIF.Domain.Entities.Tag", b =>
@@ -800,6 +1062,9 @@ namespace TAIF.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -807,6 +1072,8 @@ namespace TAIF.Infrastructure.Migrations
 
                     b.HasIndex("Name")
                         .IsUnique();
+
+                    b.HasIndex("OrganizationId");
 
                     b.ToTable("Tags");
                 });
@@ -908,6 +1175,9 @@ namespace TAIF.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -917,6 +1187,8 @@ namespace TAIF.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CourseId");
+
+                    b.HasIndex("OrganizationId");
 
                     b.HasIndex("UserId");
 
@@ -1000,6 +1272,9 @@ namespace TAIF.Infrastructure.Migrations
                     b.Property<Guid>("LearningPathId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -1012,6 +1287,8 @@ namespace TAIF.Infrastructure.Migrations
 
                     b.HasIndex("CurrentSectionId");
 
+                    b.HasIndex("OrganizationId");
+
                     b.HasIndex("LearningPathId", "IsDeleted");
 
                     b.HasIndex("UserId", "IsCompleted");
@@ -1020,6 +1297,58 @@ namespace TAIF.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("UserLearningPathProgress");
+                });
+
+            modelBuilder.Entity("TAIF.Domain.Entities.Video", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double>("DurationInSeconds")
+                        .HasColumnType("float");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid?>("LessonItemId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ThumbnailUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LessonItemId")
+                        .IsUnique()
+                        .HasFilter("[LessonItemId] IS NOT NULL");
+
+                    b.HasIndex("OrganizationId");
+
+                    b.ToTable("Videos");
                 });
 
             modelBuilder.Entity("TAIF.Domain.Entities.Category", b =>
@@ -1040,20 +1369,46 @@ namespace TAIF.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("TAIF.Domain.Entities.User", "CreatedBy")
+                        .WithMany("CreatedCourses")
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("TAIF.Domain.Entities.Organization", "Organization")
                         .WithMany()
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("TAIF.Domain.Entities.User", "Creator")
-                        .WithMany("CreatedCourses")
-                        .HasForeignKey("UserId")
+                    b.Navigation("Category");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Organization");
+                });
+
+            modelBuilder.Entity("TAIF.Domain.Entities.CourseLesson", b =>
+                {
+                    b.HasOne("TAIF.Domain.Entities.Course", "Course")
+                        .WithMany("CourseLessons")
+                        .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Category");
+                    b.HasOne("TAIF.Domain.Entities.Lesson", "Lesson")
+                        .WithMany("CourseLessons")
+                        .HasForeignKey("LessonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.Navigation("Creator");
+                    b.HasOne("TAIF.Domain.Entities.Organization", "Organization")
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Course");
+
+                    b.Navigation("Lesson");
 
                     b.Navigation("Organization");
                 });
@@ -1070,6 +1425,10 @@ namespace TAIF.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("LastLessonItemId");
 
+                    b.HasOne("TAIF.Domain.Entities.Organization", "Organization")
+                        .WithMany()
+                        .HasForeignKey("OrganizationId");
+
                     b.HasOne("TAIF.Domain.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
@@ -1079,6 +1438,8 @@ namespace TAIF.Infrastructure.Migrations
                     b.Navigation("Course");
 
                     b.Navigation("LastLessonItem");
+
+                    b.Navigation("Organization");
 
                     b.Navigation("User");
                 });
@@ -1112,6 +1473,15 @@ namespace TAIF.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("TAIF.Domain.Entities.Interest", b =>
+                {
+                    b.HasOne("TAIF.Domain.Entities.Organization", "Organization")
+                        .WithMany()
+                        .HasForeignKey("OrganizationId");
+
+                    b.Navigation("Organization");
+                });
+
             modelBuilder.Entity("TAIF.Domain.Entities.InterestTagMapping", b =>
                 {
                     b.HasOne("TAIF.Domain.Entities.Interest", "Interest")
@@ -1123,6 +1493,10 @@ namespace TAIF.Infrastructure.Migrations
                     b.HasOne("TAIF.Domain.Entities.Interest", null)
                         .WithMany("TagMappings")
                         .HasForeignKey("InterestId1");
+
+                    b.HasOne("TAIF.Domain.Entities.Organization", "Organization")
+                        .WithMany()
+                        .HasForeignKey("OrganizationId");
 
                     b.HasOne("TAIF.Domain.Entities.Tag", "Tag")
                         .WithMany()
@@ -1136,6 +1510,8 @@ namespace TAIF.Infrastructure.Migrations
 
                     b.Navigation("Interest");
 
+                    b.Navigation("Organization");
+
                     b.Navigation("Tag");
                 });
 
@@ -1147,7 +1523,13 @@ namespace TAIF.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("TAIF.Domain.Entities.Organization", "Organization")
+                        .WithMany()
+                        .HasForeignKey("OrganizationId");
+
                     b.Navigation("Creator");
+
+                    b.Navigation("Organization");
                 });
 
             modelBuilder.Entity("TAIF.Domain.Entities.LearningPathCourse", b =>
@@ -1164,7 +1546,13 @@ namespace TAIF.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("TAIF.Domain.Entities.Organization", "Organization")
+                        .WithMany()
+                        .HasForeignKey("OrganizationId");
+
                     b.Navigation("Course");
+
+                    b.Navigation("Organization");
 
                     b.Navigation("Section");
                 });
@@ -1177,29 +1565,49 @@ namespace TAIF.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("TAIF.Domain.Entities.Organization", "Organization")
+                        .WithMany()
+                        .HasForeignKey("OrganizationId");
+
                     b.Navigation("LearningPath");
+
+                    b.Navigation("Organization");
                 });
 
             modelBuilder.Entity("TAIF.Domain.Entities.Lesson", b =>
                 {
-                    b.HasOne("TAIF.Domain.Entities.Course", "Course")
-                        .WithMany()
-                        .HasForeignKey("CourseId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                    b.HasOne("TAIF.Domain.Entities.User", "CreatedBy")
+                        .WithMany("CreatedLessons")
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Course");
+                    b.HasOne("TAIF.Domain.Entities.Organization", "Organization")
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Organization");
                 });
 
             modelBuilder.Entity("TAIF.Domain.Entities.LessonItem", b =>
                 {
-                    b.HasOne("TAIF.Domain.Entities.Lesson", "Lesson")
-                        .WithMany()
-                        .HasForeignKey("LessonId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                    b.HasOne("TAIF.Domain.Entities.User", "CreatedBy")
+                        .WithMany("CreatedLessonItems")
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Lesson");
+                    b.HasOne("TAIF.Domain.Entities.Organization", "Organization")
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Organization");
                 });
 
             modelBuilder.Entity("TAIF.Domain.Entities.LessonItemProgress", b =>
@@ -1210,6 +1618,10 @@ namespace TAIF.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("TAIF.Domain.Entities.Organization", "Organization")
+                        .WithMany()
+                        .HasForeignKey("OrganizationId");
+
                     b.HasOne("TAIF.Domain.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
@@ -1218,7 +1630,52 @@ namespace TAIF.Infrastructure.Migrations
 
                     b.Navigation("LessonItem");
 
+                    b.Navigation("Organization");
+
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("TAIF.Domain.Entities.LessonLessonItem", b =>
+                {
+                    b.HasOne("TAIF.Domain.Entities.Lesson", "Lesson")
+                        .WithMany("LessonLessonItems")
+                        .HasForeignKey("LessonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TAIF.Domain.Entities.LessonItem", "LessonItem")
+                        .WithMany("LessonLessonItems")
+                        .HasForeignKey("LessonItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TAIF.Domain.Entities.Organization", "Organization")
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Lesson");
+
+                    b.Navigation("LessonItem");
+
+                    b.Navigation("Organization");
+                });
+
+            modelBuilder.Entity("TAIF.Domain.Entities.Question", b =>
+                {
+                    b.HasOne("TAIF.Domain.Entities.LessonItem", "LessonItem")
+                        .WithMany("Questions")
+                        .HasForeignKey("LessonItemId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("TAIF.Domain.Entities.Organization", "Organization")
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("LessonItem");
+
+                    b.Navigation("Organization");
                 });
 
             modelBuilder.Entity("TAIF.Domain.Entities.QuizSubmission", b =>
@@ -1240,6 +1697,10 @@ namespace TAIF.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("TAIF.Domain.Entities.Organization", "Organization")
+                        .WithMany()
+                        .HasForeignKey("OrganizationId");
+
                     b.HasOne("TAIF.Domain.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
@@ -1248,7 +1709,35 @@ namespace TAIF.Infrastructure.Migrations
 
                     b.Navigation("Course");
 
+                    b.Navigation("Organization");
+
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("TAIF.Domain.Entities.RichContent", b =>
+                {
+                    b.HasOne("TAIF.Domain.Entities.LessonItem", "LessonItem")
+                        .WithOne("RichContent")
+                        .HasForeignKey("TAIF.Domain.Entities.RichContent", "LessonItemId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("TAIF.Domain.Entities.Organization", "Organization")
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("LessonItem");
+
+                    b.Navigation("Organization");
+                });
+
+            modelBuilder.Entity("TAIF.Domain.Entities.Tag", b =>
+                {
+                    b.HasOne("TAIF.Domain.Entities.Organization", "Organization")
+                        .WithMany()
+                        .HasForeignKey("OrganizationId");
+
+                    b.Navigation("Organization");
                 });
 
             modelBuilder.Entity("TAIF.Domain.Entities.User", b =>
@@ -1269,6 +1758,10 @@ namespace TAIF.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("TAIF.Domain.Entities.Organization", "Organization")
+                        .WithMany()
+                        .HasForeignKey("OrganizationId");
+
                     b.HasOne("TAIF.Domain.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
@@ -1276,6 +1769,8 @@ namespace TAIF.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Course");
+
+                    b.Navigation("Organization");
 
                     b.Navigation("User");
                 });
@@ -1309,6 +1804,10 @@ namespace TAIF.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("TAIF.Domain.Entities.Organization", "Organization")
+                        .WithMany()
+                        .HasForeignKey("OrganizationId");
+
                     b.HasOne("TAIF.Domain.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
@@ -1321,7 +1820,31 @@ namespace TAIF.Infrastructure.Migrations
 
                     b.Navigation("LearningPath");
 
+                    b.Navigation("Organization");
+
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("TAIF.Domain.Entities.Video", b =>
+                {
+                    b.HasOne("TAIF.Domain.Entities.LessonItem", "LessonItem")
+                        .WithOne("Video")
+                        .HasForeignKey("TAIF.Domain.Entities.Video", "LessonItemId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("TAIF.Domain.Entities.Organization", "Organization")
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("LessonItem");
+
+                    b.Navigation("Organization");
+                });
+
+            modelBuilder.Entity("TAIF.Domain.Entities.Course", b =>
+                {
+                    b.Navigation("CourseLessons");
                 });
 
             modelBuilder.Entity("TAIF.Domain.Entities.EvaluationQuestion", b =>
@@ -1344,6 +1867,24 @@ namespace TAIF.Infrastructure.Migrations
                     b.Navigation("Courses");
                 });
 
+            modelBuilder.Entity("TAIF.Domain.Entities.Lesson", b =>
+                {
+                    b.Navigation("CourseLessons");
+
+                    b.Navigation("LessonLessonItems");
+                });
+
+            modelBuilder.Entity("TAIF.Domain.Entities.LessonItem", b =>
+                {
+                    b.Navigation("LessonLessonItems");
+
+                    b.Navigation("Questions");
+
+                    b.Navigation("RichContent");
+
+                    b.Navigation("Video");
+                });
+
             modelBuilder.Entity("TAIF.Domain.Entities.Organization", b =>
                 {
                     b.Navigation("Instructors");
@@ -1359,6 +1900,10 @@ namespace TAIF.Infrastructure.Migrations
             modelBuilder.Entity("TAIF.Domain.Entities.User", b =>
                 {
                     b.Navigation("CreatedCourses");
+
+                    b.Navigation("CreatedLessonItems");
+
+                    b.Navigation("CreatedLessons");
 
                     b.Navigation("InstructorProfile");
                 });

@@ -123,6 +123,22 @@ builder.Services.AddScoped<IEvaluationAnswerService, EvaluationAnswerService>();
 builder.Services.AddScoped<IUserEvaluationRepository, UserEvaluationRepository>();
 builder.Services.AddScoped<IUserEvaluationService, UserEvaluationService>();
 
+// New M-M relationship repositories and services
+builder.Services.AddScoped<ICourseLessonRepository, CourseLessonRepository>();
+builder.Services.AddScoped<ICourseLessonService, CourseLessonService>();
+
+builder.Services.AddScoped<ILessonLessonItemRepository, LessonLessonItemRepository>();
+builder.Services.AddScoped<ILessonLessonItemService, LessonLessonItemService>();
+
+// Content type repositories and services
+builder.Services.AddScoped<IVideoRepository, VideoRepository>();
+builder.Services.AddScoped<IVideoService, VideoService>();
+
+builder.Services.AddScoped<IRichContentRepository, RichContentRepository>();
+builder.Services.AddScoped<IRichContentService, RichContentService>();
+
+builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
+builder.Services.AddScoped<IQuestionService, QuestionService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -173,12 +189,32 @@ builder.Services.AddAuthentication("Bearer")
 
 builder.Services.AddAuthorization(options =>
 {
-    // SystemAdmin Only Policy (Role=0)
+    // SuperAdmin Only Policy (Role=0) - Can access all portals
+    options.AddPolicy("SuperAdminOnly", policy =>
+        policy.RequireAssertion(context =>
+            context.User.FindFirst("Role")?.Value == "0"));
+
+    // Admin or SuperAdmin (Role=0 or 1)
+    options.AddPolicy("AdminOrAbove", policy =>
+        policy.RequireAssertion(context =>
+        {
+            var roleValue = context.User.FindFirst("Role")?.Value;
+            return roleValue == "0" || roleValue == "1";
+        }));
+
+    // ContentCreator or above (Role=0, 1, or 2) - For content management
+    options.AddPolicy("ContentCreatorOrAbove", policy =>
+        policy.RequireAssertion(context =>
+        {
+            var roleValue = context.User.FindFirst("Role")?.Value;
+            return roleValue == "0" || roleValue == "1" || roleValue == "2";
+        }));
+
+    // Legacy policies for backward compatibility (map to new roles)
     options.AddPolicy("SystemAdminOnly", policy =>
         policy.RequireAssertion(context =>
             context.User.FindFirst("Role")?.Value == "0"));
 
-    // OrgAdmin or SystemAdmin (Role=0 or 1)
     options.AddPolicy("OrgAdminOrAbove", policy =>
         policy.RequireAssertion(context =>
         {
@@ -186,7 +222,6 @@ builder.Services.AddAuthorization(options =>
             return roleValue == "0" || roleValue == "1";
         }));
 
-    // Instructor or above (Role=0, 1, or 2)
     options.AddPolicy("InstructorOrAbove", policy =>
         policy.RequireAssertion(context =>
         {
@@ -194,7 +229,6 @@ builder.Services.AddAuthorization(options =>
             return roleValue == "0" || roleValue == "1" || roleValue == "2";
         }));
 
-    // Legacy policies for backward compatibility
     options.AddPolicy("AdminOnly", policy =>
         policy.RequireAssertion(context =>
             context.User.FindFirst("Role")?.Value == "0"));

@@ -49,6 +49,13 @@ namespace TAIF.Infrastructure.Data
         public DbSet<EvaluationQuestion> EvaluationQuestions => Set<EvaluationQuestion>();
         public DbSet<EvaluationAnswer> EvaluationAnswers => Set<EvaluationAnswer>();
         public DbSet<UserEvaluation> UserEvaluations => Set<UserEvaluation>();
+        
+        // New entities for M-M relationships and content types
+        public DbSet<CourseLesson> CourseLessons { get; set; }
+        public DbSet<LessonLessonItem> LessonLessonItems { get; set; }
+        public DbSet<Video> Videos { get; set; }
+        public DbSet<RichContent> RichContents { get; set; }
+        public DbSet<Question> Questions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -103,10 +110,10 @@ namespace TAIF.Infrastructure.Data
             // Course configuration
             modelBuilder.Entity<Course>(entity =>
             {
-                entity.HasOne(c => c.Creator)
+                entity.HasOne(c => c.CreatedBy)
                       .WithMany(u => u.CreatedCourses)
-                      .HasForeignKey(c => c.UserId)
-                      .OnDelete(DeleteBehavior.Cascade);
+                      .HasForeignKey(c => c.CreatedByUserId)
+                      .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(c => c.Category)
                       .WithMany()
@@ -119,7 +126,7 @@ namespace TAIF.Infrastructure.Data
                       .OnDelete(DeleteBehavior.SetNull);
 
                 entity.HasIndex(c => c.OrganizationId);
-                entity.HasIndex(c => new { c.OrganizationId, c.UserId });
+                entity.HasIndex(c => new { c.OrganizationId, c.CreatedByUserId });
             });
 
             // Category configuration
@@ -136,23 +143,128 @@ namespace TAIF.Infrastructure.Data
             // Lesson configuration
             modelBuilder.Entity<Lesson>(entity =>
             {
-                entity.HasOne(l => l.Course)
+                entity.HasOne(l => l.CreatedBy)
+                      .WithMany(u => u.CreatedLessons)
+                      .HasForeignKey(l => l.CreatedByUserId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(l => l.Organization)
                       .WithMany()
-                      .HasForeignKey(l => l.CourseId)
+                      .HasForeignKey(l => l.OrganizationId)
+                      .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasIndex(l => l.OrganizationId);
+                entity.HasIndex(l => new { l.OrganizationId, l.IsDeleted });
+            });
+
+            // CourseLesson junction table configuration (M-M: Course <-> Lesson)
+            modelBuilder.Entity<CourseLesson>(entity =>
+            {
+                entity.HasIndex(cl => new { cl.CourseId, cl.LessonId }).IsUnique();
+                entity.HasIndex(cl => new { cl.CourseId, cl.Order });
+
+                entity.HasOne(cl => cl.Course)
+                      .WithMany(c => c.CourseLessons)
+                      .HasForeignKey(cl => cl.CourseId)
                       .OnDelete(DeleteBehavior.Cascade);
 
-                entity.HasIndex(l => new { l.CourseId, l.IsDeleted });
+                entity.HasOne(cl => cl.Lesson)
+                      .WithMany(l => l.CourseLessons)
+                      .HasForeignKey(cl => cl.LessonId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(cl => cl.Organization)
+                      .WithMany()
+                      .HasForeignKey(cl => cl.OrganizationId)
+                      .OnDelete(DeleteBehavior.SetNull);
             });
 
             // LessonItem configuration
             modelBuilder.Entity<LessonItem>(entity =>
             {
-                entity.HasOne(li => li.Lesson)
+                entity.HasOne(li => li.CreatedBy)
+                      .WithMany(u => u.CreatedLessonItems)
+                      .HasForeignKey(li => li.CreatedByUserId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(li => li.Organization)
                       .WithMany()
-                      .HasForeignKey(li => li.LessonId)
+                      .HasForeignKey(li => li.OrganizationId)
+                      .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasIndex(li => li.OrganizationId);
+                entity.HasIndex(li => new { li.OrganizationId, li.IsDeleted });
+            });
+
+            // LessonLessonItem junction table configuration (M-M: Lesson <-> LessonItem)
+            modelBuilder.Entity<LessonLessonItem>(entity =>
+            {
+                entity.HasIndex(lli => new { lli.LessonId, lli.LessonItemId }).IsUnique();
+                entity.HasIndex(lli => new { lli.LessonId, lli.Order });
+
+                entity.HasOne(lli => lli.Lesson)
+                      .WithMany(l => l.LessonLessonItems)
+                      .HasForeignKey(lli => lli.LessonId)
                       .OnDelete(DeleteBehavior.Cascade);
 
-                entity.HasIndex(li => new { li.LessonId, li.IsDeleted });
+                entity.HasOne(lli => lli.LessonItem)
+                      .WithMany(li => li.LessonLessonItems)
+                      .HasForeignKey(lli => lli.LessonItemId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(lli => lli.Organization)
+                      .WithMany()
+                      .HasForeignKey(lli => lli.OrganizationId)
+                      .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // Video configuration
+            modelBuilder.Entity<Video>(entity =>
+            {
+                entity.HasOne(v => v.LessonItem)
+                      .WithOne(li => li.Video)
+                      .HasForeignKey<Video>(v => v.LessonItemId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(v => v.Organization)
+                      .WithMany()
+                      .HasForeignKey(v => v.OrganizationId)
+                      .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasIndex(v => v.OrganizationId);
+            });
+
+            // RichContent configuration
+            modelBuilder.Entity<RichContent>(entity =>
+            {
+                entity.HasOne(rc => rc.LessonItem)
+                      .WithOne(li => li.RichContent)
+                      .HasForeignKey<RichContent>(rc => rc.LessonItemId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(rc => rc.Organization)
+                      .WithMany()
+                      .HasForeignKey(rc => rc.OrganizationId)
+                      .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasIndex(rc => rc.OrganizationId);
+            });
+
+            // Question configuration
+            modelBuilder.Entity<Question>(entity =>
+            {
+                entity.HasOne(q => q.LessonItem)
+                      .WithMany(li => li.Questions)
+                      .HasForeignKey(q => q.LessonItemId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(q => q.Organization)
+                      .WithMany()
+                      .HasForeignKey(q => q.OrganizationId)
+                      .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasIndex(q => q.OrganizationId);
+                entity.HasIndex(q => new { q.LessonItemId, q.Order });
             });
 
             // Enrollment configuration

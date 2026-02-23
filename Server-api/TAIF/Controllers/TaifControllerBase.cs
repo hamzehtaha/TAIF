@@ -60,10 +60,15 @@ namespace TAIF.API.Controllers
             }
         }
 
-        protected bool IsSystemAdmin => Role == UserRoleType.SystemAdmin;
-        protected bool IsOrgAdmin => Role == UserRoleType.OrgAdmin;
-        protected bool IsInstructor => Role == UserRoleType.Instructor;
+        protected bool IsSuperAdmin => Role == UserRoleType.SuperAdmin;
+        protected bool IsAdmin => Role == UserRoleType.Admin;
+        protected bool IsContentCreator => Role == UserRoleType.ContentCreator;
         protected bool IsStudent => Role == UserRoleType.Student;
+        
+        // Legacy aliases for backward compatibility
+        protected bool IsSystemAdmin => IsSuperAdmin;
+        protected bool IsOrgAdmin => IsAdmin;
+        protected bool IsInstructor => IsContentCreator;
 
         protected UserRoleType UserRoleType => Role;
     }

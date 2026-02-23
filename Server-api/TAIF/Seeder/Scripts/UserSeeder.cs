@@ -44,8 +44,8 @@ namespace TAIF.API.Seeder.Scripts
             {
                 if (!_context.Users.Any(f => f.Email == user.Email))
                 {
-                    // SystemAdmin has no OrganizationId, all others get Public Org
-                    Guid? organizationId = user.Role == UserRoleType.SystemAdmin ? null : publicOrg?.Id;
+                    // SuperAdmin has no OrganizationId, all others get Public Org
+                    Guid? organizationId = user.Role == UserRoleType.SuperAdmin ? null : publicOrg?.Id;
                     
                     var newUser = new User
                     {
@@ -57,7 +57,7 @@ namespace TAIF.API.Seeder.Scripts
                         Role = user.Role,
                         OrganizationId = organizationId,
                         Birthday = DateOnly.FromDateTime(DateTime.Now),
-                        IsCompleted = user.Role == UserRoleType.SystemAdmin || user.Role == UserRoleType.Student,
+                        IsCompleted = user.Role == UserRoleType.SuperAdmin || user.Role == UserRoleType.Student,
                         // password = 123
                         PasswordHash = "pmWkWSBCL51Bfkhn79xPuKBKHz//H6B+mY6G9/eieuM=",
                     };

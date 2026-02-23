@@ -20,7 +20,7 @@ namespace TAIF.Infrastructure.Repositories
 
         public async Task<List<Course>> GetByUserIdAsync(Guid userId)
         {
-            return await FindNoTrackingAsync(course => course.UserId == userId);
+            return await FindNoTrackingAsync(course => course.CreatedByUserId == userId);
         }
     }
 }

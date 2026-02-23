@@ -49,18 +49,18 @@ namespace TAIF.API.Seeder.Scripts
             // Get default (Public) Organization for assigning to courses
             var publicOrg = _context.Organizations.FirstOrDefault(o => o.Identity == "default");
 
-            // Get instructors (users with Instructor role)
-            var instructors = _context.Users
-                .Where(u => u.Role == UserRoleType.Instructor)
+            // Get content creators (users with ContentCreator role)
+            var contentCreators = _context.Users
+                .Where(u => u.Role == UserRoleType.ContentCreator)
                 .ToList();
 
-            if (instructors.Count == 0)
+            if (contentCreators.Count == 0)
             {
-                Console.WriteLine("⚠️ No instructors found. Please seed users first.");
+                Console.WriteLine("⚠️ No content creators found. Please seed users first.");
                 return;
             }
 
-            var instructorIndex = 0;
+            var creatorIndex = 0;
 
             foreach (var categoryData in seedData.Categories)
             {
@@ -91,9 +91,9 @@ namespace TAIF.API.Seeder.Scripts
                         }
                     }
 
-                    // Round-robin assign courses to instructors
-                    var instructor = instructors[instructorIndex % instructors.Count];
-                    instructorIndex++;
+                    // Round-robin assign courses to content creators
+                    var creator = contentCreators[creatorIndex % contentCreators.Count];
+                    creatorIndex++;
 
                     var course = new Course
                     {
@@ -102,39 +102,68 @@ namespace TAIF.API.Seeder.Scripts
                         Photo = courseData.Photo,
                         CategoryId = category.Id,
                         Tags = tagIds,
-                        UserId = instructor.Id,
+                        CreatedByUserId = creator.Id,
                         OrganizationId = publicOrg?.Id
                     };
 
                     _context.Courses.Add(course);
                     await _context.SaveChangesAsync();
 
+                    var lessonOrder = 1;
                     foreach (var lessonData in courseData.Lessons ?? [])
                     {
+                        // Create the lesson (now independent entity)
                         var lesson = new Lesson
                         {
                             Title = lessonData.Title,
                             Photo = lessonData.Photo,
-                            Order = lessonData.Order,
-                            CourseId = course.Id
+                            CreatedByUserId = creator.Id,
+                            OrganizationId = publicOrg?.Id,
+                            // Add instructor info from content creator
+                            InstructorName = $"{creator.FirstName} {creator.LastName}",
+                            InstructorPhoto = null
                         };
 
                         _context.lessons.Add(lesson);
                         await _context.SaveChangesAsync();
 
+                        // Create CourseLesson junction entry
+                        var courseLesson = new CourseLesson
+                        {
+                            CourseId = course.Id,
+                            LessonId = lesson.Id,
+                            Order = lessonData.Order > 0 ? lessonData.Order : lessonOrder++,
+                            OrganizationId = publicOrg?.Id
+                        };
+                        _context.CourseLessons.Add(courseLesson);
+                        await _context.SaveChangesAsync();
+
+                        var itemOrder = 1;
                         foreach (var itemData in lessonData.LessonItems ?? [])
                         {
+                            // Create the lesson item (now independent entity)
                             var lessonItem = new LessonItem
                             {
                                 Name = itemData.Name,
                                 Type = itemData.Type,
-                                LessonId = lesson.Id,
-                                Order = itemData.Order,
                                 DurationInSeconds = itemData.DurationInSeconds,
-                                Content = JsonSerializer.Serialize(itemData.Content)
+                                Content = JsonSerializer.Serialize(itemData.Content),
+                                CreatedByUserId = creator.Id,
+                                OrganizationId = publicOrg?.Id
                             };
 
                             _context.LessonItems.Add(lessonItem);
+                            await _context.SaveChangesAsync();
+
+                            // Create LessonLessonItem junction entry
+                            var lessonLessonItem = new LessonLessonItem
+                            {
+                                LessonId = lesson.Id,
+                                LessonItemId = lessonItem.Id,
+                                Order = itemData.Order > 0 ? itemData.Order : itemOrder++,
+                                OrganizationId = publicOrg?.Id
+                            };
+                            _context.LessonLessonItems.Add(lessonLessonItem);
                         }
 
                         await _context.SaveChangesAsync();

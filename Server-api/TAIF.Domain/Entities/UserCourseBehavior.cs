@@ -4,7 +4,7 @@ namespace TAIF.Domain.Entities
     /// Tracks cumulative behavior score per user-course pair.
     /// Score decays over time based on LastUpdatedAt.
     /// </summary>
-    public class UserCourseBehavior : Base
+    public class UserCourseBehavior : OrganizationBase
     {
         public Guid UserId { get; set; }
         public Guid CourseId { get; set; }

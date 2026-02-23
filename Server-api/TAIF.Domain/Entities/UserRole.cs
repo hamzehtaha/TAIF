@@ -2,9 +2,9 @@ namespace TAIF.Domain.Entities
 {
     public enum UserRoleType
     {
-        SystemAdmin = 0,
-        OrgAdmin = 1,
-        Instructor = 2,
+        SuperAdmin = 0,
+        Admin = 1,
+        ContentCreator = 2,
         Student = 3
     }
 

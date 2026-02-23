@@ -116,7 +116,7 @@ namespace TAIF.Controllers
 
             // Instructor can only delete their own profile
             // Admin can delete anyone's profile
-            if (UserRoleType != UserRoleType.SystemAdmin && instructor.UserId != this.UserId)
+            if (UserRoleType != UserRoleType.SuperAdmin && instructor.UserId != this.UserId)
                 return Forbid();
 
             var result = await _instructorProfileService.DeleteAsync(id);

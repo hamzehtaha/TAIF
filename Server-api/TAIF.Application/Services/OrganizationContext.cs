@@ -9,9 +9,9 @@ namespace TAIF.Application.Services
         public Guid UserId { get; private set; }
         public int Role { get; private set; }
 
-        public bool IsSystemAdmin => Role == (int)UserRoleType.SystemAdmin;
-        public bool IsOrgAdmin => Role == (int)UserRoleType.OrgAdmin;
-        public bool IsInstructor => Role == (int)UserRoleType.Instructor;
+        public bool IsSystemAdmin => Role == (int)UserRoleType.SuperAdmin;
+        public bool IsOrgAdmin => Role == (int)UserRoleType.Admin;
+        public bool IsInstructor => Role == (int)UserRoleType.ContentCreator;
         public bool IsStudent => Role == (int)UserRoleType.Student;
 
         public void SetContext(Guid userId, Guid? organizationId, int role)

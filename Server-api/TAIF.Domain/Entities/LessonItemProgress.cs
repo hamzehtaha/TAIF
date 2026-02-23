@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace TAIF.Domain.Entities
 {
-    public  class LessonItemProgress : Base
+    public  class LessonItemProgress : OrganizationBase
     {
         public Guid UserId { get; set; }
         public User User { get; set; }

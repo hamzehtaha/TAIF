@@ -9,12 +9,13 @@ namespace TAIF.Domain.Entities
         public string? Photo { get; set; }
         public Guid CategoryId { get; set; }
         public Category Category { get; set; } = null!;
-        public Guid UserId { get; set; }
-        public User Creator { get; set; } = null!;
-        ICollection<Lesson> Lessons { get; set; } = new List<Lesson>();
+        public Guid CreatedByUserId { get; set; }
+        public User CreatedBy { get; set; } = null!;
+        public ICollection<CourseLesson> CourseLessons { get; set; } = new List<CourseLesson>();
         public ICollection<Guid> Tags { get; set; } = new List<Guid>();
         public double TotalDurationInSeconds { get; set; } = 0;
         public int TotalEnrolled { get; set; } = 0;
         public int TotalLessonItems { get; set; } = 0;
+        public int TotalLessons { get; set; } = 0;
     }
 }

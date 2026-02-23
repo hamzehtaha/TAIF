@@ -2,7 +2,7 @@ using System;
 
 namespace TAIF.Domain.Entities
 {
-    public class LearningPathCourse : Base
+    public class LearningPathCourse : OrganizationBase
     {
         public Guid LearningPathSectionId { get; set; }
         public LearningPathSection Section { get; set; } = null!;

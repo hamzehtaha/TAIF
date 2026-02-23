@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace TAIF.Domain.Entities
 {
-    public class User : Base
+    public class User : OrganizationBase
     {
         public User() { }
         public string FirstName { get; set; } = null!;
@@ -28,5 +28,7 @@ namespace TAIF.Domain.Entities
         public Organization? Organization { get; set; }
         public InstructorProfile? InstructorProfile { get; set; }
         public ICollection<Course> CreatedCourses { get; set; } = new List<Course>();
+        public ICollection<Lesson> CreatedLessons { get; set; } = new List<Lesson>();
+        public ICollection<LessonItem> CreatedLessonItems { get; set; } = new List<LessonItem>();
     }
 }

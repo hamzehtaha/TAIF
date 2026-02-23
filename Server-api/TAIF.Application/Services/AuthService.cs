@@ -44,7 +44,7 @@ public class AuthService : IAuthService
             throw new Exception("Public organization not found. Please run seeders first.");
         }
 
-        bool isCompleted = request.UserRoleType == UserRoleType.SystemAdmin || request.UserRoleType == UserRoleType.Student;
+        bool isCompleted = request.UserRoleType == UserRoleType.SuperAdmin || request.UserRoleType == UserRoleType.Student;
 
         var user = new User
         {
@@ -56,7 +56,7 @@ public class AuthService : IAuthService
             IsActive = true,
             Birthday = request.Birthday,
             Role = request.UserRoleType,
-            OrganizationId = request.UserRoleType == UserRoleType.SystemAdmin ? null : publicOrg.Id,
+            OrganizationId = request.UserRoleType == UserRoleType.SuperAdmin ? null : publicOrg.Id,
             IsCompleted = isCompleted
         };
 
@@ -98,7 +98,7 @@ public class AuthService : IAuthService
             PasswordHash = HashPassword(request.Password),
             IsActive = true,
             Birthday = request.Birthday,
-            Role = UserRoleType.Instructor,
+            Role = UserRoleType.ContentCreator,
             OrganizationId = publicOrg.Id,
             IsCompleted = false
         };
