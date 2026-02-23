@@ -11,6 +11,6 @@ namespace TAIF.Application.Interfaces.Repositories
     {
         Task<User?> GetByEmailAsync(string email);
         Task<User?> GetByRefreshTokenAsync(string refreshToken);
-
+        Task<User?> GetByIdWithOrganizationAsync(Guid id);
     }
 }

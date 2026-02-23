@@ -1,28 +1,27 @@
 /**
  * Lesson Store - Zustand store for lesson state management
+ * Matches backend LessonController endpoints
  */
 
 import { create } from 'zustand';
-import { Lesson, LessonWithItems, CreateLessonRequest, UpdateLessonRequest } from '@/lib/api/types';
-import { lessonService } from '@/lib/api/services';
+import { Lesson } from '@/models/lesson.model';
+import { CreateLessonRequest, UpdateLessonRequest } from '@/dtos/lesson.dto';
+import { lessonService } from '@/services/lesson.service';
 
 interface LessonState {
   lessons: Lesson[];
-  selectedLesson: LessonWithItems | null;
+  selectedLesson: Lesson | null;
   isLoading: boolean;
   error: string | null;
 }
 
 interface LessonActions {
-  loadLessons: () => Promise<void>;
-  loadLessonWithItems: (id: string) => Promise<LessonWithItems | null>;
+  loadLessonsByCourseId: (courseId: string) => Promise<void>;
+  loadLessonById: (id: string) => Promise<Lesson | null>;
   createLesson: (request: CreateLessonRequest) => Promise<Lesson | null>;
   updateLesson: (id: string, request: UpdateLessonRequest) => Promise<Lesson | null>;
   deleteLesson: (id: string) => Promise<boolean>;
-  addItemsToLesson: (lessonId: string, itemIds: string[]) => Promise<LessonWithItems | null>;
-  removeItemFromLesson: (lessonId: string, itemId: string) => Promise<LessonWithItems | null>;
-  reorderLessonItems: (lessonId: string, itemIds: string[]) => Promise<LessonWithItems | null>;
-  selectLesson: (lesson: LessonWithItems | null) => void;
+  selectLesson: (lesson: Lesson | null) => void;
   getLessonById: (id: string) => Lesson | undefined;
   reset: () => void;
 }
@@ -39,30 +38,22 @@ const initialState: LessonState = {
 export const useLessonStore = create<LessonStore>((set, get) => ({
   ...initialState,
 
-  loadLessons: async () => {
+  loadLessonsByCourseId: async (courseId: string) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await lessonService.getAll();
-      if (response.success) {
-        set({ lessons: response.data, isLoading: false });
-      } else {
-        set({ error: response.message, isLoading: false });
-      }
+      const lessons = await lessonService.getLessonsByCourse(courseId);
+      set({ lessons, isLoading: false });
     } catch (error) {
       set({ error: 'Failed to load lessons', isLoading: false });
     }
   },
 
-  loadLessonWithItems: async (id: string) => {
+  loadLessonById: async (id: string) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await lessonService.getWithItems(id);
-      if (response.success && response.data) {
-        set({ selectedLesson: response.data, isLoading: false });
-        return response.data;
-      }
-      set({ error: response.message, isLoading: false });
-      return null;
+      const lesson = await lessonService.getLessonById(id);
+      set({ selectedLesson: lesson, isLoading: false });
+      return lesson;
     } catch (error) {
       set({ error: 'Failed to load lesson', isLoading: false });
       return null;
@@ -72,16 +63,12 @@ export const useLessonStore = create<LessonStore>((set, get) => ({
   createLesson: async (request: CreateLessonRequest) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await lessonService.create(request);
-      if (response.success) {
-        set(state => ({
-          lessons: [...state.lessons, response.data],
-          isLoading: false,
-        }));
-        return response.data;
-      }
-      set({ error: response.message, isLoading: false });
-      return null;
+      const lesson = await lessonService.createLesson(request);
+      set(state => ({
+        lessons: [...state.lessons, lesson],
+        isLoading: false,
+      }));
+      return lesson;
     } catch (error) {
       set({ error: 'Failed to create lesson', isLoading: false });
       return null;
@@ -91,18 +78,17 @@ export const useLessonStore = create<LessonStore>((set, get) => ({
   updateLesson: async (id: string, request: UpdateLessonRequest) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await lessonService.update(id, request);
-      if (response.success && response.data) {
-        set(state => ({
-          lessons: state.lessons.map(lesson => 
-            lesson.id === id ? { ...lesson, ...response.data } : lesson
-          ),
-          isLoading: false,
-        }));
-        return response.data;
-      }
-      set({ error: response.message, isLoading: false });
-      return null;
+      const updatedLesson = await lessonService.updateLesson(id, request);
+      set(state => ({
+        lessons: state.lessons.map(lesson => 
+          lesson.id === id ? updatedLesson : lesson
+        ),
+        selectedLesson: state.selectedLesson?.id === id 
+          ? updatedLesson 
+          : state.selectedLesson,
+        isLoading: false,
+      }));
+      return updatedLesson;
     } catch (error) {
       set({ error: 'Failed to update lesson', isLoading: false });
       return null;
@@ -112,72 +98,20 @@ export const useLessonStore = create<LessonStore>((set, get) => ({
   deleteLesson: async (id: string) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await lessonService.delete(id);
-      if (response.success) {
-        set(state => ({
-          lessons: state.lessons.filter(lesson => lesson.id !== id),
-          selectedLesson: state.selectedLesson?.id === id ? null : state.selectedLesson,
-          isLoading: false,
-        }));
-        return true;
-      }
-      set({ error: response.message, isLoading: false });
-      return false;
+      await lessonService.deleteLesson(id);
+      set(state => ({
+        lessons: state.lessons.filter(lesson => lesson.id !== id),
+        selectedLesson: state.selectedLesson?.id === id ? null : state.selectedLesson,
+        isLoading: false,
+      }));
+      return true;
     } catch (error) {
       set({ error: 'Failed to delete lesson', isLoading: false });
       return false;
     }
   },
 
-  addItemsToLesson: async (lessonId: string, itemIds: string[]) => {
-    set({ isLoading: true, error: null });
-    try {
-      const response = await lessonService.addItems(lessonId, { lessonItemIds: itemIds });
-      if (response.success && response.data) {
-        set({ selectedLesson: response.data, isLoading: false });
-        return response.data;
-      }
-      set({ error: response.message, isLoading: false });
-      return null;
-    } catch (error) {
-      set({ error: 'Failed to add items to lesson', isLoading: false });
-      return null;
-    }
-  },
-
-  removeItemFromLesson: async (lessonId: string, itemId: string) => {
-    set({ isLoading: true, error: null });
-    try {
-      const response = await lessonService.removeItem(lessonId, itemId);
-      if (response.success && response.data) {
-        set({ selectedLesson: response.data, isLoading: false });
-        return response.data;
-      }
-      set({ error: response.message, isLoading: false });
-      return null;
-    } catch (error) {
-      set({ error: 'Failed to remove item from lesson', isLoading: false });
-      return null;
-    }
-  },
-
-  reorderLessonItems: async (lessonId: string, itemIds: string[]) => {
-    set({ isLoading: true, error: null });
-    try {
-      const response = await lessonService.reorderItems(lessonId, { lessonItemIds: itemIds });
-      if (response.success && response.data) {
-        set({ selectedLesson: response.data, isLoading: false });
-        return response.data;
-      }
-      set({ error: response.message, isLoading: false });
-      return null;
-    } catch (error) {
-      set({ error: 'Failed to reorder lesson items', isLoading: false });
-      return null;
-    }
-  },
-
-  selectLesson: (lesson: LessonWithItems | null) => {
+  selectLesson: (lesson: Lesson | null) => {
     set({ selectedLesson: lesson });
   },
 

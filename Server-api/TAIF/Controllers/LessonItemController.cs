@@ -1,12 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Text.Json;
 using TAIF.API.Controllers;
+using TAIF.Application.DTOs.Filters;
 using TAIF.Application.DTOs.Requests;
 using TAIF.Application.DTOs.Responses;
 using TAIF.Application.Interfaces.Services;
 using TAIF.Domain.Entities;
-using static TAIF.Domain.Entities.Enums;
 
 namespace TAIF.Controllers
 {
@@ -18,12 +17,18 @@ namespace TAIF.Controllers
         private readonly ILessonItemService _lessonItemService;
         private readonly IQuizSubmissionService _quizSubmissionService;
         private readonly ILessonItemProgressService _lessonItemProgressService;
+        private readonly ICourseService _courseService;
 
-        public LessonItemController(ILessonItemService lessonItemService, IQuizSubmissionService quizSubmissionService, ILessonItemProgressService lessonItemProgressService)
+        public LessonItemController(
+            ILessonItemService lessonItemService, 
+            IQuizSubmissionService quizSubmissionService, 
+            ILessonItemProgressService lessonItemProgressService,
+            ICourseService courseService)
         {
             _lessonItemService = lessonItemService;
             _quizSubmissionService = quizSubmissionService;
             _lessonItemProgressService = lessonItemProgressService;
+            _courseService = courseService;
         }
         [HttpGet("{id}")]
         public async Task<IActionResult> Get([FromRoute] Guid id)
@@ -31,6 +36,34 @@ namespace TAIF.Controllers
             var lessonItem = await _lessonItemService.GetByIdAsync(id);
             if (lessonItem is null) return NotFound();
             return Ok(ApiResponse<LessonItem>.SuccessResponse(lessonItem));
+        }
+
+        [HttpGet("paged")]
+        public async Task<IActionResult> GetPaged([FromQuery] LessonItemFilter filter)
+        {
+            // Get the instructor's course IDs to filter lesson items
+            //var instructorCourseIds = await _courseService.GetCourseIdsByUserAsync(this.UserId);
+
+            //Expression<Func<LessonItem, bool>> predicate = li =>
+            //    instructorCourseIds.Contains(li.Lesson.CourseId)
+            //    && (string.IsNullOrWhiteSpace(filter.Search)
+            //        || li.Name.Contains(filter.Search))
+            //    && (!filter.LessonId.HasValue
+            //        || li.LessonId == filter.LessonId)
+            //    && (!filter.CourseId.HasValue
+            //        || li.Lesson.CourseId == filter.CourseId)
+            //    && (!filter.Type.HasValue
+            //        || li.Type == filter.Type);
+
+            //var result = await _lessonItemService.GetPagedAsync(
+            //    filter: filter,
+            //    predicate: predicate,
+            //    orderBy: li => li.Order,
+            //    orderByDescending: false,
+            //    includes: li => li.Lesson
+            //);
+
+            return Ok(ApiResponse<PagedResult<LessonItem>>.SuccessResponse(null));
         }
         [HttpGet("lessonProgress/{lessonId}")]
         public async Task<IActionResult> GetLessonItemsProgressAsync([FromRoute] Guid lessonId)
@@ -54,7 +87,6 @@ namespace TAIF.Controllers
                 Name = request.Name,
                 Content = request.Content,
                 Type = request.Type,
-                LessonId = request.LessonId,
                 DurationInSeconds = request.durationInSeconds
             };
             var created_lessonItem = await _lessonItemService.CreateAsync(lessonItem);

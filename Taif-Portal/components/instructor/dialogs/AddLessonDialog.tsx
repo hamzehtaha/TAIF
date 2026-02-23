@@ -16,7 +16,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -33,7 +32,8 @@ interface AddLessonDialogProps {
   onModeChange: (mode: AddLessonMode) => void;
   availableLessons: (Lesson | LessonWithItems)[];
   excludeLessonIds?: string[];
-  onCreateLesson: (title: string, description: string) => Promise<void>;
+  courseId: string;
+  onCreateLesson: (title: string, courseId: string, photo?: string) => Promise<void>;
   onSelectLessons: (lessonIds: string[]) => Promise<void>;
   isLoading?: boolean;
 }
@@ -45,12 +45,13 @@ export function AddLessonDialog({
   onModeChange,
   availableLessons,
   excludeLessonIds = [],
+  courseId,
   onCreateLesson,
   onSelectLessons,
   isLoading = false,
 }: AddLessonDialogProps) {
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
+  const [photo, setPhoto] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -77,7 +78,7 @@ export function AddLessonDialog({
 
   const handleCreate = async () => {
     if (!title.trim()) return;
-    await onCreateLesson(title, description);
+    await onCreateLesson(title, courseId, photo || undefined);
     handleClose();
   };
 
@@ -89,7 +90,7 @@ export function AddLessonDialog({
 
   const handleClose = () => {
     setTitle("");
-    setDescription("");
+    setPhoto("");
     setSelectedIds([]);
     setSearchQuery("");
     onOpenChange(false);
@@ -148,12 +149,12 @@ export function AddLessonDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="lesson-description">Description</Label>
-              <Textarea
-                id="lesson-description"
-                placeholder="Brief description of the lesson..."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+              <Label htmlFor="lesson-photo">Photo URL (optional)</Label>
+              <Input
+                id="lesson-photo"
+                placeholder="https://example.com/image.jpg"
+                value={photo}
+                onChange={(e) => setPhoto(e.target.value)}
               />
             </div>
           </div>

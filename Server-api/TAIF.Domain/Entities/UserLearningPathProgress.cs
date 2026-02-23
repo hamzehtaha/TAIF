@@ -2,7 +2,7 @@ using System;
 
 namespace TAIF.Domain.Entities
 {
-    public class UserLearningPathProgress : Base
+    public class UserLearningPathProgress : OrganizationBase
     {
         public Guid UserId { get; set; }
         public User User { get; set; } = null!;

@@ -3,11 +3,16 @@
  */
 
 import { create } from 'zustand';
-import { Instructor, DashboardStats } from '@/lib/api/types';
-import { instructorService } from '@/lib/api/services';
+import { instructorProfileService, InstructorProfileResponse } from '@/services/instructor-profile.service';
+import { courseService } from '@/services/course.service';
+
+interface DashboardStats {
+  totalCourses: number;
+  totalEnrollments: number;
+}
 
 interface InstructorState {
-  instructor: Instructor | null;
+  instructor: InstructorProfileResponse | null;
   dashboardStats: DashboardStats | null;
   isLoading: boolean;
   error: string | null;
@@ -34,12 +39,9 @@ export const useInstructorStore = create<InstructorStore>((set) => ({
   loadInstructor: async () => {
     set({ isLoading: true, error: null });
     try {
-      const response = await instructorService.getProfile();
-      if (response.success) {
-        set({ instructor: response.data, isLoading: false });
-      } else {
-        set({ error: response.message, isLoading: false });
-      }
+      // Use getOrCreateCurrentProfile to auto-create profile if it doesn't exist
+      const instructor = await instructorProfileService.getOrCreateCurrentProfile();
+      set({ instructor, isLoading: false });
     } catch (error) {
       set({ error: 'Failed to load instructor profile', isLoading: false });
     }
@@ -48,12 +50,15 @@ export const useInstructorStore = create<InstructorStore>((set) => ({
   loadDashboardStats: async () => {
     set({ isLoading: true, error: null });
     try {
-      const response = await instructorService.getDashboardStats();
-      if (response.success) {
-        set({ dashboardStats: response.data, isLoading: false });
-      } else {
-        set({ error: response.message, isLoading: false });
-      }
+      const courses = await courseService.getMyCourses();
+      const totalEnrollments = courses.reduce((sum, c) => sum + (c.totalEnrolled || 0), 0);
+      set({ 
+        dashboardStats: { 
+          totalCourses: courses.length, 
+          totalEnrollments 
+        }, 
+        isLoading: false 
+      });
     } catch (error) {
       set({ error: 'Failed to load dashboard stats', isLoading: false });
     }

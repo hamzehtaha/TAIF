@@ -7,7 +7,6 @@ import {
   Shield,
   Palette,
   Database,
-  RefreshCw,
   Trash2,
   Moon,
   Sun,
@@ -28,24 +27,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { mockInstructorService } from "@/services/instructor/mockInstructorService";
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
-  const [resetDialogOpen, setResetDialogOpen] = useState(false);
-  const [isResetting, setIsResetting] = useState(false);
 
   // Mock settings state
   const [settings, setSettings] = useState({
@@ -66,25 +52,6 @@ export default function SettingsPage() {
     });
   };
 
-  const handleResetData = async () => {
-    setIsResetting(true);
-    try {
-      await mockInstructorService.resetToMockData();
-      toast({
-        title: "Data Reset",
-        description: "All data has been reset to default mock data. Refresh the page to see changes.",
-      });
-      setResetDialogOpen(false);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to reset data. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsResetting(false);
-    }
-  };
 
   return (
     <InstructorLayout breadcrumbs={[{ label: "Settings" }]}>
@@ -299,31 +266,13 @@ export default function SettingsPage() {
               <Database className="h-5 w-5 text-primary" />
               <CardTitle>Data Management</CardTitle>
             </div>
-            <CardDescription>Manage your local data (Phase 1)</CardDescription>
+            <CardDescription>Manage your course data</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="p-4 rounded-lg bg-muted/50">
               <p className="text-sm text-muted-foreground">
-                <strong>Note:</strong> This is Phase 1 of the Instructor Portal. All data is stored locally in your browser.
-                In Phase 2, data will be synchronized with the backend server.
+                Your course data is synchronized with the backend server. Changes are saved automatically.
               </p>
-            </div>
-            <Separator />
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Reset to Default Data</Label>
-                <p className="text-sm text-muted-foreground">
-                  Clear all local changes and restore mock data
-                </p>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setResetDialogOpen(true)}
-              >
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Reset Data
-              </Button>
             </div>
           </CardContent>
         </Card>
@@ -353,29 +302,6 @@ export default function SettingsPage() {
         </Card>
       </div>
 
-      {/* Reset Data Confirmation */}
-      <AlertDialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Reset Data</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will clear all your local changes and restore the default mock data.
-              You will lose all courses, lessons, and content you&apos;ve created.
-              This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleResetData}
-              disabled={isResetting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isResetting ? "Resetting..." : "Reset Data"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </InstructorLayout>
   );
 }

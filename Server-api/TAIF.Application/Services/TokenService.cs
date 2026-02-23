@@ -20,14 +20,20 @@ namespace TAIF.Application.Services
         {
             var jwt = _configuration.GetSection("Jwt");
 
-            var claims = new[]
+            var claims = new List<Claim>
             {
-            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new Claim(JwtRegisteredClaimNames.Email, user.Email),
-            new Claim("firstName", user.FirstName),
-            new Claim("lastName", user.LastName),
-            new Claim("UserRoleType", ((int)user.UserRoleType).ToString()),
-        };
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email),
+                new Claim("firstName", user.FirstName),
+                new Claim("lastName", user.LastName),
+                new Claim("Role", ((int)user.Role).ToString()),
+                new Claim("UserRoleType", ((int)user.Role).ToString()),
+            };
+
+            if (user.OrganizationId.HasValue)
+            {
+                claims.Add(new Claim("OrganizationId", user.OrganizationId.Value.ToString()));
+            }
 
             var key = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(jwt["Key"]!)

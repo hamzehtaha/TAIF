@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace TAIF.Domain.Entities
 {
-    public class LearningPath : Base
+    public class LearningPath : OrganizationBase
     {
         public string Name { get; set; } = null!;
         public string? Description { get; set; }

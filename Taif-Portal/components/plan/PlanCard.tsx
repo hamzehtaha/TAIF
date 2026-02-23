@@ -5,18 +5,28 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plan } from "@/models/plan.model";
-import { Clock, BookOpen, Layers, ArrowRight, Target } from "lucide-react";
+import { Clock, BookOpen, Layers, ArrowRight, Target, CheckCircle, Trophy } from "lucide-react";
 
 interface PlanCardProps {
   plan: Plan;
   isEnrolled?: boolean;
   progress?: number;
+  isCompleted?: boolean;
   variant?: "default" | "compact";
 }
 
-export function PlanCard({ plan, isEnrolled, progress, variant = "default" }: PlanCardProps) {
-  const totalCourses = plan.sections.reduce((acc, s) => acc + s.courses.length, 0);
-  const totalDuration = Math.floor(plan.duration / 60);
+function formatDuration(minutes: number): string {
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+}
+
+export function PlanCard({ plan, isEnrolled, progress, isCompleted, variant = "default" }: PlanCardProps) {
+  const totalCourses = plan.totalCourses ?? plan.sections.reduce((acc, s) => acc + s.courses.length, 0);
+  const totalSections = plan.totalSections ?? plan.sections.length;
+  const durationFormatted = formatDuration(plan.duration);
+  const completed = isCompleted || progress === 100;
 
   if (variant === "compact") {
     return (
@@ -37,7 +47,7 @@ export function PlanCard({ plan, isEnrolled, progress, variant = "default" }: Pl
                 <div className="flex items-center gap-4 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <Layers className="w-3.5 h-3.5" />
-                    {plan.sections.length} sections
+                    {totalSections} sections
                   </span>
                   <span className="flex items-center gap-1">
                     <BookOpen className="w-3.5 h-3.5" />
@@ -45,7 +55,7 @@ export function PlanCard({ plan, isEnrolled, progress, variant = "default" }: Pl
                   </span>
                   <span className="flex items-center gap-1">
                     <Clock className="w-3.5 h-3.5" />
-                    {totalDuration}h
+                    {durationFormatted}
                   </span>
                 </div>
               </div>
@@ -74,12 +84,18 @@ export function PlanCard({ plan, isEnrolled, progress, variant = "default" }: Pl
             <Badge variant="secondary" className="bg-white/20 text-white border-0 hover:bg-white/30">
               Learning Path
             </Badge>
+            {completed && (
+              <Badge className="bg-gradient-to-r from-green-500 to-emerald-600 text-white border-0 gap-1">
+                <Trophy className="w-3 h-3" />
+                Completed
+              </Badge>
+            )}
           </div>
           <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
           <div className="flex items-center gap-4 text-sm text-white/80">
             <span className="flex items-center gap-1">
               <Layers className="w-4 h-4" />
-              {plan.sections.length} sections
+              {totalSections} sections
             </span>
             <span className="flex items-center gap-1">
               <BookOpen className="w-4 h-4" />
@@ -87,7 +103,7 @@ export function PlanCard({ plan, isEnrolled, progress, variant = "default" }: Pl
             </span>
             <span className="flex items-center gap-1">
               <Clock className="w-4 h-4" />
-              {totalDuration} hours
+              {durationFormatted}
             </span>
           </div>
         </div>
@@ -101,20 +117,28 @@ export function PlanCard({ plan, isEnrolled, progress, variant = "default" }: Pl
 
         {/* Sections Preview */}
         <div className="space-y-2 mb-6">
-          {plan.sections.slice(0, 3).map((section, idx) => (
-            <div key={section.id} className="flex items-center gap-3 text-sm">
-              <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold flex-shrink-0">
-                {idx + 1}
-              </div>
-              <span className="truncate text-muted-foreground">{section.name}</span>
-              <span className="text-xs text-muted-foreground/60 flex-shrink-0">
-                {section.courses.length} courses
-              </span>
-            </div>
-          ))}
-          {plan.sections.length > 3 && (
-            <p className="text-xs text-muted-foreground pl-9">
-              +{plan.sections.length - 3} more sections
+          {plan.sections && plan.sections.length > 0 ? (
+            <>
+              {plan.sections.slice(0, 3).map((section, idx) => (
+                <div key={section.id} className="flex items-center gap-3 text-sm">
+                  <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold flex-shrink-0">
+                    {idx + 1}
+                  </div>
+                  <span className="truncate text-muted-foreground">{section.name}</span>
+                  <span className="text-xs text-muted-foreground/60 flex-shrink-0">
+                    {section.courses.length} courses
+                  </span>
+                </div>
+              ))}
+              {plan.sections.length > 3 && (
+                <p className="text-xs text-muted-foreground pl-9">
+                  +{plan.sections.length - 3} more sections
+                </p>
+              )}
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {totalSections} sections • {totalCourses} courses
             </p>
           )}
         </div>

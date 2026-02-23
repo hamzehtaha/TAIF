@@ -24,5 +24,16 @@ namespace TAIF.Application.Services
         {
             return await _recommendationService.GetRecommendedCoursesAsync(userId, limit);
         }
+
+        public async Task<List<Course>> GetByUserIdAsync(Guid userId)
+        {
+            return await _courseRepository.GetByUserIdAsync(userId);
+        }
+
+        public async Task<List<Guid>> GetCourseIdsByUserAsync(Guid userId)
+        {
+            var courses = await _courseRepository.GetByUserIdAsync(userId);
+            return courses.Select(c => c.Id).ToList();
+        }
     }
 }

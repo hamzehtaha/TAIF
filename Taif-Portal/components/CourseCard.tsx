@@ -14,6 +14,7 @@ interface CourseCardProps {
   onEnroll?: () => void;
   onToggleFavourite?: () => void;
   showRecommendedBadge?: boolean;
+  isCompleted?: boolean;
 }
 
 function formatDuration(minutes: number): string {
@@ -23,7 +24,7 @@ function formatDuration(minutes: number): string {
   return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
 }
 
-export function CourseCard({ course, onEnroll, onToggleFavourite, showRecommendedBadge }: CourseCardProps) {
+export function CourseCard({ course, onEnroll, onToggleFavourite, showRecommendedBadge, isCompleted }: CourseCardProps) {
   const t = useTranslation();
 
   const handleEnroll = (e: React.MouseEvent) => {
@@ -80,9 +81,15 @@ export function CourseCard({ course, onEnroll, onToggleFavourite, showRecommende
             )}
           </div>
           
-          {/* Top right badges: Enrolled or Recommended */}
+          {/* Top right badges: Completed, Enrolled or Recommended */}
           <div className="absolute top-3 right-3 flex flex-col gap-1">
-            {course.isEnrolled && (
+            {(isCompleted || course.progress === 100) && course.isEnrolled && (
+              <div className="flex items-center gap-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-2 py-1 rounded-full text-xs font-medium shadow-sm">
+                <CheckCircle className="w-3 h-3" />
+                Completed
+              </div>
+            )}
+            {course.isEnrolled && !(isCompleted || course.progress === 100) && (
               <div className="flex items-center gap-1 bg-success text-white px-2 py-1 rounded-full text-xs">
                 <CheckCircle className="w-3 h-3" />
                 Enrolled

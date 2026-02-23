@@ -42,7 +42,7 @@ namespace TAIF.API.Seeder.Scripts
                 ?? throw new InvalidOperationException("Invalid LearningPath JSON");
 
             var instructors = _context.Users
-                .Where(u => u.UserRoleType == UserRoleType.Instructor)
+                .Where(u => u.Role == UserRoleType.ContentCreator)
                 .ToList();
 
             if (instructors.Count == 0)

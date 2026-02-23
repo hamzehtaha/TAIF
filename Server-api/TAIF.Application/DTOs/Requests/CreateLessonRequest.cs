@@ -6,10 +6,12 @@ namespace TAIF.Application.DTOs.Requests
     {
         [Required]
         public string Title { get; set; } = null!;
-        [Required]
-        public string URL { get; set; } = null!;
-        [Required]
-        public Guid CourseId { get; set; }
+        public string? Description { get; set; }
         public string? Photo { get; set; }
+        
+        // Instructor information (embedded, not user reference)
+        public string? InstructorName { get; set; }
+        public string? InstructorBio { get; set; }
+        public string? InstructorPhoto { get; set; }
     }
 }

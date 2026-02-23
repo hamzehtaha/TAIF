@@ -17,22 +17,186 @@ import {
   VideoContent,
   RichContent,
   QuestionWithAnswers,
+  LessonItemType,
 } from '@/types/instructor';
-import { 
-  dataService,
-  CreateCourseInput,
-  UpdateCourseInput,
-  CreateLessonInput,
-  UpdateLessonInput,
-  CreateLessonItemInput,
-  UpdateLessonItemInput,
-  CreateVideoInput,
-  UpdateVideoInput,
-  CreateRichContentInput,
-  UpdateRichContentInput,
-  CreateQuestionInput,
-  UpdateQuestionInput,
-} from '@/services/instructor/dataService';
+import { instructorProfileService } from '@/services/instructor-profile.service';
+import { courseService } from '@/services/course.service';
+import { lessonService } from '@/services/lesson.service';
+import { lessonItemService } from '@/services/lesson-item.service';
+import { categoryService } from '@/services/category.service';
+import { Course } from '@/models/course.model';
+import { Lesson } from '@/models/lesson.model';
+import { LessonItem } from '@/models/lesson-item.model';
+import { LessonItemType as LessonItemTypeEnum } from '@/enums/lesson-item-type.enum';
+
+// ============================================
+// Input Types for Create/Update Operations
+// ============================================
+
+export interface CreateCourseInput {
+  title: string;
+  description: string;
+  categoryId: string;
+  thumbnail?: string;
+}
+
+export interface UpdateCourseInput {
+  title?: string;
+  description?: string;
+  categoryId?: string;
+  thumbnail?: string;
+}
+
+export interface CreateLessonInput {
+  title: string;
+  description?: string;
+  courseId?: string;
+}
+
+export interface UpdateLessonInput {
+  title?: string;
+  description?: string;
+}
+
+export interface CreateLessonItemInput {
+  title: string;
+  description?: string;
+  type: LessonItemType;
+  lessonId?: string;
+  content?: string;
+  durationInSeconds?: number;
+}
+
+export interface UpdateLessonItemInput {
+  title?: string;
+  description?: string;
+  content?: string;
+  durationInSeconds?: number;
+}
+
+export interface CreateVideoInput {
+  title: string;
+  description?: string;
+  videoUrl: string;
+  duration?: number;
+  thumbnailUrl?: string;
+}
+
+export interface UpdateVideoInput {
+  title?: string;
+  description?: string;
+  videoUrl?: string;
+  duration?: number;
+  thumbnailUrl?: string;
+}
+
+export interface CreateRichContentInput {
+  title: string;
+  description?: string;
+  htmlContent: string;
+}
+
+export interface UpdateRichContentInput {
+  title?: string;
+  description?: string;
+  htmlContent?: string;
+}
+
+export interface CreateQuestionInput {
+  text: string;
+  description?: string;
+  type?: 'multiple-choice' | 'true-false';
+  answers: { text: string; isCorrect: boolean }[];
+}
+
+export interface UpdateQuestionInput {
+  text?: string;
+  description?: string;
+  type?: 'multiple-choice' | 'true-false';
+  answers?: { id: string; text: string; isCorrect: boolean; order: number }[];
+}
+
+// ============================================
+// Type Mappers
+// ============================================
+
+const mapLessonItemTypeToInstructor = (type: LessonItemTypeEnum): LessonItemType => {
+  switch (type) {
+    case 'video': return 'video';
+    case 'text': return 'rich-content';
+    case 'question': return 'question';
+    default: return 'video';
+  }
+};
+
+const mapLessonItemTypeToBackend = (type: LessonItemType): number => {
+  switch (type) {
+    case 'video': return 0;
+    case 'rich-content': return 1;
+    case 'question': return 2;
+    default: return 0;
+  }
+};
+
+const mapCourseToInstructor = (course: Course, lessons: InstructorLesson[] = []): InstructorCourse => {
+  const totalItems = lessons.reduce((sum, l) => sum + l.items.length, 0);
+  return {
+    id: course.id,
+    title: course.title,
+    description: course.description || '',
+    thumbnail: course.thumbnail || '',
+    categoryId: course.categoryId,
+    categoryName: course.categoryName || '',
+    status: 'draft',
+    instructorId: '',
+    lessons,
+    stats: {
+      totalLessons: lessons.length,
+      totalItems,
+      totalEnrollments: course.totalEnrolled || 0,
+      averageRating: course.rating || 0,
+      totalReviews: course.reviewCount || 0,
+      totalStudents: course.totalEnrolled || 0,
+      completionRate: 0,
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+};
+
+const mapLessonToInstructor = (lesson: Lesson, items: InstructorLessonItem[] = []): InstructorLesson => {
+  return {
+    id: lesson.id,
+    title: lesson.title,
+    description: lesson.description || '',
+    order: lesson.order || 0,
+    courseId: lesson.courseId,
+    items,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+};
+
+const mapLessonItemToInstructor = (item: LessonItem): InstructorLessonItem => {
+  const type = mapLessonItemTypeToInstructor(item.type);
+  const baseItem = {
+    id: item.id,
+    title: item.name,
+    description: '',
+    order: item.order || 0,
+    lessonId: item.lessonId,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  
+  if (type === 'video') {
+    return { ...baseItem, type: 'video' as const, videoContentId: '' };
+  } else if (type === 'rich-content') {
+    return { ...baseItem, type: 'rich-content' as const, richContentId: '' };
+  } else {
+    return { ...baseItem, type: 'question' as const, questionId: '' };
+  }
+};
 
 // ============================================
 // State Types
@@ -489,7 +653,18 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
   const loadInstructor = useCallback(async () => {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
-      const instructor = await dataService.getInstructor();
+      const profile = await instructorProfileService.getCurrentProfile();
+      // Convert InstructorProfileResponse to Instructor type for compatibility
+      const instructor: Instructor = {
+        id: profile.id,
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        email: profile.email,
+        avatar: undefined, // Not available in profile response
+        bio: profile.bio,
+        expertise: profile.expertises,
+        createdAt: profile.createdAt,
+      };
       dispatch({ type: 'SET_INSTRUCTOR', payload: instructor });
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to load instructor profile' });
@@ -502,7 +677,20 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
   const loadCourses = useCallback(async () => {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
-      const courses = await dataService.getCourses();
+      const rawCourses = await courseService.getMyCourses();
+      const courses: InstructorCourse[] = await Promise.all(
+        rawCourses.map(async (course) => {
+          const rawLessons = await lessonService.getLessonsByCourse(course.id);
+          const lessons: InstructorLesson[] = await Promise.all(
+            rawLessons.map(async (lesson) => {
+              const rawItems = await lessonItemService.getItemsByLesson(lesson.id);
+              const items = rawItems.map(mapLessonItemToInstructor);
+              return mapLessonToInstructor(lesson, items);
+            })
+          );
+          return mapCourseToInstructor(course, lessons);
+        })
+      );
       dispatch({ type: 'SET_COURSES', payload: courses });
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to load courses' });
@@ -514,7 +702,12 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
   // Load categories
   const loadCategories = useCallback(async () => {
     try {
-      const categories = await dataService.getCategories();
+      const rawCategories = await categoryService.getCategories();
+      const categories: Category[] = rawCategories.map(c => ({
+        id: c.id,
+        name: c.name,
+        description: '',
+      }));
       dispatch({ type: 'SET_CATEGORIES', payload: categories });
     } catch (error) {
       console.error('Failed to load categories:', error);
@@ -524,7 +717,23 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
   // Load dashboard stats
   const loadDashboardStats = useCallback(async () => {
     try {
-      const stats = await dataService.getDashboardStats();
+      const rawCourses = await courseService.getMyCourses();
+      const stats: DashboardStats = {
+        totalCourses: rawCourses.length,
+        publishedCourses: 0, // TODO: Add status support
+        draftCourses: rawCourses.length,
+        totalStudents: rawCourses.reduce((sum, c) => sum + (c.totalEnrolled || 0), 0),
+        totalReviews: rawCourses.reduce((sum, c) => sum + (c.reviewCount || 0), 0),
+        averageRating: rawCourses.length > 0 
+          ? rawCourses.reduce((sum, c) => sum + (c.rating || 0), 0) / rawCourses.length 
+          : 0,
+        recentActivity: [],
+        popularCourses: rawCourses.slice(0, 5).map(c => ({
+          courseId: c.id,
+          courseName: c.title,
+          enrollments: c.totalEnrolled || 0,
+        })),
+      };
       dispatch({ type: 'SET_DASHBOARD_STATS', payload: stats });
     } catch (error) {
       console.error('Failed to load dashboard stats:', error);
@@ -535,7 +744,16 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
   const loadCourse = useCallback(async (courseId: string) => {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
-      const course = await dataService.getCourseById(courseId);
+      const rawCourse = await courseService.getCourseById(courseId);
+      const rawLessons = await lessonService.getLessonsByCourse(courseId);
+      const lessons: InstructorLesson[] = await Promise.all(
+        rawLessons.map(async (lesson) => {
+          const rawItems = await lessonItemService.getItemsByLesson(lesson.id);
+          const items = rawItems.map(mapLessonItemToInstructor);
+          return mapLessonToInstructor(lesson, items);
+        })
+      );
+      const course = mapCourseToInstructor(rawCourse, lessons);
       dispatch({ type: 'SET_CURRENT_COURSE', payload: course });
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to load course' });
@@ -548,7 +766,14 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
   const createCourse = useCallback(async (input: CreateCourseInput): Promise<InstructorCourse | null> => {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
-      const course = await dataService.createCourse(input);
+      const rawCourse = await courseService.createCourse({
+        name: input.title,
+        description: input.description,
+        photo: input.thumbnail || '',
+        categoryId: input.categoryId,
+        tags: [],
+      });
+      const course = mapCourseToInstructor(rawCourse, []);
       dispatch({ type: 'ADD_COURSE', payload: course });
       return course;
     } catch (error) {
@@ -562,10 +787,21 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
   // Update course
   const updateCourse = useCallback(async (id: string, input: UpdateCourseInput): Promise<InstructorCourse | null> => {
     try {
-      const course = await dataService.updateCourse(id, input);
-      if (course) {
-        dispatch({ type: 'UPDATE_COURSE', payload: course });
-      }
+      const rawCourse = await courseService.updateCourse(id, {
+        name: input.title,
+        description: input.description,
+        photo: input.thumbnail,
+      });
+      const rawLessons = await lessonService.getLessonsByCourse(id);
+      const lessons: InstructorLesson[] = await Promise.all(
+        rawLessons.map(async (lesson) => {
+          const rawItems = await lessonItemService.getItemsByLesson(lesson.id);
+          const items = rawItems.map(mapLessonItemToInstructor);
+          return mapLessonToInstructor(lesson, items);
+        })
+      );
+      const course = mapCourseToInstructor(rawCourse, lessons);
+      dispatch({ type: 'UPDATE_COURSE', payload: course });
       return course;
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to update course' });
@@ -576,7 +812,7 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
   // Delete course
   const deleteCourse = useCallback(async (id: string): Promise<boolean> => {
     try {
-      const success = await dataService.deleteCourse(id);
+      const success = await courseService.deleteCourse(id);
       if (success) {
         dispatch({ type: 'DELETE_COURSE', payload: id });
       }
@@ -587,45 +823,36 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
     }
   }, []);
 
-  // Publish course
+  // Publish course (TODO: Implement when backend supports status)
   const publishCourse = useCallback(async (id: string): Promise<boolean> => {
     try {
-      const course = await dataService.publishCourse(id);
-      if (course) {
-        dispatch({ type: 'UPDATE_COURSE', payload: course });
-        return true;
-      }
-      return false;
+      // Backend doesn't support status yet, just return success
+      console.warn('publishCourse: Backend does not support course status yet');
+      return true;
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to publish course' });
       return false;
     }
   }, []);
 
-  // Archive course
+  // Archive course (TODO: Implement when backend supports status)
   const archiveCourse = useCallback(async (id: string): Promise<boolean> => {
     try {
-      const course = await dataService.archiveCourse(id);
-      if (course) {
-        dispatch({ type: 'UPDATE_COURSE', payload: course });
-        return true;
-      }
-      return false;
+      // Backend doesn't support status yet, just return success
+      console.warn('archiveCourse: Backend does not support course status yet');
+      return true;
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to archive course' });
       return false;
     }
   }, []);
 
-  // Unpublish course (return to draft)
+  // Unpublish course (return to draft) (TODO: Implement when backend supports status)
   const unpublishCourse = useCallback(async (id: string): Promise<boolean> => {
     try {
-      const course = await dataService.unpublishCourse(id);
-      if (course) {
-        dispatch({ type: 'UPDATE_COURSE', payload: course });
-        return true;
-      }
-      return false;
+      // Backend doesn't support status yet, just return success
+      console.warn('unpublishCourse: Backend does not support course status yet');
+      return true;
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to unpublish course' });
       return false;
@@ -635,8 +862,13 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
   // Create lesson
   const createLesson = useCallback(async (input: CreateLessonInput): Promise<InstructorLesson | null> => {
     try {
-      const lesson = await dataService.createLesson(input);
-      if (lesson) {
+      const rawLesson = await lessonService.createLesson({
+        title: input.title,
+        url: input.title.toLowerCase().replace(/\s+/g, '-'),
+        courseId: input.courseId || '',
+      });
+      const lesson = mapLessonToInstructor(rawLesson, []);
+      if (input.courseId) {
         dispatch({ type: 'ADD_LESSON', payload: { courseId: input.courseId, lesson } });
       }
       return lesson;
@@ -653,10 +885,13 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
     input: UpdateLessonInput
   ): Promise<InstructorLesson | null> => {
     try {
-      const lesson = await dataService.updateLesson(lessonId, input);
-      if (lesson) {
-        dispatch({ type: 'UPDATE_LESSON', payload: { courseId, lesson } });
-      }
+      const rawLesson = await lessonService.updateLesson(lessonId, {
+        title: input.title,
+      });
+      const rawItems = await lessonItemService.getItemsByLesson(lessonId);
+      const items = rawItems.map(mapLessonItemToInstructor);
+      const lesson = mapLessonToInstructor(rawLesson, items);
+      dispatch({ type: 'UPDATE_LESSON', payload: { courseId, lesson } });
       return lesson;
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to update lesson' });
@@ -667,7 +902,7 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
   // Delete lesson
   const deleteLesson = useCallback(async (courseId: string, lessonId: string): Promise<boolean> => {
     try {
-      const success = await dataService.deleteLesson(lessonId);
+      const success = await lessonService.deleteLesson(lessonId);
       if (success) {
         dispatch({ type: 'DELETE_LESSON', payload: { courseId, lessonId } });
       }
@@ -678,45 +913,40 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
     }
   }, []);
 
-  // Reorder lessons
+  // Reorder lessons (TODO: Implement when backend supports reordering)
   const reorderLessons = useCallback(async (courseId: string, lessonIds: string[]): Promise<void> => {
     try {
-      const result = await dataService.reorderCourseLessons(courseId, lessonIds);
-      const lessons = result?.lessons || [];
-      dispatch({ type: 'REORDER_LESSONS', payload: { courseId, lessons } });
+      // Backend doesn't support reordering yet
+      console.warn('reorderLessons: Backend does not support lesson reordering yet');
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to reorder lessons' });
     }
   }, []);
 
-  // Add existing lessons to course
+  // Add existing lessons to course (TODO: Implement when backend supports this)
   const addLessonsToCourse = useCallback(async (
     courseId: string,
     lessonIds: string[]
   ): Promise<InstructorCourse | null> => {
     try {
-      const course = await dataService.addLessonsToCourse(courseId, lessonIds);
-      if (course) {
-        dispatch({ type: 'SET_CURRENT_COURSE', payload: course });
-      }
-      return course;
+      // Backend doesn't support this operation yet
+      console.warn('addLessonsToCourse: Backend does not support this operation yet');
+      return null;
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to add lessons to course' });
       return null;
     }
   }, []);
 
-  // Remove lesson from course
+  // Remove lesson from course (TODO: Implement when backend supports this)
   const removeLessonFromCourse = useCallback(async (
     courseId: string,
     lessonId: string
   ): Promise<InstructorCourse | null> => {
     try {
-      const course = await dataService.removeLessonFromCourse(courseId, lessonId);
-      if (course) {
-        dispatch({ type: 'SET_CURRENT_COURSE', payload: course });
-      }
-      return course;
+      // Backend doesn't support this operation yet - just delete the lesson
+      await lessonService.deleteLesson(lessonId);
+      return null;
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to remove lesson from course' });
       return null;
@@ -730,10 +960,15 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
     input: CreateLessonItemInput
   ): Promise<InstructorLessonItem | null> => {
     try {
-      const item = await dataService.createLessonItem({ ...input, lessonId });
-      if (item) {
-        dispatch({ type: 'ADD_LESSON_ITEM', payload: { courseId, lessonId, item } });
-      }
+      const rawItem = await lessonItemService.createLessonItem({
+        name: input.title,
+        content: input.content || '',
+        type: mapLessonItemTypeToBackend(input.type),
+        lessonId: lessonId,
+        durationInSeconds: input.durationInSeconds || 0,
+      });
+      const item = mapLessonItemToInstructor(rawItem);
+      dispatch({ type: 'ADD_LESSON_ITEM', payload: { courseId, lessonId, item } });
       return item;
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to create lesson item' });
@@ -749,10 +984,12 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
     input: UpdateLessonItemInput
   ): Promise<InstructorLessonItem | null> => {
     try {
-      const item = await dataService.updateLessonItem(itemId, input);
-      if (item) {
-        dispatch({ type: 'UPDATE_LESSON_ITEM', payload: { courseId, lessonId, item } });
-      }
+      const rawItem = await lessonItemService.updateLessonItem(itemId, {
+        name: input.title,
+        durationInSeconds: input.durationInSeconds || 0,
+      });
+      const item = mapLessonItemToInstructor(rawItem);
+      dispatch({ type: 'UPDATE_LESSON_ITEM', payload: { courseId, lessonId, item } });
       return item;
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to update lesson item' });
@@ -767,7 +1004,7 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
     itemId: string
   ): Promise<boolean> => {
     try {
-      const success = await dataService.deleteLessonItem(itemId);
+      const success = await lessonItemService.deleteLessonItem(itemId);
       if (success) {
         dispatch({ type: 'DELETE_LESSON_ITEM', payload: { courseId, lessonId, itemId } });
       }
@@ -778,29 +1015,29 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
     }
   }, []);
 
-  // Reorder lesson items
+  // Reorder lesson items (TODO: Implement when backend supports reordering)
   const reorderLessonItems = useCallback(async (
     courseId: string,
     lessonId: string,
     itemIds: string[]
   ): Promise<void> => {
     try {
-      const result = await dataService.reorderLessonItems(lessonId, itemIds);
-      const items = result?.items || [];
-      dispatch({ type: 'REORDER_LESSON_ITEMS', payload: { courseId, lessonId, items } });
+      // Backend doesn't support reordering yet
+      console.warn('reorderLessonItems: Backend does not support item reordering yet');
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to reorder lesson items' });
     }
   }, []);
 
   // ============================================
-  // Standalone Videos
+  // Standalone Videos (stored as LessonItems with type=video)
   // ============================================
 
   const loadVideos = useCallback(async () => {
     try {
-      const videos = await dataService.getVideos();
-      dispatch({ type: 'SET_VIDEOS', payload: videos });
+      // Videos are stored as lesson items - this is a placeholder
+      // In the real implementation, you would fetch lesson items with type=video
+      dispatch({ type: 'SET_VIDEOS', payload: [] });
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to load videos' });
     }
@@ -808,7 +1045,18 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
 
   const createVideo = useCallback(async (input: CreateVideoInput): Promise<VideoContent | null> => {
     try {
-      const video = await dataService.createVideo(input);
+      // Create video content locally - will be linked to lesson item
+      const video: VideoContent = {
+        id: `video-${Date.now()}`,
+        title: input.title,
+        description: input.description,
+        videoUrl: input.videoUrl,
+        duration: input.duration,
+        thumbnailUrl: input.thumbnailUrl,
+        instructorId: '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
       dispatch({ type: 'ADD_VIDEO', payload: video });
       return video;
     } catch (error) {
@@ -819,24 +1067,26 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
 
   const updateVideo = useCallback(async (id: string, input: UpdateVideoInput): Promise<VideoContent | null> => {
     try {
-      const video = await dataService.updateVideo(id, input);
-      if (video) {
-        dispatch({ type: 'UPDATE_VIDEO', payload: video });
-      }
+      // Update video content locally
+      const existingVideo = state.videos.find(v => v.id === id);
+      if (!existingVideo) return null;
+      const video: VideoContent = {
+        ...existingVideo,
+        ...input,
+        updatedAt: new Date().toISOString(),
+      };
+      dispatch({ type: 'UPDATE_VIDEO', payload: video });
       return video;
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to update video' });
       return null;
     }
-  }, []);
+  }, [state.videos]);
 
   const deleteVideo = useCallback(async (id: string): Promise<boolean> => {
     try {
-      const success = await dataService.deleteVideo(id);
-      if (success) {
-        dispatch({ type: 'DELETE_VIDEO', payload: id });
-      }
-      return success;
+      dispatch({ type: 'DELETE_VIDEO', payload: id });
+      return true;
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to delete video' });
       return false;
@@ -844,13 +1094,13 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
   }, []);
 
   // ============================================
-  // Standalone Rich Contents
+  // Standalone Rich Contents (stored as LessonItems with type=rich-content)
   // ============================================
 
   const loadRichContents = useCallback(async () => {
     try {
-      const contents = await dataService.getRichContents();
-      dispatch({ type: 'SET_RICH_CONTENTS', payload: contents });
+      // Rich contents are stored as lesson items - this is a placeholder
+      dispatch({ type: 'SET_RICH_CONTENTS', payload: [] });
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to load rich contents' });
     }
@@ -858,7 +1108,16 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
 
   const createRichContent = useCallback(async (input: CreateRichContentInput): Promise<RichContent | null> => {
     try {
-      const content = await dataService.createRichContent(input);
+      // Create rich content locally - will be linked to lesson item
+      const content: RichContent = {
+        id: `rich-${Date.now()}`,
+        title: input.title,
+        description: input.description,
+        htmlContent: input.htmlContent,
+        instructorId: '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
       dispatch({ type: 'ADD_RICH_CONTENT', payload: content });
       return content;
     } catch (error) {
@@ -869,24 +1128,25 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
 
   const updateRichContent = useCallback(async (id: string, input: UpdateRichContentInput): Promise<RichContent | null> => {
     try {
-      const content = await dataService.updateRichContent(id, input);
-      if (content) {
-        dispatch({ type: 'UPDATE_RICH_CONTENT', payload: content });
-      }
+      const existingContent = state.richContents.find(r => r.id === id);
+      if (!existingContent) return null;
+      const content: RichContent = {
+        ...existingContent,
+        ...input,
+        updatedAt: new Date().toISOString(),
+      };
+      dispatch({ type: 'UPDATE_RICH_CONTENT', payload: content });
       return content;
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to update rich content' });
       return null;
     }
-  }, []);
+  }, [state.richContents]);
 
   const deleteRichContent = useCallback(async (id: string): Promise<boolean> => {
     try {
-      const success = await dataService.deleteRichContent(id);
-      if (success) {
-        dispatch({ type: 'DELETE_RICH_CONTENT', payload: id });
-      }
-      return success;
+      dispatch({ type: 'DELETE_RICH_CONTENT', payload: id });
+      return true;
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to delete rich content' });
       return false;
@@ -894,13 +1154,13 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
   }, []);
 
   // ============================================
-  // Standalone Questions
+  // Standalone Questions (stored as LessonItems with type=question)
   // ============================================
 
   const loadQuestions = useCallback(async () => {
     try {
-      const questions = await dataService.getQuestions();
-      dispatch({ type: 'SET_QUESTIONS', payload: questions });
+      // Questions are stored as lesson items - this is a placeholder
+      dispatch({ type: 'SET_QUESTIONS', payload: [] });
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to load questions' });
     }
@@ -908,7 +1168,22 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
 
   const createQuestion = useCallback(async (input: CreateQuestionInput): Promise<QuestionWithAnswers | null> => {
     try {
-      const question = await dataService.createQuestion(input);
+      // Create question locally - will be linked to lesson item
+      const question: QuestionWithAnswers = {
+        id: `question-${Date.now()}`,
+        text: input.text,
+        description: input.description,
+        type: input.type || 'multiple-choice',
+        answers: input.answers.map((a, i) => ({
+          id: `answer-${Date.now()}-${i}`,
+          text: a.text,
+          isCorrect: a.isCorrect,
+          order: i + 1,
+        })),
+        instructorId: '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
       dispatch({ type: 'ADD_QUESTION', payload: question });
       return question;
     } catch (error) {
@@ -919,24 +1194,28 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
 
   const updateQuestion = useCallback(async (id: string, input: UpdateQuestionInput): Promise<QuestionWithAnswers | null> => {
     try {
-      const question = await dataService.updateQuestion(id, input);
-      if (question) {
-        dispatch({ type: 'UPDATE_QUESTION', payload: question });
-      }
+      const existingQuestion = state.questions.find(q => q.id === id);
+      if (!existingQuestion) return null;
+      const question: QuestionWithAnswers = {
+        ...existingQuestion,
+        text: input.text || existingQuestion.text,
+        description: input.description || existingQuestion.description,
+        type: input.type || existingQuestion.type,
+        answers: input.answers || existingQuestion.answers,
+        updatedAt: new Date().toISOString(),
+      };
+      dispatch({ type: 'UPDATE_QUESTION', payload: question });
       return question;
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to update question' });
       return null;
     }
-  }, []);
+  }, [state.questions]);
 
   const deleteQuestion = useCallback(async (id: string): Promise<boolean> => {
     try {
-      const success = await dataService.deleteQuestion(id);
-      if (success) {
-        dispatch({ type: 'DELETE_QUESTION', payload: id });
-      }
-      return success;
+      dispatch({ type: 'DELETE_QUESTION', payload: id });
+      return true;
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to delete question' });
       return false;
@@ -949,8 +1228,8 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
 
   const loadLessonItems = useCallback(async () => {
     try {
-      const items = await dataService.getLessonItems();
-      dispatch({ type: 'SET_LESSON_ITEMS', payload: items });
+      // Standalone lesson items are not directly supported - this is a placeholder
+      dispatch({ type: 'SET_LESSON_ITEMS', payload: [] });
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to load lesson items' });
     }
@@ -958,7 +1237,18 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
 
   const createStandaloneLessonItem = useCallback(async (input: CreateLessonItemInput): Promise<InstructorLessonItem | null> => {
     try {
-      const item = await dataService.createLessonItem(input);
+      if (!input.lessonId) {
+        dispatch({ type: 'SET_ERROR', payload: 'Lesson ID is required to create a lesson item' });
+        return null;
+      }
+      const rawItem = await lessonItemService.createLessonItem({
+        name: input.title,
+        content: input.content || '',
+        type: mapLessonItemTypeToBackend(input.type),
+        lessonId: input.lessonId,
+        durationInSeconds: input.durationInSeconds || 0,
+      });
+      const item = mapLessonItemToInstructor(rawItem);
       dispatch({ type: 'ADD_STANDALONE_LESSON_ITEM', payload: item });
       return item;
     } catch (error) {
@@ -969,10 +1259,12 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
 
   const updateStandaloneLessonItem = useCallback(async (id: string, input: UpdateLessonItemInput): Promise<InstructorLessonItem | null> => {
     try {
-      const item = await dataService.updateLessonItem(id, input);
-      if (item) {
-        dispatch({ type: 'UPDATE_STANDALONE_LESSON_ITEM', payload: item });
-      }
+      const rawItem = await lessonItemService.updateLessonItem(id, {
+        name: input.title,
+        durationInSeconds: input.durationInSeconds || 0,
+      });
+      const item = mapLessonItemToInstructor(rawItem);
+      dispatch({ type: 'UPDATE_STANDALONE_LESSON_ITEM', payload: item });
       return item;
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to update lesson item' });
@@ -982,7 +1274,7 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
 
   const deleteStandaloneLessonItem = useCallback(async (id: string): Promise<boolean> => {
     try {
-      const success = await dataService.deleteLessonItem(id);
+      const success = await lessonItemService.deleteLessonItem(id);
       if (success) {
         dispatch({ type: 'DELETE_STANDALONE_LESSON_ITEM', payload: id });
       }
@@ -999,8 +1291,8 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
 
   const loadLessons = useCallback(async () => {
     try {
-      const lessons = await dataService.getLessons();
-      dispatch({ type: 'SET_LESSONS', payload: lessons });
+      // Standalone lessons are not directly supported - this is a placeholder
+      dispatch({ type: 'SET_LESSONS', payload: [] });
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to load lessons' });
     }
@@ -1008,7 +1300,16 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
 
   const createStandaloneLesson = useCallback(async (input: CreateLessonInput): Promise<InstructorLesson | null> => {
     try {
-      const lesson = await dataService.createLesson(input);
+      if (!input.courseId) {
+        dispatch({ type: 'SET_ERROR', payload: 'Course ID is required to create a lesson' });
+        return null;
+      }
+      const rawLesson = await lessonService.createLesson({
+        title: input.title,
+        url: input.title.toLowerCase().replace(/\s+/g, '-'),
+        courseId: input.courseId,
+      });
+      const lesson = mapLessonToInstructor(rawLesson, []);
       dispatch({ type: 'ADD_STANDALONE_LESSON', payload: lesson });
       return lesson;
     } catch (error) {
@@ -1019,10 +1320,13 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
 
   const updateStandaloneLesson = useCallback(async (id: string, input: UpdateLessonInput): Promise<InstructorLesson | null> => {
     try {
-      const lesson = await dataService.updateLesson(id, input);
-      if (lesson) {
-        dispatch({ type: 'UPDATE_STANDALONE_LESSON', payload: lesson });
-      }
+      const rawLesson = await lessonService.updateLesson(id, {
+        title: input.title,
+      });
+      const rawItems = await lessonItemService.getItemsByLesson(id);
+      const items = rawItems.map(mapLessonItemToInstructor);
+      const lesson = mapLessonToInstructor(rawLesson, items);
+      dispatch({ type: 'UPDATE_STANDALONE_LESSON', payload: lesson });
       return lesson;
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to update lesson' });
@@ -1032,7 +1336,7 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
 
   const deleteStandaloneLesson = useCallback(async (id: string): Promise<boolean> => {
     try {
-      const success = await dataService.deleteLesson(id);
+      const success = await lessonService.deleteLesson(id);
       if (success) {
         dispatch({ type: 'DELETE_STANDALONE_LESSON', payload: id });
       }
@@ -1045,11 +1349,9 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
 
   const addItemsToLesson = useCallback(async (lessonId: string, itemIds: string[]): Promise<InstructorLesson | null> => {
     try {
-      const lesson = await dataService.addItemsToLesson(lessonId, itemIds);
-      if (lesson) {
-        dispatch({ type: 'UPDATE_STANDALONE_LESSON', payload: lesson });
-      }
-      return lesson;
+      // Backend doesn't support this operation directly - items are added via createLessonItem
+      console.warn('addItemsToLesson: Items should be created with createLessonItem');
+      return null;
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to add items to lesson' });
       return null;
@@ -1058,10 +1360,14 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
 
   const removeItemFromLesson = useCallback(async (lessonId: string, itemId: string): Promise<InstructorLesson | null> => {
     try {
-      const lesson = await dataService.removeItemFromLesson(lessonId, itemId);
-      if (lesson) {
-        dispatch({ type: 'UPDATE_STANDALONE_LESSON', payload: lesson });
-      }
+      // Remove item by deleting it
+      await lessonItemService.deleteLessonItem(itemId);
+      // Return updated lesson
+      const rawLesson = await lessonService.getLessonById(lessonId);
+      const rawItems = await lessonItemService.getItemsByLesson(lessonId);
+      const items = rawItems.map(mapLessonItemToInstructor);
+      const lesson = mapLessonToInstructor(rawLesson, items);
+      dispatch({ type: 'UPDATE_STANDALONE_LESSON', payload: lesson });
       return lesson;
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to remove item from lesson' });
@@ -1071,11 +1377,9 @@ export function InstructorProvider({ children }: { children: React.ReactNode }) 
 
   const reorderStandaloneLessonItems = useCallback(async (lessonId: string, itemIds: string[]): Promise<InstructorLesson | null> => {
     try {
-      const lesson = await dataService.reorderLessonItems(lessonId, itemIds);
-      if (lesson) {
-        dispatch({ type: 'UPDATE_STANDALONE_LESSON', payload: lesson });
-      }
-      return lesson;
+      // Backend doesn't support reordering yet
+      console.warn('reorderStandaloneLessonItems: Backend does not support item reordering yet');
+      return null;
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to reorder lesson items' });
       return null;

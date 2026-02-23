@@ -15,22 +15,40 @@ namespace TAIF.Infrastructure.Repositories
             _context = context;
         }
 
+        /// <summary>
+        /// Gets lessons assigned to a course via the CourseLesson junction table
+        /// </summary>
         public async Task<List<Lesson>> GetByCourseIdAsync(Guid courseId, bool withDeleted = false)
         {
-            return await FindNoTrackingAsync(((lesson) => lesson.CourseId.Equals(courseId)), withDeleted);
+            var query = _context.CourseLessons
+                .Where(cl => cl.CourseId == courseId && !cl.IsDeleted)
+                .Include(cl => cl.Lesson)
+                .OrderBy(cl => cl.Order)
+                .Select(cl => cl.Lesson);
+
+            if (!withDeleted)
+                query = query.Where(l => !l.IsDeleted);
+
+            return await query.ToListAsync();
         }
 
         /// <summary>
         /// Gets both total duration and lesson item count per course in a single query
+        /// Uses the M-M junction tables (CourseLesson and LessonLessonItem)
         /// </summary>
         public async Task<Dictionary<Guid, CourseStatisticsDTO>> GetCourseStatisticsAsync()
         {
-            return await _context.lessons
-                .Where(l => !l.IsDeleted)
+            // Join through junction tables: Course -> CourseLesson -> Lesson -> LessonLessonItem -> LessonItem
+            return await _context.CourseLessons
+                .Where(cl => !cl.IsDeleted)
+                .Join(_context.LessonLessonItems.Where(lli => !lli.IsDeleted),
+                    cl => cl.LessonId,
+                    lli => lli.LessonId,
+                    (cl, lli) => new { cl.CourseId, lli.LessonItemId })
                 .Join(_context.LessonItems.Where(li => !li.IsDeleted),
-                    lesson => lesson.Id,
-                    lessonItem => lessonItem.LessonId,
-                    (lesson, lessonItem) => new { lesson.CourseId, lessonItem.DurationInSeconds })
+                    x => x.LessonItemId,
+                    li => li.Id,
+                    (x, li) => new { x.CourseId, li.DurationInSeconds })
                 .GroupBy(x => x.CourseId)
                 .Select(g => new 
                 { 
@@ -49,12 +67,17 @@ namespace TAIF.Infrastructure.Repositories
 
         public async Task<CourseStatisticsDTO?> GetCourseStatisticsForSingleCourseAsync(Guid courseId)
         {
-            var result = await _context.lessons
-                .Where(l => !l.IsDeleted && l.CourseId == courseId)
+            // Join through junction tables for single course
+            var result = await _context.CourseLessons
+                .Where(cl => !cl.IsDeleted && cl.CourseId == courseId)
+                .Join(_context.LessonLessonItems.Where(lli => !lli.IsDeleted),
+                    cl => cl.LessonId,
+                    lli => lli.LessonId,
+                    (cl, lli) => new { cl.CourseId, lli.LessonItemId })
                 .Join(_context.LessonItems.Where(li => !li.IsDeleted),
-                    lesson => lesson.Id,
-                    lessonItem => lessonItem.LessonId,
-                    (lesson, lessonItem) => new { lesson.CourseId, lessonItem.DurationInSeconds })
+                    x => x.LessonItemId,
+                    li => li.Id,
+                    (x, li) => new { x.CourseId, li.DurationInSeconds })
                 .GroupBy(x => x.CourseId)
                 .Select(g => new 
                 { 
@@ -72,6 +95,21 @@ namespace TAIF.Infrastructure.Repositories
                 TotalDuration = result.TotalDuration,
                 TotalLessonItems = result.TotalLessonItems
             };
+        }
+
+        /// <summary>
+        /// Get lesson count per course using the junction table
+        /// </summary>
+        public async Task<Dictionary<Guid, int>> GetLessonCountPerCourseAsync()
+        {
+            return await _context.CourseLessons
+                .Where(cl => !cl.IsDeleted)
+                .Join(_context.lessons.Where(l => !l.IsDeleted),
+                    cl => cl.LessonId,
+                    l => l.Id,
+                    (cl, l) => cl.CourseId)
+                .GroupBy(courseId => courseId)
+                .ToDictionaryAsync(g => g.Key, g => g.Count());
         }
     }
 }

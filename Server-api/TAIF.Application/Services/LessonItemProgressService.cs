@@ -15,6 +15,7 @@ namespace TAIF.Application.Services
     {
         private readonly ILessonItemProgressRepository _lessonItemProgressRepository;
         private readonly ILessonItemService _lessonItemService;
+        private readonly ILessonItemRepository _lessonItemRepository;
         private readonly IQuizSubmissionService _quizSubmissionService;
         private readonly ILearningPathRepository _learningPathRepository;
         private readonly IEnrollmentRepository _enrollmentRepository;
@@ -23,7 +24,8 @@ namespace TAIF.Application.Services
 
         public LessonItemProgressService(
             ILessonItemProgressRepository repository, 
-            ILessonItemService lessonItemService, 
+            ILessonItemService lessonItemService,
+            ILessonItemRepository lessonItemRepository,
             IQuizSubmissionService quizSubmissionService,
             ILearningPathRepository learningPathRepository,
             IEnrollmentRepository enrollmentRepository,
@@ -32,6 +34,7 @@ namespace TAIF.Application.Services
         {
             _lessonItemProgressRepository = repository;
             _lessonItemService = lessonItemService;
+            _lessonItemRepository = lessonItemRepository;
             _quizSubmissionService = quizSubmissionService;
             _learningPathRepository = learningPathRepository;
             _enrollmentRepository = enrollmentRepository;
@@ -122,7 +125,8 @@ namespace TAIF.Application.Services
         
         public async Task<List<LessonItemResponse>> GetLessonItemsProgressAsync(Guid userId, Guid lessonId, bool withDeleted = false)
         {
-            var lessonItems = await _lessonItemService.FindNoTrackingAsync((x) => x.LessonId.Equals(lessonId) && (withDeleted || !x.IsDeleted));
+            // Use the repository method that works with the M-M junction table
+            var lessonItems = await _lessonItemRepository.GetByLessonIdAsync(lessonId, withDeleted);
             List<LessonItemProgress> lessonItemProgress = await _lessonItemProgressRepository.FindAsync((x) => x.UserId.Equals(userId) && x.LessonID.Equals(lessonId));
             var progressLookup = lessonItemProgress.ToDictionary(x => x.LessonItemId, x => x.IsCompleted);
             List<LessonItemResponse> lessonItemsResponse = lessonItems
@@ -133,7 +137,6 @@ namespace TAIF.Application.Services
                     Content = LessonItemService.SanitizeContent(li),
                     Type = li.Type,
                     DurationInSeconds = li.DurationInSeconds,
-                    Order = li.Order,
                     IsCompleted = progressLookup.TryGetValue(li.Id, out var completed) && completed
                 }).ToList();
             return lessonItemsResponse;

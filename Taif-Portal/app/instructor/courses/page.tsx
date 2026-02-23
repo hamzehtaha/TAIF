@@ -1,14 +1,12 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import Link from "next/link";
 import {
   Plus,
   Search,
   BookOpen,
   LayoutGrid,
   List,
-  Calendar,
   SortAsc,
 } from "lucide-react";
 import { InstructorLayout } from "@/components/instructor/layout";
@@ -33,40 +31,47 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCourseStore, useCategoryStore } from "@/stores/instructor";
-import { CourseCard } from "@/components/instructor/cards";
-import { CourseDialog } from "@/components/instructor/dialogs";
+import { tagService, Tag } from "@/services/tag.service";
 import { PuzzleLoader } from "@/components/PuzzleLoader";
-import { Course, CourseStatus, CreateCourseRequest, UpdateCourseRequest } from "@/lib/api/types";
-import { isAfter, subDays, subWeeks, subMonths } from "date-fns";
+import { Course } from "@/models/course.model";
+import { CreateCourseRequest, UpdateCourseRequest } from "@/dtos/course.dto";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
+import Link from "next/link";
 
 type ViewMode = "grid" | "list";
-type StatusFilter = CourseStatus | "all";
-type DateFilter = "all" | "today" | "week" | "month";
-type SortOption = "newest" | "oldest" | "name";
+type SortOption = "newest" | "oldest" | "title";
 
 export default function CoursesPage() {
   // Zustand stores
   const {
     courses,
     isLoading,
-    loadCourses,
+    loadMyCourses,
     createCourse,
     updateCourse,
     deleteCourse,
-    publishCourse,
-    unpublishCourse,
-    archiveCourse,
   } = useCourseStore();
   const { categories, loadCategories } = useCategoryStore();
 
   // UI State
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [dateFilter, setDateFilter] = useState<DateFilter>("all");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [allTags, setAllTags] = useState<Tag[]>([]);
 
   // Dialog State
   const [courseDialogOpen, setCourseDialogOpen] = useState(false);
@@ -74,11 +79,29 @@ export default function CoursesPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
 
+  // Course form state
+  const [formTitle, setFormTitle] = useState("");
+  const [formDescription, setFormDescription] = useState("");
+  const [formCategoryId, setFormCategoryId] = useState("");
+  const [formPhoto, setFormPhoto] = useState("");
+  const [formTags, setFormTags] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   // Load data on mount
   useEffect(() => {
-    loadCourses();
+    loadMyCourses();
     loadCategories();
-  }, [loadCourses, loadCategories]);
+    loadTags();
+  }, [loadMyCourses, loadCategories]);
+
+  const loadTags = async () => {
+    try {
+      const tags = await tagService.getAllTags();
+      setAllTags(tags);
+    } catch (error) {
+      console.error("Failed to load tags:", error);
+    }
+  };
 
   // Filtered and sorted courses
   const filteredCourses = useMemo(() => {
@@ -89,53 +112,49 @@ export default function CoursesPage() {
       const query = searchQuery.toLowerCase();
       result = result.filter(
         (c) =>
-          c.name.toLowerCase().includes(query) ||
+          c.title.toLowerCase().includes(query) ||
           c.description?.toLowerCase().includes(query)
       );
-    }
-
-    // Status filter
-    if (statusFilter !== "all") {
-      result = result.filter((c) => c.status === statusFilter);
-    }
-
-    // Date filter
-    if (dateFilter !== "all") {
-      const now = new Date();
-      let cutoffDate: Date;
-      switch (dateFilter) {
-        case "today": cutoffDate = subDays(now, 1); break;
-        case "week": cutoffDate = subWeeks(now, 1); break;
-        case "month": cutoffDate = subMonths(now, 1); break;
-        default: cutoffDate = new Date(0);
-      }
-      result = result.filter((c) => isAfter(new Date(c.createdAt), cutoffDate));
     }
 
     // Sort
     switch (sortBy) {
       case "newest":
-        result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        result.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
         break;
       case "oldest":
-        result.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        result.sort((a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime());
         break;
-      case "name":
-        result.sort((a, b) => a.name.localeCompare(b.name));
+      case "title":
+        result.sort((a, b) => a.title.localeCompare(b.title));
         break;
     }
 
     return result;
-  }, [courses, searchQuery, statusFilter, dateFilter, sortBy]);
+  }, [courses, searchQuery, sortBy]);
 
   // Handlers
+  const resetForm = () => {
+    setFormTitle("");
+    setFormDescription("");
+    setFormCategoryId("");
+    setFormPhoto("");
+    setFormTags([]);
+  };
+
   const handleOpenCreate = () => {
     setEditingCourse(null);
+    resetForm();
     setCourseDialogOpen(true);
   };
 
   const handleOpenEdit = (course: Course) => {
     setEditingCourse(course);
+    setFormTitle(course.title);
+    setFormDescription(course.description || "");
+    setFormCategoryId(course.categoryId);
+    setFormPhoto(course.thumbnail || "");
+    setFormTags(course.tags || []);
     setCourseDialogOpen(true);
   };
 
@@ -152,25 +171,44 @@ export default function CoursesPage() {
     }
   };
 
-  const handleCourseSubmit = async (data: CreateCourseRequest | UpdateCourseRequest) => {
-    if (editingCourse) {
-      await updateCourse(editingCourse.id, data as UpdateCourseRequest);
-    } else {
-      await createCourse(data as CreateCourseRequest);
+  const handleCourseSubmit = async () => {
+    if (!formTitle.trim() || !formCategoryId) return;
+    
+    setIsSubmitting(true);
+    try {
+      if (editingCourse) {
+        await updateCourse(editingCourse.id, {
+          name: formTitle,
+          description: formDescription,
+          photo: formPhoto,
+          tags: formTags,
+        });
+      } else {
+        await createCourse({
+          name: formTitle,
+          description: formDescription,
+          photo: formPhoto,
+          categoryId: formCategoryId,
+          tags: formTags,
+        });
+      }
+      setCourseDialogOpen(false);
+      resetForm();
+    } catch (error) {
+      console.error("Failed to save course:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handlePublish = async (courseId: string) => {
-    await publishCourse(courseId);
+  const toggleFormTag = (tagId: string) => {
+    setFormTags(prev => 
+      prev.includes(tagId) 
+        ? prev.filter(id => id !== tagId)
+        : [...prev, tagId]
+    );
   };
 
-  const handleUnpublish = async (courseId: string) => {
-    await unpublishCourse(courseId);
-  };
-
-  const handleArchive = async (courseId: string) => {
-    await archiveCourse(courseId);
-  };
 
   return (
     <InstructorLayout breadcrumbs={[{ label: "Courses" }]}>
@@ -192,45 +230,22 @@ export default function CoursesPage() {
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search by name..."
+              placeholder="Search courses..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
             />
           </div>
           <div className="flex flex-wrap gap-2">
-            <Select value={statusFilter} onValueChange={(v: StatusFilter) => setStatusFilter(v)}>
-              <SelectTrigger className="w-[130px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value={CourseStatus.Published}>Published</SelectItem>
-                <SelectItem value={CourseStatus.Draft}>Draft</SelectItem>
-                <SelectItem value={CourseStatus.Archived}>Archived</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={dateFilter} onValueChange={(v: DateFilter) => setDateFilter(v)}>
-              <SelectTrigger className="w-[130px]">
-                <Calendar className="mr-2 h-4 w-4" />
-                <SelectValue placeholder="Date" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Time</SelectItem>
-                <SelectItem value="today">Today</SelectItem>
-                <SelectItem value="week">This Week</SelectItem>
-                <SelectItem value="month">This Month</SelectItem>
-              </SelectContent>
-            </Select>
             <Select value={sortBy} onValueChange={(v: SortOption) => setSortBy(v)}>
-              <SelectTrigger className="w-[120px]">
+              <SelectTrigger className="w-[140px]">
                 <SortAsc className="mr-2 h-4 w-4" />
                 <SelectValue placeholder="Sort" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="newest">Newest</SelectItem>
-                <SelectItem value="oldest">Oldest</SelectItem>
-                <SelectItem value="name">Name A-Z</SelectItem>
+                <SelectItem value="newest">Newest First</SelectItem>
+                <SelectItem value="oldest">Oldest First</SelectItem>
+                <SelectItem value="title">Title A-Z</SelectItem>
               </SelectContent>
             </Select>
             <div className="flex border rounded-md">
@@ -255,35 +270,18 @@ export default function CoursesPage() {
         </div>
 
         {/* Active Filters */}
-        {(statusFilter !== "all" || dateFilter !== "all" || searchQuery) && (
+        {searchQuery && (
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-sm text-muted-foreground">Filters:</span>
-            {searchQuery && (
-              <Badge variant="secondary" className="gap-1">
-                Search: {searchQuery}
-                <button onClick={() => setSearchQuery("")} className="ml-1 hover:text-destructive">×</button>
-              </Badge>
-            )}
-            {statusFilter !== "all" && (
-              <Badge variant="secondary" className="gap-1">
-                {statusFilter}
-                <button onClick={() => setStatusFilter("all")} className="ml-1 hover:text-destructive">×</button>
-              </Badge>
-            )}
-            {dateFilter !== "all" && (
-              <Badge variant="secondary" className="gap-1">
-                {dateFilter === "today" ? "Today" : dateFilter === "week" ? "This Week" : "This Month"}
-                <button onClick={() => setDateFilter("all")} className="ml-1 hover:text-destructive">×</button>
-              </Badge>
-            )}
-            <Button variant="ghost" size="sm" onClick={() => { setSearchQuery(""); setStatusFilter("all"); setDateFilter("all"); }}>
-              Clear All
-            </Button>
+            <Badge variant="secondary" className="gap-1">
+              Search: {searchQuery}
+              <button onClick={() => setSearchQuery("")} className="ml-1 hover:text-destructive">×</button>
+            </Badge>
           </div>
         )}
 
         {/* Course Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card>
             <CardContent className="p-4 text-center">
               <p className="text-2xl font-bold">{courses.length}</p>
@@ -293,25 +291,9 @@ export default function CoursesPage() {
           <Card>
             <CardContent className="p-4 text-center">
               <p className="text-2xl font-bold text-primary">
-                {courses.filter((c) => c.status === CourseStatus.Published).length}
+                {courses.reduce((sum, c) => sum + (c.totalEnrolled || 0), 0)}
               </p>
-              <p className="text-sm text-muted-foreground">Published</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold text-warning">
-                {courses.filter((c) => c.status === CourseStatus.Draft).length}
-              </p>
-              <p className="text-sm text-muted-foreground">Drafts</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold text-muted-foreground">
-                {courses.filter((c) => c.status === CourseStatus.Archived).length}
-              </p>
-              <p className="text-sm text-muted-foreground">Archived</p>
+              <p className="text-sm text-muted-foreground">Total Enrollments</p>
             </CardContent>
           </Card>
         </div>
@@ -333,16 +315,48 @@ export default function CoursesPage() {
             )}
           >
             {filteredCourses.map((course) => (
-              <CourseCard
-                key={course.id}
-                course={course}
-                viewMode={viewMode}
-                onEdit={() => handleOpenEdit(course)}
-                onDelete={() => handleDeleteClick(course)}
-                onPublish={() => handlePublish(course.id)}
-                onUnpublish={() => handleUnpublish(course.id)}
-                onArchive={() => handleArchive(course.id)}
-              />
+              <Card key={course.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                <Link href={`/instructor/courses/${course.id}`}>
+                  <div className="relative h-40 bg-muted">
+                    {course.thumbnail ? (
+                      <Image
+                        src={course.thumbnail}
+                        alt={course.title}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <BookOpen className="h-12 w-12 text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                </Link>
+                <CardContent className="p-4">
+                  <Link href={`/instructor/courses/${course.id}`}>
+                    <h3 className="font-semibold hover:text-primary transition-colors line-clamp-1">
+                      {course.title}
+                    </h3>
+                  </Link>
+                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                    {course.description || "No description"}
+                  </p>
+                  <div className="flex items-center justify-between mt-3">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <BookOpen className="h-4 w-4" />
+                      <span>{course.lessons?.length || 0} lessons</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => handleOpenEdit(course)}>
+                        Edit
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => handleDeleteClick(course)}>
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         ) : !isLoading && (
@@ -350,14 +364,14 @@ export default function CoursesPage() {
             <CardContent className="p-12 text-center">
               <BookOpen className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
               <h3 className="text-lg font-semibold mb-2">
-                {searchQuery || statusFilter !== "all" ? "No courses found" : "No courses yet"}
+                {searchQuery ? "No courses found" : "No courses yet"}
               </h3>
               <p className="text-muted-foreground mb-6">
-                {searchQuery || statusFilter !== "all"
-                  ? "Try adjusting your search or filter criteria"
+                {searchQuery
+                  ? "Try adjusting your search criteria"
                   : "Create your first course to start teaching"}
               </p>
-              {!searchQuery && statusFilter === "all" && (
+              {!searchQuery && (
                 <Button onClick={handleOpenCreate}>
                   <Plus className="mr-2 h-4 w-4" />
                   Create Course
@@ -369,14 +383,111 @@ export default function CoursesPage() {
       </div>
 
       {/* Course Create/Edit Dialog */}
-      <CourseDialog
-        open={courseDialogOpen}
-        onOpenChange={setCourseDialogOpen}
-        course={editingCourse}
-        categories={categories}
-        onSubmit={handleCourseSubmit}
-        isLoading={isLoading}
-      />
+      <Dialog open={courseDialogOpen} onOpenChange={(open) => {
+        if (!open) resetForm();
+        setCourseDialogOpen(open);
+      }}>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingCourse ? "Edit Course" : "Create New Course"}</DialogTitle>
+            <DialogDescription>
+              {editingCourse ? "Update your course details" : "Fill in the details to create a new course"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="course-title">Title *</Label>
+              <Input
+                id="course-title"
+                placeholder="Enter course title..."
+                value={formTitle}
+                onChange={(e) => setFormTitle(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="course-description">Description</Label>
+              <Textarea
+                id="course-description"
+                placeholder="Describe your course..."
+                value={formDescription}
+                onChange={(e) => setFormDescription(e.target.value)}
+                className="min-h-24"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="course-category">Category *</Label>
+              <Select value={formCategoryId} onValueChange={setFormCategoryId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="course-photo">Thumbnail URL</Label>
+              <Input
+                id="course-photo"
+                placeholder="https://example.com/image.jpg"
+                value={formPhoto}
+                onChange={(e) => setFormPhoto(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Tags</Label>
+              <ScrollArea className="h-32 border rounded-md p-2">
+                <div className="space-y-2">
+                  {allTags.length > 0 ? (
+                    allTags.map((tag) => (
+                      <div
+                        key={tag.id}
+                        className={cn(
+                          "flex items-center gap-2 p-2 rounded cursor-pointer transition-colors",
+                          formTags.includes(tag.id)
+                            ? "bg-primary/10"
+                            : "hover:bg-muted"
+                        )}
+                        onClick={() => toggleFormTag(tag.id)}
+                      >
+                        <Checkbox
+                          checked={formTags.includes(tag.id)}
+                          onCheckedChange={() => toggleFormTag(tag.id)}
+                        />
+                        <span className="text-sm">{tag.name}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center py-2">
+                      No tags available
+                    </p>
+                  )}
+                </div>
+              </ScrollArea>
+              {formTags.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {formTags.length} tag(s) selected
+                </p>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCourseDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleCourseSubmit}
+              disabled={!formTitle.trim() || !formCategoryId || isSubmitting}
+            >
+              {isSubmitting ? "Saving..." : editingCourse ? "Save Changes" : "Create Course"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -384,7 +495,7 @@ export default function CoursesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Course</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete &quot;{courseToDelete?.name}&quot;? This action cannot be undone.
+              Are you sure you want to delete &quot;{courseToDelete?.title}&quot;? This action cannot be undone.
               All lessons and content within this course will be permanently deleted.
             </AlertDialogDescription>
           </AlertDialogHeader>

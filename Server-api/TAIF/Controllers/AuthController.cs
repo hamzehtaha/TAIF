@@ -25,10 +25,15 @@ namespace TAIF.API.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterRequest request)
         {
-            var result = await _authService.RegisterAsync(
-                request
-            );
-            return Ok(result);
+            var result = await _authService.RegisterAsync(request);
+            return Ok(ApiResponse<AuthResponse>.SuccessResponse(result));
+        }
+
+        [HttpPost("register/instructor")]
+        public async Task<IActionResult> RegisterInstructor(RegisterInstructorRequest request)
+        {
+            var result = await _authService.RegisterInstructorAsync(request);
+            return Ok(ApiResponse<AuthResponse>.SuccessResponse(result));
         }
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginRequest request)
@@ -65,24 +70,29 @@ namespace TAIF.API.Controllers
             {
                 return Unauthorized("Invalid UserId format");
             }
-            // 2️ Load user
-            var user = await _userService.GetByIdAsync(userId);
+            // 2️ Load user with organization
+            var user = await _userService.GetByIdWithOrganizationAsync(userId);
 
             if (user == null)
             {
                 return NotFound("User not found");
             }
-            UserResponse userResponse = new UserResponse();
-            userResponse.Id = user.Id;
-            userResponse.Email = user.Email;
-            userResponse.FirstName = user.FirstName;
-            userResponse.LastName = user.LastName;
-            userResponse.Birthday = user.Birthday;
-            userResponse.IsActive = user.IsActive;
-            userResponse.UserRoleType = user.UserRoleType;
-            userResponse.CreatedAt = user.CreatedAt;
-            userResponse.UpdatedAt = user.UpdatedAt;
-            userResponse.IsCompleted = user.IsCompleted;
+            UserResponse userResponse = new UserResponse
+            {
+                Id = user.Id,
+                Email = user.Email,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Birthday = user.Birthday,
+                IsActive = user.IsActive,
+                Role = user.Role,
+                UserRoleType = user.Role,
+                OrganizationId = user.OrganizationId,
+                OrganizationName = user.Organization?.Name,
+                CreatedAt = user.CreatedAt,
+                UpdatedAt = user.UpdatedAt,
+                IsCompleted = user.IsCompleted
+            };
             return Ok(ApiResponse<UserResponse>.SuccessResponse(userResponse));
         }
     }

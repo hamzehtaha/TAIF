@@ -27,7 +27,6 @@ namespace TAIF.Application.Services
                     Content = SanitizeContent(li),
                     Type = li.Type,
                     DurationInSeconds = li.DurationInSeconds,
-                    Order = li.Order
                 }).ToList();
             return lessonItemsResponse;
         }

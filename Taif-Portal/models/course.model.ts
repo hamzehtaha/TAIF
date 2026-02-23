@@ -12,10 +12,14 @@ export interface Course {
   isEnrolled?: boolean;
   isFavourite?: boolean;
   isRecommended?: boolean;
+  isCompleted?: boolean;
   lessons?: Lesson[];
   rating?: number;
   reviewCount?: number;
   durationInMinutes?: number;
   progress?: number;
   totalEnrolled?: number;
+  tags?: string[];
+  createdAt?: string;
+  updatedAt?: string;
 }

@@ -13,10 +13,11 @@ export class EnrollmentMapper {
             isFavourite: dto.isFavourite,
             lastLessonItemId: dto.lastLessonItemId,
             completedDurationInSeconds: dto.completedDurationInSeconds,
+            isCompleted: dto.isCompleted ?? false,
+            completedAt: dto.completedAt,
             createdAt: dto.createdAt,
             updatedAt: dto.updatedAt,
             isDeleted: dto.isDeleted
-
         };
     }
 }

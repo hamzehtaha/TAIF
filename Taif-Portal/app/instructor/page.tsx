@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   BookOpen,
@@ -20,50 +20,88 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useInstructor } from "@/contexts/InstructorContext";
+import { instructorProfileService, InstructorProfileResponse } from "@/services/instructor-profile.service";
 import { formatDistanceToNow } from "date-fns";
 
+interface DashboardStats {
+  totalCourses: number;
+  publishedCourses: number;
+  draftCourses: number;
+  totalStudents: number;
+  averageRating: number;
+  totalReviews: number;
+  recentActivity: Array<{
+    id: string;
+    type: string;
+    message: string;
+    timestamp: string;
+  }>;
+}
+
+interface DashboardCourse {
+  id: string;
+  title: string;
+  status: string;
+  stats: {
+    totalStudents: number;
+    averageRating: number;
+    totalLessons: number;
+    completionRate: number;
+  };
+}
+
 export default function InstructorDashboard() {
-  const {
-    instructor,
-    courses,
-    dashboardStats,
-    loadCourses,
-    loadDashboardStats,
-    isLoading,
-  } = useInstructor();
+  const [instructor, setInstructor] = useState<InstructorProfileResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Mock data for dashboard (will be replaced with real API later)
+  const dashboardStats: DashboardStats = {
+    totalCourses: 0,
+    publishedCourses: 0,
+    draftCourses: 0,
+    totalStudents: 0,
+    averageRating: 0,
+    totalReviews: 0,
+    recentActivity: [],
+  };
+
+  const courses: DashboardCourse[] = [];
 
   useEffect(() => {
-    loadCourses();
-    loadDashboardStats();
-  }, [loadCourses, loadDashboardStats]);
+    const loadData = async () => {
+      try {
+        setIsLoading(true);
+        const profile = await instructorProfileService.getCurrentProfile();
+        setInstructor(profile);
+      } catch (error) {
+        console.error("Failed to load instructor profile:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
 
   const stats = [
     {
       title: "Total Courses",
-      value: dashboardStats?.totalCourses || 0,
-      subtitle: `${dashboardStats?.publishedCourses || 0} published, ${dashboardStats?.draftCourses || 0} drafts`,
+      value: instructor?.coursesCount || 0,
+      subtitle: "Your created courses",
       icon: BookOpen,
       color: "bg-primary",
     },
     {
-      title: "Total Students",
-      value: dashboardStats?.totalStudents || 0,
-      subtitle: "Enrolled across all courses",
-      icon: Users,
-      color: "bg-secondary",
-    },
-    {
       title: "Average Rating",
-      value: dashboardStats?.averageRating?.toFixed(1) || "0.0",
-      subtitle: `From ${dashboardStats?.totalReviews || 0} reviews`,
+      value: instructor?.rating?.toFixed(1) || "0.0",
+      subtitle: "Based on student reviews",
       icon: Star,
       color: "bg-warning",
     },
     {
-      title: "Completion Rate",
-      value: "67%",
-      subtitle: "Average across courses",
+      title: "Years of Experience",
+      value: instructor?.yearsOfExperience || 0,
+      subtitle: "Teaching experience",
       icon: TrendingUp,
       color: "bg-accent",
     },
@@ -108,7 +146,7 @@ export default function InstructorDashboard() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {stats.map((stat, index) => {
             const Icon = stat.icon;
             return (

@@ -57,6 +57,12 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 
+// Organization context - request scoped
+builder.Services.AddScoped<TAIF.Application.Interfaces.IOrganizationContext, TAIF.Application.Services.OrganizationContext>();
+
+// Tenant provider for automatic multi-tenancy filtering in DbContext
+builder.Services.AddScoped<TAIF.Application.Interfaces.ITenantProvider, TAIF.Application.Services.TenantProvider>();
+
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<ICourseRepository, CourseRepository>();
 builder.Services.AddScoped<ILessonRepository, LessonRepository>();
@@ -117,6 +123,22 @@ builder.Services.AddScoped<IEvaluationAnswerService, EvaluationAnswerService>();
 builder.Services.AddScoped<IUserEvaluationRepository, UserEvaluationRepository>();
 builder.Services.AddScoped<IUserEvaluationService, UserEvaluationService>();
 
+// New M-M relationship repositories and services
+builder.Services.AddScoped<ICourseLessonRepository, CourseLessonRepository>();
+builder.Services.AddScoped<ICourseLessonService, CourseLessonService>();
+
+builder.Services.AddScoped<ILessonLessonItemRepository, LessonLessonItemRepository>();
+builder.Services.AddScoped<ILessonLessonItemService, LessonLessonItemService>();
+
+// Content type repositories and services
+builder.Services.AddScoped<IVideoRepository, VideoRepository>();
+builder.Services.AddScoped<IVideoService, VideoService>();
+
+builder.Services.AddScoped<IRichContentRepository, RichContentRepository>();
+builder.Services.AddScoped<IRichContentService, RichContentService>();
+
+builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
+builder.Services.AddScoped<IQuestionService, QuestionService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -167,25 +189,62 @@ builder.Services.AddAuthentication("Bearer")
 
 builder.Services.AddAuthorization(options =>
 {
-    // Admin Only Policy
+    // SuperAdmin Only Policy (Role=0) - Can access all portals
+    options.AddPolicy("SuperAdminOnly", policy =>
+        policy.RequireAssertion(context =>
+            context.User.FindFirst("Role")?.Value == "0"));
+
+    // Admin or SuperAdmin (Role=0 or 1)
+    options.AddPolicy("AdminOrAbove", policy =>
+        policy.RequireAssertion(context =>
+        {
+            var roleValue = context.User.FindFirst("Role")?.Value;
+            return roleValue == "0" || roleValue == "1";
+        }));
+
+    // ContentCreator or above (Role=0, 1, or 2) - For content management
+    options.AddPolicy("ContentCreatorOrAbove", policy =>
+        policy.RequireAssertion(context =>
+        {
+            var roleValue = context.User.FindFirst("Role")?.Value;
+            return roleValue == "0" || roleValue == "1" || roleValue == "2";
+        }));
+
+    // Legacy policies for backward compatibility (map to new roles)
+    options.AddPolicy("SystemAdminOnly", policy =>
+        policy.RequireAssertion(context =>
+            context.User.FindFirst("Role")?.Value == "0"));
+
+    options.AddPolicy("OrgAdminOrAbove", policy =>
+        policy.RequireAssertion(context =>
+        {
+            var roleValue = context.User.FindFirst("Role")?.Value;
+            return roleValue == "0" || roleValue == "1";
+        }));
+
+    options.AddPolicy("InstructorOrAbove", policy =>
+        policy.RequireAssertion(context =>
+        {
+            var roleValue = context.User.FindFirst("Role")?.Value;
+            return roleValue == "0" || roleValue == "1" || roleValue == "2";
+        }));
+
     options.AddPolicy("AdminOnly", policy =>
         policy.RequireAssertion(context =>
-            context.User.FindFirst("UserRoleType")?.Value == "0"));
+            context.User.FindFirst("Role")?.Value == "0"));
 
-    // Instructor, Company, or Admin
     options.AddPolicy("InstructorOrCompanyOrAdmin", policy =>
         policy.RequireAssertion(context =>
         {
-            var roleValue = context.User.FindFirst("UserRoleType")?.Value;
-            return roleValue == "1" || roleValue == "2" || roleValue == "0";
+            var roleValue = context.User.FindFirst("Role")?.Value;
+            return roleValue == "0" || roleValue == "1" || roleValue == "2";
         }));
 
-    // Instructor Only (but Admin can also do it)
     options.AddPolicy("InstructorOrAdmin", policy =>
         policy.RequireAssertion(context =>
         {
-            var roleValue = context.User.FindFirst("UserRoleType")?.Value;
-            return roleValue == "1" || roleValue == "0";
+            var roleValue = context.User.FindFirst("Role")?.Value;
+            return roleValue == "0" || roleValue == "1" || roleValue == "2";
         }));
 });
 
@@ -214,12 +273,12 @@ if (args.Length >= 2 && args[0].Equals("seed", StringComparison.OrdinalIgnoreCas
     
     if (entityName == "all")
     {
-        // Order seeders correctly
+        // Order seeders correctly - Organization MUST be first
         var orderedSeeders = allSeeders
             .OrderBy(s => s.GetType().Name switch
             {
-                "UserSeeder" => 0,                  // First: seed users
-                "OrganizationSeeder" => 1,          // Second: seed organizations
+                "OrganizationSeeder" => 0,          // First: seed organizations (required for user assignment)
+                "UserSeeder" => 1,                  // Second: seed users (with OrganizationId)
                 "InstructorProfileSeeder" => 2,     // Third: seed instructor profiles
                 "RecommendationSeeder" => 3,        // Fourth: seed interests & tags
                 "CourseSeeder" => 4,                // Fifth: seed courses (uses users + tags)
@@ -313,6 +372,8 @@ app.Use(async (context, next) =>
 app.UseMiddleware<ExceptionMiddleware>();
 
 app.UseAuthentication();
+app.UseMiddleware<OrganizationContextMiddleware>();
+app.UseMiddleware<OrganizationScopingMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();

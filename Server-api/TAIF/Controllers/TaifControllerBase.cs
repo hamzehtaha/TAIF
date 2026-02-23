@@ -24,20 +24,52 @@ namespace TAIF.API.Controllers
                 return userId;
             }
         }
-        protected UserRoleType UserRoleType
+
+        protected UserRoleType Role
         {
             get
             {
-                var value = User.FindFirstValue("UserRoleType");
+                var value = User.FindFirstValue("Role");
 
                 if (string.IsNullOrEmpty(value))
-                    throw new UnauthorizedAccessException("UserRoleType claim missing");
+                    throw new UnauthorizedAccessException("Role claim missing");
 
-                if (!Enum.TryParse<UserRoleType>(value, out var userRoleType))
-                    throw new UnauthorizedAccessException($"Invalid UserRoleType claim: {value}");
+                if (int.TryParse(value, out var roleInt))
+                    return (UserRoleType)roleInt;
 
-                return userRoleType;
+                if (Enum.TryParse<UserRoleType>(value, out var role))
+                    return role;
+
+                throw new UnauthorizedAccessException($"Invalid Role claim: {value}");
             }
         }
+
+        protected Guid? OrganizationId
+        {
+            get
+            {
+                var value = User.FindFirstValue("OrganizationId");
+                
+                if (string.IsNullOrEmpty(value))
+                    return null;
+
+                if (Guid.TryParse(value, out var orgId))
+                    return orgId;
+
+                return null;
+            }
+        }
+
+        protected bool IsSuperAdmin => Role == UserRoleType.SuperAdmin;
+        protected bool IsAdmin => Role == UserRoleType.Admin;
+        protected bool IsContentCreator => Role == UserRoleType.ContentCreator;
+        protected bool IsStudent => Role == UserRoleType.Student;
+        
+        // Legacy aliases for backward compatibility
+        protected bool IsSystemAdmin => IsSuperAdmin;
+        protected bool IsOrgAdmin => IsAdmin;
+        protected bool IsInstructor => IsContentCreator;
+
+        protected UserRoleType UserRoleType => Role;
     }
 }

@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { authService } from "@/services/auth.service";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { interestService } from "@/services/interest.service";
+import { UserRole } from "@/enums/user-role.enum";
 
 export default function Login() {
   const t = useTranslation();
@@ -41,6 +42,16 @@ export default function Login() {
         email: formData.email,
         password: formData.password,
       });
+
+      // Check user role and redirect accordingly
+      const user = authService.getUser();
+      if (user?.role === UserRole.Instructor || user?.role === UserRole.OrgAdmin || user?.role === UserRole.SystemAdmin) {
+        // Redirect instructors/admins to instructor portal
+        router.push("/instructor");
+        return;
+      }
+
+      // Student flow
       if (!(await interestService.hasInterests())) {
         router.push("/dashboard/interests");
       } else {
@@ -180,6 +191,17 @@ export default function Login() {
                     className="text-primary font-semibold hover:underline"
                   >
                     {t.auth.signin.signup}
+                  </Link>
+                </p>
+
+                {/* Instructor Login Link */}
+                <p className="text-center text-sm text-muted-foreground">
+                  Are you an instructor?{" "}
+                  <Link
+                    href="/instructor/login"
+                    className="text-primary font-semibold hover:underline"
+                  >
+                    Instructor Login
                   </Link>
                 </p>
               </form>

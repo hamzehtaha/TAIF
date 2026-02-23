@@ -29,17 +29,14 @@ export interface PaginationFilter {
 // API Configuration
 const API_CONFIG = {
   baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
-  useMock: process.env.NEXT_PUBLIC_USE_MOCK === 'true' || true, // Default to mock for development
   timeout: 10000,
 };
 
 class ApiClient {
   private baseUrl: string;
-  private useMock: boolean;
 
   constructor() {
     this.baseUrl = API_CONFIG.baseUrl;
-    this.useMock = API_CONFIG.useMock;
   }
 
   private async getHeaders(): Promise<HeadersInit> {
@@ -121,9 +118,6 @@ class ApiClient {
     return data as ApiResponse<T>;
   }
 
-  isMockMode(): boolean {
-    return this.useMock;
-  }
 }
 
 export const apiClient = new ApiClient();

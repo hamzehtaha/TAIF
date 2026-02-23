@@ -336,6 +336,17 @@ export default function SignUp() {
                     {t.auth.signup.signin}
                   </Link>
                 </p>
+
+                {/* Instructor Sign Up Link */}
+                <p className="text-center text-sm text-muted-foreground">
+                  Want to teach?{" "}
+                  <Link
+                    href="/instructor/signup"
+                    className="text-primary font-semibold hover:underline"
+                  >
+                    Become an Instructor
+                  </Link>
+                </p>
               </form>
             </CardContent>
           </Card>

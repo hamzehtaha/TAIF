@@ -4,7 +4,7 @@ namespace TAIF.Domain.Entities
     /// Many-to-many mapping between Interest and Tag with a relevance weight.
     /// The weight (0-1) indicates how strongly a tag relates to an interest.
     /// </summary>
-    public class InterestTagMapping : Base
+    public class InterestTagMapping : OrganizationBase
     {
         public Guid InterestId { get; set; }
         public Interest Interest { get; set; } = null!;

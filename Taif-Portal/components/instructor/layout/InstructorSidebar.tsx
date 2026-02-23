@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
   BookOpen,
@@ -33,7 +34,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { useInstructor } from "@/contexts/InstructorContext";
+import { instructorProfileService, InstructorProfileResponse } from "@/services/instructor-profile.service";
 
 const mainNavItems = [
   {
@@ -94,9 +95,22 @@ const settingsNavItems = [
 
 export function InstructorSidebar() {
   const pathname = usePathname();
-  const { instructor } = useInstructor();
+  const [instructor, setInstructor] = useState<InstructorProfileResponse | null>(null);
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
+
+  useEffect(() => {
+    const loadInstructor = async () => {
+      try {
+        const profile = await instructorProfileService.getCurrentProfile();
+        setInstructor(profile);
+      } catch (error) {
+        console.error("Failed to load instructor profile:", error);
+      }
+    };
+
+    loadInstructor();
+  }, []);
 
   const isActive = (href: string) => {
     if (href === "/instructor") {
@@ -223,7 +237,6 @@ export function InstructorSidebar() {
               isCollapsed && "justify-center"
             )}>
               <Avatar className="h-8 w-8">
-                <AvatarImage src={instructor.avatar} alt={instructor.firstName} />
                 <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                   {instructor.firstName?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'IN'}
                 </AvatarFallback>
@@ -231,7 +244,7 @@ export function InstructorSidebar() {
               {!isCollapsed && (
                 <div className="flex-1 overflow-hidden">
                   <p className="truncate text-sm font-medium">
-                    {instructor.firstName}
+                    {instructor.firstName} {instructor.lastName}
                   </p>
                   <p className="truncate text-xs text-muted-foreground">
                     {instructor.email}

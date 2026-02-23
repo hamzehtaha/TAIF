@@ -64,6 +64,7 @@ namespace TAIF.Infrastructure.Repositories
                 {
                     query = orderByDescending ? query.OrderByDescending(orderBy) : query.OrderBy(orderBy);
                 }
+                var sql = query.ToQueryString();
                 return await query.ToListAsync();
             }
             catch (Exception ex)

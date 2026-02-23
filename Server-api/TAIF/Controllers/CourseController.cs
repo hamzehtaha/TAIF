@@ -79,8 +79,26 @@ namespace TAIF.Controllers
             return Ok(ApiResponse<List<Course>>.SuccessResponse(courses));
         }
 
+        [HttpGet("my-courses")]
+        [Authorize(Policy = "ContentCreatorOrAbove")]
+        public async Task<IActionResult> GetMyCourses()
+        {
+            var courses = await _courseService.GetByUserIdAsync(this.UserId);
+            if (courses is null) return NotFound();
+            return Ok(ApiResponse<List<Course>>.SuccessResponse(courses));
+        }
+
+        [HttpGet("my-courses/count")]
+        [Authorize(Policy = "ContentCreatorOrAbove")]
+        public async Task<IActionResult> GetMyCoursesCount()
+        {
+            var courses = await _courseService.GetByUserIdAsync(this.UserId);
+            var count = courses?.Count ?? 0;
+            return Ok(ApiResponse<int>.SuccessResponse(count));
+        }
+
         [HttpPost("")]
-        [Authorize(Policy = "InstructorOrCompanyOrAdmin")]
+        [Authorize(Policy = "ContentCreatorOrAbove")]
         public async Task<IActionResult> Create([FromBody] CreateCourseRequest request)
         {
             await _tagService.TagsValidationGuard(request.Tags);
@@ -91,14 +109,14 @@ namespace TAIF.Controllers
                 Photo = request.Photo,
                 CategoryId = request.CategoryId,
                 Tags = request.Tags,
-                UserId = this.UserId
+                CreatedByUserId = this.UserId
             };
             var created_course = await _courseService.CreateAsync(course);
             return Ok(ApiResponse<Course>.SuccessResponse(created_course));
         }
 
         [HttpPut("{id}")]
-        [Authorize(Policy = "InstructorOrCompanyOrAdmin")]
+        [Authorize(Policy = "ContentCreatorOrAbove")]
         public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateCourseRequest request)
         {
             if (request.Tags is not null && request.Tags.Any())
@@ -109,7 +127,7 @@ namespace TAIF.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Policy = "InstructorOrCompanyOrAdmin")]
+        [Authorize(Policy = "ContentCreatorOrAbove")]
         public async Task<IActionResult> Delete([FromRoute] Guid id)
         {
             var result = await _courseService.DeleteAsync(id);
