@@ -18,10 +18,6 @@ public class CourseLessonService : ServiceBase<CourseLesson>, ICourseLessonServi
         return await _courseLessonRepository.GetByCourseIdAsync(courseId);
     }
 
-    public async Task<List<CourseLesson>> GetByLessonIdAsync(Guid lessonId)
-    {
-        return await _courseLessonRepository.GetByLessonIdAsync(lessonId);
-    }
 
     public async Task<CourseLesson> AssignLessonToCourseAsync(Guid courseId, Guid lessonId, int? order = null)
     {

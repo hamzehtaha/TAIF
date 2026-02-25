@@ -12,10 +12,14 @@ namespace TAIF.Application.DTOs.Responses
     {
         public Guid Id { get; set; }
         public string Name { get; set; } = null!;
+        public string? Description { get; set; }
         public LessonItemType Type { get; set; }
-        public object Content { get; set; } = null!;
+        public Guid? ContentId { get; set; }
+        public object? Content { get; set; }
         public int Order { get; set; }
         public double DurationInSeconds { get; set; }
         public bool IsCompleted { get; set; } = false;
+        public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
     }
 }

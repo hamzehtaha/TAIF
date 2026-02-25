@@ -16,11 +16,9 @@ namespace TAIF.Controllers
     public class OrganizationController : TaifControllerBase
     {
         private readonly IOrganizationService _organizationService;
-        private readonly IInstructorProfileService _instructorProfileService;
-        public OrganizationController(IOrganizationService organizationService, IInstructorProfileService instructorProfileService)
+        public OrganizationController(IOrganizationService organizationService)
         {
             _organizationService = organizationService;
-            _instructorProfileService = instructorProfileService;
         }
         [HttpGet("")]
         [Authorize(Policy = "AdminOnly")]
@@ -55,21 +53,7 @@ namespace TAIF.Controllers
                 return NotFound();
             return Ok(ApiResponse<Organization>.SuccessResponse(organization));
         }
-        [HttpGet("current-org")]
-        public async Task<IActionResult> GetCurrentOrg()
-        {
-            var instructor = await _instructorProfileService.FindNoTrackingAsync(
-                predicate: ip => ip.UserId == UserId
-            );
-            if (instructor is null || instructor.Count <= 0 || instructor[0] is null || instructor[0].OrganizationId is null)
-            {
-                return NotFound("Your current user is not instructor.");
-            }
-            var organization = await _organizationService.GetByIdAsync(instructor[0].OrganizationId.Value);
-            if (organization is null)
-                return NotFound();
-            return Ok(ApiResponse<Organization>.SuccessResponse(organization));
-        }
+
         [HttpPost("")]
         [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Create([FromBody] CreateOrganizationRequest request)

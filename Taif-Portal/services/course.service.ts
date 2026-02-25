@@ -62,6 +62,27 @@ class CourseService {
       categoryName: categoryMap.get(course.categoryId) || "Unknown",
     }));
   }
+
+  // Course-Lesson Assignment APIs
+  async getCourseLessons(courseId: string): Promise<any[]> {
+    return httpService.get<any[]>(`/api/content/courses/${courseId}/lessons`);
+  }
+
+  async assignLesson(courseId: string, lessonId: string, order?: number): Promise<any> {
+    return httpService.post<any>(`/api/content/courses/${courseId}/lessons/${lessonId}`, order ? { newOrder: order } : {});
+  }
+
+  async assignLessonToCourse(courseId: string, lessonId: string, order?: number): Promise<any> {
+    return this.assignLesson(courseId, lessonId, order);
+  }
+
+  async unassignLesson(courseId: string, lessonId: string): Promise<boolean> {
+    return httpService.delete<boolean>(`/api/content/courses/${courseId}/lessons/${lessonId}`);
+  }
+
+  async updateLessonOrder(courseId: string, lessonId: string, newOrder: number): Promise<any> {
+    return httpService.put<any>(`/api/content/courses/${courseId}/lessons/${lessonId}/order`, { newOrder });
+  }
 }
 
 export const courseService = new CourseService();

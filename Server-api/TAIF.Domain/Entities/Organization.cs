@@ -16,6 +16,6 @@ namespace TAIF.Domain.Entities
 
         // Navigation
         public ICollection<User> Users { get; set; } = new List<User>();
-        public ICollection<InstructorProfile> Instructors { get; set; } = new List<InstructorProfile>();
+        public ICollection<Instructor> Instructors { get; set; } = new List<Instructor>();
     }
 }

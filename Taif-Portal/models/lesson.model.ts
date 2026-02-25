@@ -7,4 +7,17 @@ export interface Lesson {
   isCompleted?: boolean;
   photo?: string;
   courseId: string;
+  instructorId?: string;
+  instructor?: Instructor;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Instructor {
+  id: string;
+  firstName: string;
+  lastName: string;
+  bio?: string;
+  expertises?: string[];
+  yearsOfExperience?: number;
 }

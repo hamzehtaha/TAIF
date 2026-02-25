@@ -4,8 +4,16 @@
 export interface LessonDto {
   id: string;
   title: string;
+  description?: string;
   photo?: string;
   courseId: string;
+  instructorId?: string;
+  instructor?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    bio?: string;
+  };
   createdAt?: string;
   updatedAt?: string;
   isDeleted?: boolean;
@@ -15,14 +23,14 @@ export interface LessonDto {
 
 export interface CreateLessonRequest {
   title: string;
-  url: string;
+  description?: string;
   photo?: string;
-  courseId: string;
+  instructorId?: string;
 }
 
 export interface UpdateLessonRequest {
   title?: string;
-  url?: string;
+  description?: string;
   photo?: string;
-  courseId?: string;
+  instructorId?: string;
 }

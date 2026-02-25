@@ -6,7 +6,7 @@
         {
             Video = 0,
             RichText = 1,
-            Question = 2,
+            Quiz = 2,
         }
     }
 }

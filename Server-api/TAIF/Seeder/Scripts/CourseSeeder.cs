@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using TAIF.Domain.Entities;
+using TAIF.Domain.Interfaces;
 using TAIF.Infrastructure.Data;
 using static TAIF.Domain.Entities.Enums;
 
@@ -60,7 +61,16 @@ namespace TAIF.API.Seeder.Scripts
                 return;
             }
 
+            // Get instructors for assigning to lessons
+            var instructors = _context.Instructors.ToList();
+            if (instructors.Count == 0)
+            {
+                Console.WriteLine("⚠️ No instructors found. Please seed instructors first.");
+                return;
+            }
+
             var creatorIndex = 0;
+            var instructorIndex = 0;
 
             foreach (var categoryData in seedData.Categories)
             {
@@ -112,16 +122,19 @@ namespace TAIF.API.Seeder.Scripts
                     var lessonOrder = 1;
                     foreach (var lessonData in courseData.Lessons ?? [])
                     {
+                        // Round-robin assign instructors to lessons
+                        var instructor = instructors[instructorIndex % instructors.Count];
+                        instructorIndex++;
+
                         // Create the lesson (now independent entity)
                         var lesson = new Lesson
                         {
                             Title = lessonData.Title,
                             Photo = lessonData.Photo,
+                            Description = lessonData.Description,
                             CreatedByUserId = creator.Id,
                             OrganizationId = publicOrg?.Id,
-                            // Add instructor info from content creator
-                            InstructorName = $"{creator.FirstName} {creator.LastName}",
-                            InstructorPhoto = null
+                            InstructorId = instructor.Id
                         };
 
                         _context.lessons.Add(lesson);
@@ -141,14 +154,26 @@ namespace TAIF.API.Seeder.Scripts
                         var itemOrder = 1;
                         foreach (var itemData in lessonData.LessonItems ?? [])
                         {
-                            // Create the lesson item (now independent entity)
+                            // Create content entity first
+                            IContentData contentData = itemData.Type switch
+                            {
+                                LessonItemType.Video => JsonSerializer.Deserialize<Video>(itemData.Content.GetRawText()) ?? new Video(),
+                                LessonItemType.RichText => JsonSerializer.Deserialize<RichText>(itemData.Content.GetRawText()) ?? new RichText(),
+                                LessonItemType.Quiz => JsonSerializer.Deserialize<Quiz>(itemData.Content.GetRawText()) ?? new Quiz(),
+                                _ => throw new InvalidOperationException($"Unknown content type: {itemData.Type}")
+                            };
+
+                            var content = new Content(itemData.Type, contentData);
+                            _context.Contents.Add(content);
+                            await _context.SaveChangesAsync();
+
+                            // Create the lesson item referencing the content
                             var lessonItem = new LessonItem
                             {
                                 Name = itemData.Name,
                                 Type = itemData.Type,
                                 DurationInSeconds = itemData.DurationInSeconds,
-                                Content = JsonSerializer.Serialize(itemData.Content),
-                                CreatedByUserId = creator.Id,
+                                ContentId = content.Id,
                                 OrganizationId = publicOrg?.Id
                             };
 
@@ -199,6 +224,7 @@ namespace TAIF.API.Seeder.Scripts
         private class LessonJson
         {
             public string Title { get; set; } = null!;
+            public string? Description { get; set; }
             public string? Photo { get; set; }
             public int Order { get; set; }
             public List<LessonItemJson>? LessonItems { get; set; }

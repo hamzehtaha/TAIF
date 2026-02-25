@@ -44,12 +44,16 @@ namespace TAIF.Application.Services
         
         public async Task<QuizResultResponse> SubmitQuizAsync(Guid userId, SubmitQuizRequest request)
         {
-            var lessonItem = await _lessonItemService.GetByIdAsync(request.LessonItemId);
-            if (lessonItem == null || lessonItem.Type != LessonItemType.Question)
+            var lessonItem = await _lessonItemRepository.GetByIdWithContentAsync(request.LessonItemId);
+            if (lessonItem == null || lessonItem.Type != LessonItemType.Quiz)
             {
                 throw new Exception("Lesson item type is not question");
             }
-            using var doc = JsonDocument.Parse(lessonItem.Content);
+            if (lessonItem.Content == null || string.IsNullOrEmpty(lessonItem.Content.ContentJson))
+            {
+                throw new Exception("Lesson item has no content");
+            }
+            using var doc = JsonDocument.Parse(lessonItem.Content.ContentJson);
 
             var questions = doc.RootElement
                 .GetProperty("questions")
@@ -134,7 +138,9 @@ namespace TAIF.Application.Services
                 {
                     Id = li.Id,
                     Name = li.Name,
-                    Content = LessonItemService.SanitizeContent(li),
+                    Description = li.Description,
+                    ContentId = li.ContentId,
+                    Content = GetContentData(li.Content),
                     Type = li.Type,
                     DurationInSeconds = li.DurationInSeconds,
                     IsCompleted = progressLookup.TryGetValue(li.Id, out var completed) && completed
@@ -246,6 +252,21 @@ namespace TAIF.Application.Services
         public async Task<int> GetCompletedItemCountAsync(Guid userId, Guid courseId)
         {
             return await _lessonItemProgressRepository.GetCompletedItemCountAsync(userId, courseId);
+        }
+
+        private static object? GetContentData(Content? content)
+        {
+            if (content == null || string.IsNullOrEmpty(content.ContentJson))
+                return null;
+
+            try
+            {
+                return JsonSerializer.Deserialize<object>(content.ContentJson);
+            }
+            catch
+            {
+                return null;
+            }
         }
     }
 }

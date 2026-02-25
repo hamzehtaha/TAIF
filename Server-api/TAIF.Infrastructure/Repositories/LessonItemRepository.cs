@@ -22,6 +22,7 @@ namespace TAIF.Infrastructure.Repositories
             var query = _context.LessonLessonItems
                 .Where(lli => lli.LessonId == lessonId && !lli.IsDeleted)
                 .Include(lli => lli.LessonItem)
+                    .ThenInclude(li => li.Content)
                 .OrderBy(lli => lli.Order)
                 .Select(lli => lli.LessonItem);
 
@@ -29,6 +30,25 @@ namespace TAIF.Infrastructure.Repositories
                 query = query.Where(li => !li.IsDeleted);
 
             return await query.ToListAsync();
+        }
+
+        public async Task<List<LessonItem>> GetAllWithContentAsync(bool withDeleted = false)
+        {
+            var query = _context.Set<LessonItem>()
+                .Include(li => li.Content)
+                .AsQueryable();
+
+            if (!withDeleted)
+                query = query.Where(li => !li.IsDeleted);
+
+            return await query.OrderByDescending(li => li.CreatedAt).ToListAsync();
+        }
+
+        public async Task<LessonItem?> GetByIdWithContentAsync(Guid id)
+        {
+            return await _context.Set<LessonItem>()
+                .Include(li => li.Content)
+                .FirstOrDefaultAsync(li => li.Id == id && !li.IsDeleted);
         }
     }
 }

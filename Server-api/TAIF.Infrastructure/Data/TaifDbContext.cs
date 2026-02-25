@@ -29,7 +29,7 @@ namespace TAIF.Infrastructure.Data
         }
         public DbSet<User> Users { get; set; }
         public DbSet<Organization> Organizations { get; set; }
-        public DbSet<InstructorProfile> InstructorProfiles { get; set; }
+        public DbSet<Instructor> Instructors { get; set; }
         public DbSet<Category> Categories { get; set; }
         public DbSet<Course> Courses { get; set; }
         public DbSet<Lesson> lessons { get; set; }
@@ -53,36 +53,11 @@ namespace TAIF.Infrastructure.Data
         // New entities for M-M relationships and content types
         public DbSet<CourseLesson> CourseLessons { get; set; }
         public DbSet<LessonLessonItem> LessonLessonItems { get; set; }
-        public DbSet<Video> Videos { get; set; }
-        public DbSet<RichContent> RichContents { get; set; }
-        public DbSet<Question> Questions { get; set; }
+        public DbSet<Content> Contents { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // InstructorProfile configuration
-            modelBuilder.Entity<InstructorProfile>(entity =>
-            {
-                entity.HasOne(ip => ip.User)
-                      .WithOne(u => u.InstructorProfile)
-                      .HasForeignKey<InstructorProfile>(ip => ip.UserId)
-                      .OnDelete(DeleteBehavior.Cascade);
 
-                entity.HasOne(ip => ip.Organization)
-                      .WithMany(o => o.Instructors)
-                      .HasForeignKey(ip => ip.OrganizationId)
-                      .OnDelete(DeleteBehavior.SetNull);
-
-                entity.HasIndex(ip => ip.UserId).IsUnique();
-
-                entity.Property(ip => ip.Rating)
-                      .HasPrecision(5, 2);
-
-                entity.Property(ip => ip.Expertises)
-                      .HasConversion(
-                          v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
-                          v => System.Text.Json.JsonSerializer.Deserialize<List<string>>(v, (System.Text.Json.JsonSerializerOptions?)null) ?? new List<string>()
-                      );
-            });
 
             // Organization configuration
             modelBuilder.Entity<Organization>(entity =>
@@ -182,18 +157,35 @@ namespace TAIF.Infrastructure.Data
             // LessonItem configuration
             modelBuilder.Entity<LessonItem>(entity =>
             {
-                entity.HasOne(li => li.CreatedBy)
-                      .WithMany(u => u.CreatedLessonItems)
-                      .HasForeignKey(li => li.CreatedByUserId)
-                      .OnDelete(DeleteBehavior.Restrict);
-
                 entity.HasOne(li => li.Organization)
                       .WithMany()
                       .HasForeignKey(li => li.OrganizationId)
                       .OnDelete(DeleteBehavior.SetNull);
 
+                entity.HasOne(li => li.Content)
+                      .WithMany()
+                      .HasForeignKey(li => li.ContentId)
+                      .OnDelete(DeleteBehavior.SetNull);
+
                 entity.HasIndex(li => li.OrganizationId);
                 entity.HasIndex(li => new { li.OrganizationId, li.IsDeleted });
+            });
+
+            modelBuilder.Entity<Content>(builder =>
+            {
+                builder.ToTable("Contents");
+
+                builder.HasKey(x => x.Id);
+
+                builder.Property(x => x.Type)
+                       .IsRequired();
+
+                builder.Property(x => x.ContentJson)
+                       .IsRequired()
+                       .HasColumnType("nvarchar(max)");
+
+                builder.Property(x => x.CreatedAt)
+                       .IsRequired();
             });
 
             // LessonLessonItem junction table configuration (M-M: Lesson <-> LessonItem)
@@ -218,54 +210,6 @@ namespace TAIF.Infrastructure.Data
                       .OnDelete(DeleteBehavior.SetNull);
             });
 
-            // Video configuration
-            modelBuilder.Entity<Video>(entity =>
-            {
-                entity.HasOne(v => v.LessonItem)
-                      .WithOne(li => li.Video)
-                      .HasForeignKey<Video>(v => v.LessonItemId)
-                      .OnDelete(DeleteBehavior.Cascade);
-
-                entity.HasOne(v => v.Organization)
-                      .WithMany()
-                      .HasForeignKey(v => v.OrganizationId)
-                      .OnDelete(DeleteBehavior.SetNull);
-
-                entity.HasIndex(v => v.OrganizationId);
-            });
-
-            // RichContent configuration
-            modelBuilder.Entity<RichContent>(entity =>
-            {
-                entity.HasOne(rc => rc.LessonItem)
-                      .WithOne(li => li.RichContent)
-                      .HasForeignKey<RichContent>(rc => rc.LessonItemId)
-                      .OnDelete(DeleteBehavior.Cascade);
-
-                entity.HasOne(rc => rc.Organization)
-                      .WithMany()
-                      .HasForeignKey(rc => rc.OrganizationId)
-                      .OnDelete(DeleteBehavior.SetNull);
-
-                entity.HasIndex(rc => rc.OrganizationId);
-            });
-
-            // Question configuration
-            modelBuilder.Entity<Question>(entity =>
-            {
-                entity.HasOne(q => q.LessonItem)
-                      .WithMany(li => li.Questions)
-                      .HasForeignKey(q => q.LessonItemId)
-                      .OnDelete(DeleteBehavior.Cascade);
-
-                entity.HasOne(q => q.Organization)
-                      .WithMany()
-                      .HasForeignKey(q => q.OrganizationId)
-                      .OnDelete(DeleteBehavior.SetNull);
-
-                entity.HasIndex(q => q.OrganizationId);
-                entity.HasIndex(q => new { q.LessonItemId, q.Order });
-            });
 
             // Enrollment configuration
             modelBuilder.Entity<Enrollment>(entity =>

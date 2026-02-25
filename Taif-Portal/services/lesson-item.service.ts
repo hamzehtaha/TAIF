@@ -80,6 +80,11 @@ class LessonItemService {
     return dtos.map(dto => LessonItemMapper.map(dto, lessonId));
   }
 
+  async getAllLessonItems(): Promise<LessonItem[]> {
+    const dtos = await httpService.get<LessonItemDto[]>(`${this.serviceBaseUrl}/all`);
+    return dtos.map(dto => LessonItemMapper.map(dto));
+  }
+
   async getItemById(itemId: string): Promise<LessonItem> {
     const dto = await httpService.get<LessonItemDto>(`${this.serviceBaseUrl}/${itemId}`);
     return LessonItemMapper.map(dto);
@@ -130,7 +135,8 @@ class LessonItemService {
       id: dto.id,
       lessonId: lessonId,
       name: dto.name,
-      url: dto.url,
+      description: dto.description,
+      contentId: dto.contentId,
       content: dto.content,
       type: mapLessonItemType(dto.type),
       durationInSeconds: dto.durationInSeconds,

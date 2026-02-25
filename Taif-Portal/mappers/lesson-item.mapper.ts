@@ -1,21 +1,23 @@
-
 import { LessonItem } from "@/models/lesson-item.model";
 import { mapLessonItemType } from "@/enums/lesson-item-type.enum";
 import { LessonItemDto } from "@/dtos/lesson-item.dto";
 
 export class LessonItemMapper {
     static map(dto: LessonItemDto, lessonId?: string): LessonItem {
-        if (!dto) return null;
+        if (!dto) return null as any;
         return {
             id: dto.id,
-            lessonId: dto.lessonId || lessonId || "",
+            lessonId: dto.lessonId || lessonId,
             name: dto.name,
-            url: dto.url,
+            description: dto.description,
+            contentId: dto.contentId,
             content: dto.content,
             type: mapLessonItemType(dto.type),
-            durationInSeconds: 0,
-            order: 0,
+            durationInSeconds: dto.durationInSeconds || 0,
+            order: dto.order || 0,
             isCompleted: false,
+            createdAt: dto.createdAt,
+            updatedAt: dto.updatedAt,
         };
     }
-}   
+}

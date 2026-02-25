@@ -18,11 +18,6 @@ public class LessonLessonItemService : ServiceBase<LessonLessonItem>, ILessonLes
         return await _lessonLessonItemRepository.GetByLessonIdAsync(lessonId);
     }
 
-    public async Task<List<LessonLessonItem>> GetByLessonItemIdAsync(Guid lessonItemId)
-    {
-        return await _lessonLessonItemRepository.GetByLessonItemIdAsync(lessonItemId);
-    }
-
     public async Task<LessonLessonItem> AssignLessonItemToLessonAsync(Guid lessonId, Guid lessonItemId, int? order = null)
     {
         // Check if already assigned
@@ -57,15 +52,15 @@ public class LessonLessonItemService : ServiceBase<LessonLessonItem>, ILessonLes
         return true;
     }
 
-    public async Task<bool> UpdateOrderAsync(Guid lessonId, Guid lessonItemId, int newOrder)
+    public async Task<LessonLessonItem?> UpdateOrderAsync(Guid lessonId, Guid lessonItemId, int newOrder)
     {
         var lessonLessonItem = await _lessonLessonItemRepository.GetByCompositeKeyAsync(lessonId, lessonItemId);
         if (lessonLessonItem == null)
-            return false;
+            return null;
 
         lessonLessonItem.Order = newOrder;
-        _lessonLessonItemRepository.Update(lessonLessonItem, lli => lli.Order);
         await _lessonLessonItemRepository.SaveChangesAsync();
-        return true;
+        return lessonLessonItem;
     }
+
 }

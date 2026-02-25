@@ -46,8 +46,8 @@ export default function Login() {
       // Check user role and redirect accordingly
       const user = authService.getUser();
       if (user?.role === UserRole.Instructor || user?.role === UserRole.OrgAdmin || user?.role === UserRole.SystemAdmin) {
-        // Redirect instructors/admins to instructor portal
-        router.push("/instructor");
+        // Redirect instructors/admins to admin portal
+        router.push("/admin");
         return;
       }
 
@@ -194,14 +194,14 @@ export default function Login() {
                   </Link>
                 </p>
 
-                {/* Instructor Login Link */}
+                {/* Admin Login Link */}
                 <p className="text-center text-sm text-muted-foreground">
-                  Are you an instructor?{" "}
+                  Are you an admin?{" "}
                   <Link
-                    href="/instructor/login"
+                    href="/admin/login"
                     className="text-primary font-semibold hover:underline"
                   >
-                    Instructor Login
+                    Admin Login
                   </Link>
                 </p>
               </form>

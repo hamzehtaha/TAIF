@@ -16,48 +16,39 @@ namespace TAIF.Application.Services
         {
             _lessonItemRepository = repository;
         }
+
         public async Task<List<LessonItemResponse>> GetByLessonIdAsync(Guid lessonId, bool withDeleted = false)
         {
-            var lessonsItem =  await _lessonItemRepository.GetByLessonIdAsync(lessonId, withDeleted);
+            var lessonsItem = await _lessonItemRepository.GetByLessonIdAsync(lessonId, withDeleted);
             List<LessonItemResponse> lessonItemsResponse = lessonsItem
                 .Select(li => new LessonItemResponse
                 {
                     Id = li.Id,
                     Name = li.Name,
-                    Content = SanitizeContent(li),
+                    Description = li.Description,
+                    ContentId = li.ContentId,
+                    Content = li.Content != null ? GetContentData(li.Content) : null,
                     Type = li.Type,
                     DurationInSeconds = li.DurationInSeconds,
+                    CreatedAt = li.CreatedAt,
+                    UpdatedAt = li.UpdatedAt,
                 }).ToList();
             return lessonItemsResponse;
         }
 
-        internal static object SanitizeContent(LessonItem item)
+        private static object? GetContentData(Content content)
         {
-            if (item.Type != LessonItemType.Question)
+            if (content == null || string.IsNullOrEmpty(content.ContentJson))
+                return null;
+
+            try
             {
-                return JsonSerializer.Deserialize<object>(item.Content)!;
+                return JsonSerializer.Deserialize<object>(content.ContentJson);
             }
-            using var doc = JsonDocument.Parse(item.Content);
-            var root = doc.RootElement;
-
-            var sanitizedQuestions = root
-                .GetProperty("questions")
-                .EnumerateArray()
-                .Select(q => new
-                {
-                    id = q.GetProperty("id").GetString(),
-                    text = q.GetProperty("text").GetString(),
-                    options = q.GetProperty("options")
-                               .EnumerateArray()
-                               .Select(o => o.GetString())
-                               .ToList()
-                })
-                .ToList();
-
-            return new
+            catch
             {
-                questions = sanitizedQuestions
-            };
+                return null;
+            }
         }
     }
 }

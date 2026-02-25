@@ -79,18 +79,28 @@ namespace TAIF.Controllers
             if (lessonItems is null) return NotFound();
             return Ok(ApiResponse<List<LessonItemResponse>>.SuccessResponse(lessonItems));
         }
+
+        // Create Video,Rich,Questions Items
         [HttpPost("")]
         public async Task<IActionResult> Create([FromBody] CreateLessonItemRequest request)
         {
             var lessonItem = new LessonItem
             {
                 Name = request.Name,
-                Content = request.Content,
+                Description = request.Description,
+                ContentId = request.ContentId,
                 Type = request.Type,
-                DurationInSeconds = request.durationInSeconds
+                DurationInSeconds = request.DurationInSeconds,
+                OrganizationId = this.OrganizationId
             };
             var created_lessonItem = await _lessonItemService.CreateAsync(lessonItem);
             return Ok(ApiResponse<LessonItem>.SuccessResponse(created_lessonItem));
+        }
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAll()
+        {
+            var lessonItems = await _lessonItemService.GetAllAsync();
+            return Ok(ApiResponse<List<LessonItem>>.SuccessResponse(lessonItems.ToList()));
         }
         [HttpPut("{id}")]
         public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateLessonItemRequest lessonItem)

@@ -48,7 +48,7 @@
                   "Name": "U-Z Finger Spelling",
                   "Type": "Video",
                   "DurationInSeconds": 300,
-                  "Order": 5,
+                  "Order": 4,
                   "Content": {
                     "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
                     "description": "Complete the alphabet with letters U through Z and practice full words."
@@ -56,50 +56,15 @@
                 },
                 {
                   "Name": "Alphabet Practice Quiz",
-                  "Type": "Question",
-                  "Order": 6,
+                  "Type": "Quiz",
+                  "Order": 5,
                   "Content": {
                     "questions": [
                       {
                         "id": "q1",
                         "text": "Which hand shape represents the letter A?",
-                        "options": [ "Closed fist", "Open palm", "Two fingers" ],
+                        "options": ["Closed fist", "Open palm", "Two fingers"],
                         "correctIndex": 0
-                      },
-                      {
-                        "id": "q2",
-                        "text": "Which hand shape represents the letter A?",
-                        "options": [ "Closed fist", "Open palm", "Two fingers" ],
-                        "correctIndex": 0
-                      },
-                      {
-                        "id": "q3",
-                        "text": "Which hand shape represents the letter A?",
-                        "options": [ "Closed fist", "Open palm", "Two fingers" ],
-                        "correctIndex": 0
-                      }
-                    ]
-                  }
-                },
-                {
-                  "Name": "Common Name Spelling",
-                  "Type": "RichText",
-                  "Order": 7,
-                  "Content": {
-                    "text": "Practice spelling common names using the complete alphabet."
-                  }
-                },
-                {
-                  "Name": "Common Name Spelling",
-                  "Type": "Question",
-                  "Order": 6,
-                  "Content": {
-                    "questions": [
-                      {
-                        "id": "q2",
-                        "text": "Which hand shape represents the letter A?",
-                        "options": [ "Closed fist", "Open palm", "Two fingers" ],
-                        "correctIndex": 1
                       }
                     ]
                   }
@@ -132,127 +97,17 @@
                   }
                 },
                 {
-                  "Name": "Nice to Meet You",
-                  "Type": "Video",
-                  "DurationInSeconds": 300,
+                  "Name": "Greetings Reading",
+                  "Type": "RichText",
                   "Order": 3,
                   "Content": {
-                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                    "description": "Express politeness and courtesy in sign language."
-                  }
-                },
-                {
-                  "Name": "How Are You?",
-                  "Type": "Video",
-                  "DurationInSeconds": 300,
-                  "Order": 4,
-                  "Content": {
-                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                    "description": "Ask about wellbeing and respond appropriately."
-                  }
-                },
-                {
-                  "Name": "Thank You and Please",
-                  "Type": "Video",
-                  "DurationInSeconds": 300,
-                  "Order": 5,
-                  "Content": {
-                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                    "description": "Master essential polite expressions in sign language."
-                  }
-                },
-                {
-                  "Name": "Excuse Me and Sorry",
-                  "Type": "Video",
-                  "DurationInSeconds": 300,
-                  "Order": 6,
-                  "Content": {
-                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                    "description": "Learn apologetic and attention-getting signs."
-                  }
-                },
-                {
-                  "Name": "Yes and No",
-                  "Type": "Video",
-                  "DurationInSeconds": 300,
-                  "Order": 7,
-                  "Content": {
-                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                    "description": "Express agreement and disagreement clearly."
-                  }
-                }
-              ]
-            },
-            {
-              "Title": "Family and Relationships",
-              "Photo": "https://images.unsplash.com/photo-1511895426328-dc8714191300?w=800",
-              "Order": 3,
-              "LessonItems": [
-                {
-                  "Name": "Mother and Father",
-                  "Type": "Video",
-                  "DurationInSeconds": 300,
-                  "Order": 1,
-                  "Content": {
-                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                    "description": "Learn signs for parents and immediate family members."
-                  }
-                },
-                {
-                  "Name": "Brother and Sister",
-                  "Type": "Video",
-                  "DurationInSeconds": 300,
-                  "Order": 2,
-                  "Content": {
-                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                    "description": "Master sibling relationship signs."
-                  }
-                },
-                {
-                  "Name": "Grandparents",
-                  "Type": "Video",
-                  "DurationInSeconds": 300,
-                  "Order": 3,
-                  "Content": {
-                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                    "description": "Sign for grandmother and grandfather."
-                  }
-                },
-                {
-                  "Name": "Extended Family",
-                  "Type": "Video",
-                  "DurationInSeconds": 300,
-                  "Order": 4,
-                  "Content": {
-                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                    "description": "Learn signs for aunts, uncles, and cousins."
-                  }
-                },
-                {
-                  "Name": "Friend and Family",
-                  "Type": "Video",
-                  "DurationInSeconds": 300,
-                  "Order": 5,
-                  "Content": {
-                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                    "description": "Distinguish between different relationship types."
-                  }
-                },
-                {
-                  "Name": "Family Tree Activity",
-                  "Type": "Video",
-                  "DurationInSeconds": 300,
-                  "Order": 6,
-                  "Content": {
-                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                    "description": "Practice describing your family structure in sign language."
+                    "html": "<p>Sign language greetings are essential for daily communication. Practice these signs regularly.</p>"
                   }
                 }
               ]
             }
           ]
         },
-
         {
           "Name": "Braille Reading and Writing",
           "Description": "Complete Braille literacy program for visually impaired individuals. Master the Braille alphabet, numbers, punctuation, and develop fluent reading and writing skills.",
@@ -275,7 +130,7 @@
                   }
                 },
                 {
-                  "Name": "Braille Cell Structure (Reading)",
+                  "Name": "Braille Cell Structure",
                   "Type": "RichText",
                   "Order": 2,
                   "Content": {
@@ -283,7 +138,7 @@
                   }
                 },
                 {
-                  "Name": "Letters A–J (First Ten)",
+                  "Name": "Letters A-J",
                   "Type": "Video",
                   "DurationInSeconds": 300,
                   "Order": 3,
@@ -294,92 +149,22 @@
                 },
                 {
                   "Name": "Alphabet Recognition Quiz",
-                  "Type": "Question",
+                  "Type": "Quiz",
                   "Order": 4,
                   "Content": {
                     "questions": [
                       {
                         "question": "How many dots are in a standard Braille cell?",
-                        "options": [ "4", "5", "6", "8" ],
+                        "options": ["4", "5", "6", "8"],
                         "correctAnswerIndex": 2
-                      },
-                      {
-                        "question": "Which dots are used to represent the letter A?",
-                        "options": [ "Dot 1", "Dots 1-2", "Dots 1-4", "Dots 2-3" ],
-                        "correctAnswerIndex": 0
                       }
                     ]
-                  }
-                },
-                {
-                  "Name": "Letters K–T (Second Ten)",
-                  "Type": "Video",
-                  "DurationInSeconds": 300,
-                  "Order": 5,
-                  "Content": {
-                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                    "description": "Learn letters K through T with dot 3 added."
-                  }
-                }
-              ]
-            },
-            {
-              "Title": "Braille Numbers and Math",
-              "Photo": "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800",
-              "Order": 2,
-              "LessonItems": [
-                {
-                  "Name": "Number Sign Indicator",
-                  "Type": "Video",
-                  "DurationInSeconds": 300,
-                  "Order": 1,
-                  "Content": {
-                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                    "description": "Understand the number indicator and its usage."
-                  }
-                },
-                {
-                  "Name": "Braille Numbers Explained",
-                  "Type": "RichText",
-                  "Order": 2,
-                  "Content": {
-                    "html": "<p>Braille numbers are formed using the letters A–J preceded by a number sign. This allows numbers 0–9 to be represented efficiently.</p>"
-                  }
-                },
-                {
-                  "Name": "Numbers 0–9 Practice Quiz",
-                  "Type": "Question",
-                  "Order": 3,
-                  "Content": {
-                    "questions": [
-                      {
-                        "question": "Which letters represent numbers in Braille?",
-                        "options": [ "A–J", "K–T", "U–Z", "All letters" ],
-                        "correctAnswerIndex": 0
-                      },
-                      {
-                        "question": "What symbol must appear before Braille numbers?",
-                        "options": [ "Capital sign", "Number sign", "Period", "Comma" ],
-                        "correctAnswerIndex": 1
-                      }
-                    ]
-                  }
-                },
-                {
-                  "Name": "Simple Addition (Video)",
-                  "Type": "Video",
-                  "DurationInSeconds": 300,
-                  "Order": 4,
-                  "Content": {
-                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                    "description": "Practice basic addition problems in Braille."
                   }
                 }
               ]
             }
           ]
         }
-
       ]
     },
     {
@@ -387,9 +172,9 @@
       "Courses": [
         {
           "Name": "Assistive Technology for Daily Living",
-          "Description": "Comprehensive training on adaptive devices and technology that enhance independence for individuals with physical and cognitive disabilities. Learn to use screen readers, voice control, and specialized equipment.",
+          "Description": "Comprehensive training on adaptive devices and technology that enhance independence for individuals with physical and cognitive disabilities.",
           "Photo": "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800",
-          "Tags": ["Screen Readers", "JAWS", "NVDA", "Voice Control", "Dictation Software", "Adaptive Devices"],
+          "Tags": ["Screen Readers", "JAWS", "NVDA", "Voice Control", "Adaptive Devices"],
           "Lessons": [
             {
               "Title": "Screen Reader Basics",
@@ -411,7 +196,7 @@
                   "Type": "RichText",
                   "Order": 2,
                   "Content": {
-                    "html": "<p>Screen readers convert on-screen text into speech or Braille output. They allow visually impaired users to navigate operating systems, applications, and websites independently.</p>"
+                    "html": "<p>Screen readers convert on-screen text into speech or Braille output.</p>"
                   }
                 },
                 {
@@ -425,28 +210,17 @@
                   }
                 },
                 {
-                  "Name": "Question",
-                  "Type": "Question",
+                  "Name": "Screen Reader Quiz",
+                  "Type": "Quiz",
                   "Order": 4,
                   "Content": {
-                    "question": "What is the primary function of a screen reader?",
-                    "options": [
-                      "Enhance screen brightness",
-                      "Convert text into speech or Braille",
-                      "Translate languages",
-                      "Increase font size only"
-                    ],
-                    "correctAnswerIndex": 1
-                  }
-                },
-                {
-                  "Name": "Basic Navigation Commands",
-                  "Type": "Video",
-                  "DurationInSeconds": 300,
-                  "Order": 5,
-                  "Content": {
-                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                    "description": "Learn essential keyboard shortcuts for screen readers."
+                    "questions": [
+                      {
+                        "question": "What is the primary function of a screen reader?",
+                        "options": ["Enhance screen brightness", "Convert text into speech or Braille", "Translate languages", "Increase font size only"],
+                        "correctAnswerIndex": 1
+                      }
+                    ]
                   }
                 }
               ]
@@ -471,32 +245,7 @@
                   "Type": "RichText",
                   "Order": 2,
                   "Content": {
-                    "html": "<p>Voice dictation software allows users to convert spoken words into written text, improving accessibility and productivity for users with mobility or vision impairments.</p>"
-                  }
-                },
-                {
-                  "Name": "Basic Dictation",
-                  "Type": "Video",
-                  "DurationInSeconds": 300,
-                  "Order": 3,
-                  "Content": {
-                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                    "description": "Compose text using voice commands."
-                  }
-                },
-                {
-                  "Name": "Question",
-                  "Type": "Question",
-                  "Order": 4,
-                  "Content": {
-                    "question": "Which task is best suited for voice dictation software?",
-                    "options": [
-                      "Photo editing",
-                      "Typing long documents",
-                      "Gaming",
-                      "Video rendering"
-                    ],
-                    "correctAnswerIndex": 1
+                    "html": "<p>Voice dictation software allows users to convert spoken words into written text.</p>"
                   }
                 }
               ]
@@ -505,9 +254,9 @@
         },
         {
           "Name": "Sensory Integration and Self-Regulation",
-          "Description": "Therapeutic techniques for individuals with autism, ADHD, and sensory processing disorders. Learn strategies to manage sensory input, develop coping mechanisms, and improve focus and emotional regulation.",
+          "Description": "Therapeutic techniques for individuals with autism, ADHD, and sensory processing disorders.",
           "Photo": "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800",
-          "Tags": ["Sensory Integration", "Self-Regulation", "Deep Pressure Therapy", "Autism Support", "ADHD Strategies"],
+          "Tags": ["Sensory Integration", "Self-Regulation", "Deep Pressure Therapy", "Autism Support"],
           "Lessons": [
             {
               "Title": "Understanding Sensory Processing",
@@ -529,7 +278,7 @@
                   "Type": "RichText",
                   "Order": 2,
                   "Content": {
-                    "html": "<p>Sensory processing refers to how the nervous system receives messages from the senses and turns them into appropriate motor and behavioral responses.</p>"
+                    "html": "<p>Sensory processing refers to how the nervous system receives messages from the senses.</p>"
                   }
                 },
                 {
@@ -543,68 +292,17 @@
                   }
                 },
                 {
-                  "Name": "Question",
-                  "Type": "Question",
+                  "Name": "Sensory Processing Quiz",
+                  "Type": "Quiz",
                   "Order": 4,
                   "Content": {
-                    "question": "Which of the following is a common sign of sensory overload?",
-                    "options": [
-                      "Increased focus",
-                      "Calm behavior",
-                      "Covering ears or avoiding stimuli",
-                      "Improved attention"
-                    ],
-                    "correctAnswerIndex": 2
-                  }
-                }
-              ]
-            },
-            {
-              "Title": "Deep Pressure and Proprioceptive Input",
-              "Photo": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800",
-              "Order": 2,
-              "LessonItems": [
-                {
-                  "Name": "Benefits of Deep Pressure",
-                  "Type": "Video",
-                  "DurationInSeconds": 300,
-                  "Order": 1,
-                  "Content": {
-                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                    "description": "Understand how deep pressure calms the nervous system."
-                  }
-                },
-                {
-                  "Name": "How Deep Pressure Works",
-                  "Type": "RichText",
-                  "Order": 2,
-                  "Content": {
-                    "html": "<p>Deep pressure stimulation activates the parasympathetic nervous system, helping individuals feel calmer and more grounded.</p>"
-                  }
-                },
-                {
-                  "Name": "Weighted Blanket Use",
-                  "Type": "Video",
-                  "DurationInSeconds": 300,
-                  "Order": 3,
-                  "Content": {
-                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                    "description": "Safely use weighted blankets for regulation."
-                  }
-                },
-                {
-                  "Name": "Question",
-                  "Type": "Question",
-                  "Order": 4,
-                  "Content": {
-                    "question": "What is the main benefit of deep pressure therapy?",
-                    "options": [
-                      "Increased muscle strength",
-                      "Improved vision",
-                      "Calming the nervous system",
-                      "Faster reaction time"
-                    ],
-                    "correctAnswerIndex": 2
+                    "questions": [
+                      {
+                        "question": "Which of the following is a common sign of sensory overload?",
+                        "options": ["Increased focus", "Calm behavior", "Covering ears or avoiding stimuli", "Improved attention"],
+                        "correctAnswerIndex": 2
+                      }
+                    ]
                   }
                 }
               ]

@@ -6,9 +6,10 @@ namespace TAIF.Application.DTOs.Requests
     public record UpdateLessonItemRequest
     {
         public string? Name { get; set; }
-        public string? Content { get; set; }
-        public LessonItemType Type { get; set; }
-        public Guid LessonId { get; set; }
-        public double durationInSeconds { get; set; } = 0;
+        public string? Description { get; set; }
+        public Guid? ContentId { get; set; }
+        public LessonItemType? Type { get; set; }
+        public Guid? LessonId { get; set; }
+        public double? DurationInSeconds { get; set; }
     }
 }

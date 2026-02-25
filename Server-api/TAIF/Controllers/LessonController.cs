@@ -37,8 +37,7 @@ namespace TAIF.Controllers
         public async Task<IActionResult> GetPaged([FromQuery] LessonFilter filter)
         {
             Expression<Func<Lesson, bool>> predicate = l =>
-                (string.IsNullOrWhiteSpace(filter.Search)
-                    || l.Title.Contains(filter.Search));
+                (string.IsNullOrWhiteSpace(filter.Search) || l.Title.Contains(filter.Search));
 
             var result = await _lessonService.GetPagedAsync(
                 filter: filter,
@@ -67,10 +66,9 @@ namespace TAIF.Controllers
                 Title = request.Title,
                 Description = request.Description,
                 Photo = request.Photo,
-                InstructorName = request.InstructorName,
-                InstructorBio = request.InstructorBio,
-                InstructorPhoto = request.InstructorPhoto,
-                CreatedByUserId = this.UserId
+                InstructorId = request.InstructorId,
+                CreatedByUserId = this.UserId,
+                OrganizationId = this.OrganizationId
             };
             var created_lesson = await _lessonService.CreateAsync(lesson);
             return Ok(ApiResponse<Lesson>.SuccessResponse(created_lesson));
