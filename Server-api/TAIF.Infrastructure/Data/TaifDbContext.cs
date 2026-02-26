@@ -49,11 +49,13 @@ namespace TAIF.Infrastructure.Data
         public DbSet<EvaluationQuestion> EvaluationQuestions => Set<EvaluationQuestion>();
         public DbSet<EvaluationAnswer> EvaluationAnswers => Set<EvaluationAnswer>();
         public DbSet<UserEvaluation> UserEvaluations => Set<UserEvaluation>();
-        
         // New entities for M-M relationships and content types
         public DbSet<CourseLesson> CourseLessons { get; set; }
         public DbSet<LessonLessonItem> LessonLessonItems { get; set; }
         public DbSet<Content> Contents { get; set; }
+        public DbSet<Question> Questions { get; set; }
+        public DbSet<Answer> Answers { get; set; }
+        public DbSet<Skill> Skills { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -80,6 +82,26 @@ namespace TAIF.Infrastructure.Data
                       .WithMany(o => o.Users)
                       .HasForeignKey(u => u.OrganizationId)
                       .OnDelete(DeleteBehavior.SetNull);
+            });
+            modelBuilder.Entity<Skill>(builder =>
+            {
+                builder.ToTable("Skills");
+
+                builder.HasKey(x => x.Id);
+
+                builder.Property(x => x.Name)
+                       .IsRequired()
+                       .HasMaxLength(200);
+
+                builder.Property(x => x.Description)
+                       .HasMaxLength(1000);
+
+                // Multi-tenant uniqueness (optional but recommended)
+                builder.HasIndex(x => new { x.Name, x.OrganizationId })
+                       .IsUnique();
+
+                // Optional: filter soft deleted rows (if you're using soft delete globally)
+                builder.HasQueryFilter(x => !x.IsDeleted);
             });
 
             // Course configuration
@@ -171,9 +193,14 @@ namespace TAIF.Infrastructure.Data
                 builder.Property(x => x.Type)
                        .IsRequired();
 
-                builder.Property(x => x.ContentJson)
-                       .IsRequired()
-                       .HasColumnType("nvarchar(max)");
+                var property = builder.Property(x => x.ContentJson)
+                         .IsRequired();
+
+                if (Database.IsNpgsql())
+                    property.HasColumnType("text");
+                else if (Database.IsSqlServer())
+                    property.HasColumnType("nvarchar(max)");
+
 
                 builder.Property(x => x.CreatedAt)
                        .IsRequired();
@@ -415,6 +442,31 @@ namespace TAIF.Infrastructure.Data
                 .Property(e => e.Interests)
                 .HasConversion(guidCollectionConverter)
                 .Metadata.SetValueComparer(guidCollectionComparer);
+
+            modelBuilder.Entity<Question>(builder =>
+            {
+                builder.ToTable("Questions");
+
+                builder.HasKey(x => x.Id);
+
+                builder.Property(x => x.Info)
+                       .IsRequired();
+
+                builder.Property(x => x.Goals)
+                       .IsRequired();
+
+                builder.Property(x => x.AnswerIds)
+                       .HasColumnType("jsonb");
+
+                builder.Property(x => x.SkillIds)
+                       .HasColumnType("jsonb");
+
+                builder.Property(x => x.CorrectAnswerIndex)
+                       .IsRequired();
+
+                builder.Property(x => x.MinPercentage)
+                       .IsRequired();
+            });
 
             // Apply global query filters for multi-tenancy
             ApplyTenantQueryFilters(modelBuilder);

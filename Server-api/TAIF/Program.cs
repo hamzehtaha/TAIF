@@ -134,6 +134,15 @@ builder.Services.AddScoped<ILessonLessonItemService, LessonLessonItemService>();
 builder.Services.AddScoped<IContentService, ContentService>();
 builder.Services.AddScoped<IContentRepository, ContentRepository>();
 
+builder.Services.AddScoped<IQuestionService, QuestionService>();
+builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
+
+builder.Services.AddScoped<IAnswerService, AnswerService>();
+builder.Services.AddScoped<IAnswerRepository, AnswerRepository>();
+
+builder.Services.AddScoped<ISkillService, SkillService>();
+builder.Services.AddScoped<ISkillRepository, SkillRepository>();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -385,4 +394,7 @@ void InjectSeeders()
     builder.Services.AddScoped<IEntitySeeder, InstructorSeeder>();
     builder.Services.AddScoped<IEntitySeeder, CourseSeeder>();
     builder.Services.AddScoped<IEntitySeeder, LearningPathSeeder>();
+    builder.Services.AddScoped<IEntitySeeder, SkillSeeder>();
+    //builder.Services.AddScoped<IEntitySeeder, AnswerSeeder>();
+    //builder.Services.AddScoped<IEntitySeeder, QuestionSeeder>();
 }

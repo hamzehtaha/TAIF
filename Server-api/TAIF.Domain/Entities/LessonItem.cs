@@ -12,6 +12,7 @@ namespace TAIF.Domain.Entities
         public Guid? ContentId { get; set; }
         public Content? Content { get; set; }
         public double DurationInSeconds { get; set; } = 0;
+        public List<Guid> SkillIds { get; set; } = new();
         public ICollection<LessonLessonItem> LessonLessonItems { get; set; } = new List<LessonLessonItem>();
     }
 }

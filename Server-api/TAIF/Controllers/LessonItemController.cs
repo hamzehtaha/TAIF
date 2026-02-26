@@ -91,7 +91,9 @@ namespace TAIF.Controllers
                 ContentId = request.ContentId,
                 Type = request.Type,
                 DurationInSeconds = request.DurationInSeconds,
-                OrganizationId = this.OrganizationId
+                OrganizationId = this.OrganizationId,
+                SkillIds = request.SkillIds
+
             };
             var created_lessonItem = await _lessonItemService.CreateAsync(lessonItem);
             return Ok(ApiResponse<LessonItem>.SuccessResponse(created_lessonItem));
