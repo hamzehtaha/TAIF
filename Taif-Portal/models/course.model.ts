@@ -1,5 +1,6 @@
 import { Lesson } from "@/models/lesson.model";
 
+export type CourseStatus = 'draft' | 'published' | 'archived';
 
 export interface Course {
   id: string;
@@ -9,6 +10,7 @@ export interface Course {
   imageUrl?: string;
   categoryId: string;
   categoryName?: string;
+  status?: CourseStatus;
   isEnrolled?: boolean;
   isFavourite?: boolean;
   isRecommended?: boolean;

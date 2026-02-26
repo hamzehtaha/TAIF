@@ -29,12 +29,7 @@ namespace TAIF.API.Controllers
             return Ok(ApiResponse<AuthResponse>.SuccessResponse(result));
         }
 
-        [HttpPost("register/instructor")]
-        public async Task<IActionResult> RegisterInstructor(RegisterInstructorRequest request)
-        {
-            var result = await _authService.RegisterInstructorAsync(request);
-            return Ok(ApiResponse<AuthResponse>.SuccessResponse(result));
-        }
+
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginRequest request)
         {
@@ -86,7 +81,6 @@ namespace TAIF.API.Controllers
                 Birthday = user.Birthday,
                 IsActive = user.IsActive,
                 Role = user.Role,
-                UserRoleType = user.Role,
                 OrganizationId = user.OrganizationId,
                 OrganizationName = user.Organization?.Name,
                 CreatedAt = user.CreatedAt,

@@ -26,9 +26,5 @@ namespace TAIF.Domain.Entities
         public ICollection<Guid> Interests { get; set; } = new List<Guid>();
         
         public Organization? Organization { get; set; }
-        public InstructorProfile? InstructorProfile { get; set; }
-        public ICollection<Course> CreatedCourses { get; set; } = new List<Course>();
-        public ICollection<Lesson> CreatedLessons { get; set; } = new List<Lesson>();
-        public ICollection<LessonItem> CreatedLessonItems { get; set; } = new List<LessonItem>();
     }
 }

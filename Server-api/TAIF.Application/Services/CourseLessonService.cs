@@ -18,10 +18,6 @@ public class CourseLessonService : ServiceBase<CourseLesson>, ICourseLessonServi
         return await _courseLessonRepository.GetByCourseIdAsync(courseId);
     }
 
-    public async Task<List<CourseLesson>> GetByLessonIdAsync(Guid lessonId)
-    {
-        return await _courseLessonRepository.GetByLessonIdAsync(lessonId);
-    }
 
     public async Task<CourseLesson> AssignLessonToCourseAsync(Guid courseId, Guid lessonId, int? order = null)
     {
@@ -65,6 +61,23 @@ public class CourseLessonService : ServiceBase<CourseLesson>, ICourseLessonServi
 
         courseLesson.Order = newOrder;
         _courseLessonRepository.Update(courseLesson, cl => cl.Order);
+        await _courseLessonRepository.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> BulkReorderAsync(Guid courseId, List<(Guid LessonId, int Order)> items)
+    {
+        var courseLessons = await _courseLessonRepository.GetByCourseIdAsync(courseId);
+        var lessonMap = courseLessons.ToDictionary(cl => cl.LessonId);
+
+        foreach (var (lessonId, order) in items)
+        {
+            if (lessonMap.TryGetValue(lessonId, out var courseLesson))
+            {
+                courseLesson.Order = order;
+            }
+        }
+
         await _courseLessonRepository.SaveChangesAsync();
         return true;
     }

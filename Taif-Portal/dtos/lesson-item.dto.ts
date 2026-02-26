@@ -4,10 +4,13 @@
 export interface LessonItemDto {
   id: string;
   name: string;
-  url: string;
-  content: string;
-  type: number; // 0 = Video, 1 = Quiz, etc. (LessonItemType enum)
+  description?: string;
+  contentId?: string;
+  content?: object;
+  type: number; // 0 = Video, 1 = RichText, 2 = Quiz (LessonItemType enum)
   lessonId: string;
+  order: number;
+  durationInSeconds: number;
   createdAt?: string;
   updatedAt?: string;
   isDeleted?: boolean;
@@ -15,15 +18,17 @@ export interface LessonItemDto {
 
 export interface CreateLessonItemRequest {
   name: string;
-  content: string;
+  description?: string;
+  contentId: string;
   type: number;
   lessonId: string;
-  durationInSeconds: number;
+  durationInSeconds?: number;
 }
 
 export interface UpdateLessonItemRequest {
   name?: string;
-  content?: string;
+  description?: string;
+  contentId?: string;
   type?: number;
   lessonId?: string;
   durationInSeconds?: number;
@@ -32,8 +37,9 @@ export interface UpdateLessonItemRequest {
 export interface LessonItemWithProgressDto {
   id: string;
   name: string;
-  url: string;
-  content: string | object;
+  description?: string;
+  contentId?: string;
+  content?: object;
   type: number;
   order: number;
   durationInSeconds: number;

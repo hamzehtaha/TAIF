@@ -44,7 +44,19 @@ class InterestService {
     }
   }
 
+  async createInterest(name: string): Promise<Interest> {
+    const dto = await httpService.post<InterestDto>(this.serviceBaseUrl, { name });
+    return InterestMapper.map(dto);
+  }
 
+  async updateInterest(id: string, name: string): Promise<Interest> {
+    const dto = await httpService.put<InterestDto>(`${this.serviceBaseUrl}/${id}`, { name });
+    return InterestMapper.map(dto);
+  }
+
+  async deleteInterest(id: string): Promise<boolean> {
+    return httpService.delete<boolean>(`${this.serviceBaseUrl}/${id}`);
+  }
 }
 
 export const interestService = new InterestService();

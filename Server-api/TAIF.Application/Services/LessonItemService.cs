@@ -16,48 +16,72 @@ namespace TAIF.Application.Services
         {
             _lessonItemRepository = repository;
         }
+
         public async Task<List<LessonItemResponse>> GetByLessonIdAsync(Guid lessonId, bool withDeleted = false)
         {
-            var lessonsItem =  await _lessonItemRepository.GetByLessonIdAsync(lessonId, withDeleted);
+            var lessonsItem = await _lessonItemRepository.GetByLessonIdAsync(lessonId, withDeleted);
             List<LessonItemResponse> lessonItemsResponse = lessonsItem
                 .Select(li => new LessonItemResponse
                 {
                     Id = li.Id,
                     Name = li.Name,
-                    Content = SanitizeContent(li),
+                    Description = li.Description,
+                    ContentId = li.ContentId,
+                    Content = li.Content != null ? GetContentData(li.Content) : null,
                     Type = li.Type,
                     DurationInSeconds = li.DurationInSeconds,
+                    CreatedAt = li.CreatedAt,
+                    UpdatedAt = li.UpdatedAt,
                 }).ToList();
             return lessonItemsResponse;
         }
 
-        internal static object SanitizeContent(LessonItem item)
+        private static object? GetContentData(Content content)
         {
-            if (item.Type != LessonItemType.Question)
+            if (content == null || string.IsNullOrEmpty(content.ContentJson))
+                return null;
+
+            try
             {
-                return JsonSerializer.Deserialize<object>(item.Content)!;
+                using var doc = JsonDocument.Parse(content.ContentJson);
+                return StripCorrectAnswers(doc.RootElement);
             }
-            using var doc = JsonDocument.Parse(item.Content);
-            var root = doc.RootElement;
-
-            var sanitizedQuestions = root
-                .GetProperty("questions")
-                .EnumerateArray()
-                .Select(q => new
-                {
-                    id = q.GetProperty("id").GetString(),
-                    text = q.GetProperty("text").GetString(),
-                    options = q.GetProperty("options")
-                               .EnumerateArray()
-                               .Select(o => o.GetString())
-                               .ToList()
-                })
-                .ToList();
-
-            return new
+            catch
             {
-                questions = sanitizedQuestions
-            };
+                return null;
+            }
+        }
+
+        private static object? StripCorrectAnswers(JsonElement element)
+        {
+            if (element.ValueKind == JsonValueKind.Object)
+            {
+                var dict = new Dictionary<string, object?>();
+                foreach (var prop in element.EnumerateObject())
+                {
+                    // Skip correctAnswerIndex and correctIndex properties
+                    if (prop.Name.Equals("correctAnswerIndex", StringComparison.OrdinalIgnoreCase) ||
+                        prop.Name.Equals("correctIndex", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+                    dict[prop.Name] = StripCorrectAnswers(prop.Value);
+                }
+                return dict;
+            }
+            else if (element.ValueKind == JsonValueKind.Array)
+            {
+                var list = new List<object?>();
+                foreach (var item in element.EnumerateArray())
+                {
+                    list.Add(StripCorrectAnswers(item));
+                }
+                return list;
+            }
+            else
+            {
+                return JsonSerializer.Deserialize<object>(element.GetRawText());
+            }
         }
     }
 }

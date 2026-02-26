@@ -57,6 +57,32 @@ class LessonService {
   async deleteLesson(id: string): Promise<boolean> {
     return httpService.delete<boolean>(`/api/Lesson/${id}`);
   }
+
+  async getAllLessons(): Promise<Lesson[]> {
+    const dtos = await httpService.get<LessonDto[]>("/api/Lesson");
+    return dtos.map(dto => LessonMapper.map(dto));
+  }
+
+  // Lesson-LessonItem Assignment APIs
+  async getLessonItems(lessonId: string): Promise<any[]> {
+    return httpService.get<any[]>(`/api/content/lessons/${lessonId}/items`);
+  }
+
+  async assignLessonItem(lessonId: string, lessonItemId: string, order?: number): Promise<any> {
+    return httpService.post<any>(`/api/content/lessons/${lessonId}/items/${lessonItemId}`, order ? { newOrder: order } : {});
+  }
+
+  async unassignLessonItem(lessonId: string, lessonItemId: string): Promise<boolean> {
+    return httpService.delete<boolean>(`/api/content/lessons/${lessonId}/items/${lessonItemId}`);
+  }
+
+  async updateLessonItemOrder(lessonId: string, lessonItemId: string, newOrder: number): Promise<any> {
+    return httpService.put<any>(`/api/content/lessons/${lessonId}/items/${lessonItemId}/order`, { newOrder });
+  }
+
+  async bulkReorderLessonItems(lessonId: string, items: { id: string; order: number }[]): Promise<boolean> {
+    return httpService.put<boolean>(`/api/content/lessons/${lessonId}/items/reorder`, { items });
+  }
 }
 
 export const lessonService = new LessonService();

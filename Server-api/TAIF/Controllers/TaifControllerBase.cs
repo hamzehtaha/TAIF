@@ -64,12 +64,6 @@ namespace TAIF.API.Controllers
         protected bool IsAdmin => Role == UserRoleType.Admin;
         protected bool IsContentCreator => Role == UserRoleType.ContentCreator;
         protected bool IsStudent => Role == UserRoleType.Student;
-        
-        // Legacy aliases for backward compatibility
-        protected bool IsSystemAdmin => IsSuperAdmin;
-        protected bool IsOrgAdmin => IsAdmin;
-        protected bool IsInstructor => IsContentCreator;
-
         protected UserRoleType UserRoleType => Role;
     }
 }

@@ -44,18 +44,14 @@ namespace TAIF.API.Seeder.Scripts
             {
                 if (!_context.Users.Any(f => f.Email == user.Email))
                 {
-                    // SuperAdmin has no OrganizationId, all others get Public Org
-                    Guid? organizationId = user.Role == UserRoleType.SuperAdmin ? null : publicOrg?.Id;
-                    
                     var newUser = new User
                     {
-                        Id = user.Id,
                         FirstName = user.FirstName,
                         LastName = user.LastName,
                         Email = user.Email,
                         IsActive = true,
                         Role = user.Role,
-                        OrganizationId = organizationId,
+                        OrganizationId = publicOrg?.Id,
                         Birthday = DateOnly.FromDateTime(DateTime.Now),
                         IsCompleted = user.Role == UserRoleType.SuperAdmin || user.Role == UserRoleType.Student,
                         // password = 123
@@ -71,7 +67,6 @@ namespace TAIF.API.Seeder.Scripts
 
         private class UserJson
         {
-            public Guid Id { get; set; }
             public string FirstName { get; set; } = null!;
             public string LastName { get; set; } = null!;
             public string Email { get; set; } = null!;

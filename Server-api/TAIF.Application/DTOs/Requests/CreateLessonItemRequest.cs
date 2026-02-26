@@ -7,13 +7,14 @@ namespace TAIF.Application.DTOs.Requests
     {
         [Required]
         public string Name { get; set; } = null!;
+        public string? Description { get; set; }
         [Required]
-        public string Content { get; set; } = null!;
+        public Guid ContentId { get; set; }
         [Required]
         public LessonItemType Type { get; set; }
         [Required]
         public Guid LessonId { get; set; }
-        [Required]
-        public double durationInSeconds { get; set; } = 0;
+        public double DurationInSeconds { get; set; } = 0;
+        public Guid? OrganizationId { get; set; } // Only SuperAdmin can set this
     }
 }

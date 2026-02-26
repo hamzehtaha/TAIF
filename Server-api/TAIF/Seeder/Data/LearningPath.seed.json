@@ -7,14 +7,7 @@
       {
         "name": "Sign Language Foundations",
         "description": "Start your journey with basic sign language skills and communication techniques",
-        "order": 1,
-        "courses": [
-          {
-            "courseName": "Sign Language Fundamentals",
-            "order": 1,
-            "isRequired": true
-          }
-        ]
+        "order": 1
       }
     ]
   },
@@ -26,14 +19,7 @@
       {
         "name": "Braille Reading and Writing Skills",
         "description": "Learn to read and write in Braille from alphabet basics to advanced text composition",
-        "order": 1,
-        "courses": [
-          {
-            "courseName": "Braille Reading and Writing",
-            "order": 1,
-            "isRequired": true
-          }
-        ]
+        "order": 1
       }
     ]
   },
@@ -45,14 +31,7 @@
       {
         "name": "Assistive Technology Essentials",
         "description": "Master screen readers, voice control, and adaptive devices for enhanced independence",
-        "order": 1,
-        "courses": [
-          {
-            "courseName": "Assistive Technology for Daily Living",
-            "order": 1,
-            "isRequired": true
-          }
-        ]
+        "order": 1
       }
     ]
   },
@@ -64,26 +43,12 @@
       {
         "name": "Understanding Sensory Processing",
         "description": "Foundation knowledge for sensory integration and self-regulation strategies",
-        "order": 1,
-        "courses": [
-          {
-            "courseName": "Sensory Integration and Self-Regulation",
-            "order": 1,
-            "isRequired": true
-          }
-        ]
+        "order": 1
       },
       {
         "name": "Assistive Tools for Regulation",
         "description": "Use technology to support sensory needs and enhance daily functioning",
-        "order": 2,
-        "courses": [
-          {
-            "courseName": "Assistive Technology for Daily Living",
-            "order": 1,
-            "isRequired": false
-          }
-        ]
+        "order": 2
       }
     ]
   },
@@ -95,38 +60,17 @@
       {
         "name": "Visual Communication",
         "description": "Learn sign language for deaf and hard of hearing communication",
-        "order": 1,
-        "courses": [
-          {
-            "courseName": "Sign Language Fundamentals",
-            "order": 1,
-            "isRequired": true
-          }
-        ]
+        "order": 1
       },
       {
         "name": "Tactile Communication",
         "description": "Master Braille for visually impaired literacy and communication",
-        "order": 2,
-        "courses": [
-          {
-            "courseName": "Braille Reading and Writing",
-            "order": 1,
-            "isRequired": true
-          }
-        ]
+        "order": 2
       },
       {
         "name": "Technology-Assisted Communication",
         "description": "Utilize assistive technology for enhanced independence and daily living",
-        "order": 3,
-        "courses": [
-          {
-            "courseName": "Assistive Technology for Daily Living",
-            "order": 1,
-            "isRequired": true
-          }
-        ]
+        "order": 3
       }
     ]
   },
@@ -138,43 +82,17 @@
       {
         "name": "Foundation Communication Skills",
         "description": "Build core communication skills through sign language and Braille",
-        "order": 1,
-        "courses": [
-          {
-            "courseName": "Sign Language Fundamentals",
-            "order": 1,
-            "isRequired": true
-          },
-          {
-            "courseName": "Braille Reading and Writing",
-            "order": 2,
-            "isRequired": true
-          }
-        ]
+        "order": 1
       },
       {
         "name": "Technology Integration",
         "description": "Master assistive technology tools for daily independence",
-        "order": 2,
-        "courses": [
-          {
-            "courseName": "Assistive Technology for Daily Living",
-            "order": 1,
-            "isRequired": true
-          }
-        ]
+        "order": 2
       },
       {
         "name": "Advanced Support Techniques",
         "description": "Learn therapeutic and self-regulation strategies for comprehensive support",
-        "order": 3,
-        "courses": [
-          {
-            "courseName": "Sensory Integration and Self-Regulation",
-            "order": 1,
-            "isRequired": true
-          }
-        ]
+        "order": 3
       }
     ]
   }

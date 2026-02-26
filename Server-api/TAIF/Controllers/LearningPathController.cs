@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Linq.Expressions;
 using TAIF.API.Controllers;
 using TAIF.Application.DTOs.Filters;
+using TAIF.Application.DTOs.Requests;
 using TAIF.Application.DTOs.Responses;
 using TAIF.Application.Interfaces.Services;
 using TAIF.Domain.Entities;
@@ -191,5 +192,52 @@ namespace TAIF.Controllers
             var enrollment = await _progressService.EnrollUserAsync(this.UserId, id);
             return Ok(ApiResponse<UserLearningPathProgress>.SuccessResponse(enrollment));
         }
+
+        #region Admin CRUD Operations
+
+        [HttpGet("{id}")]
+        [Authorize(Policy = "ContentCreatorOrAbove")]
+        public async Task<IActionResult> GetById([FromRoute] Guid id)
+        {
+            var learningPath = await _learningPathService.GetByIdAsync(id);
+            if (learningPath is null) return NotFound();
+            return Ok(ApiResponse<LearningPath>.SuccessResponse(learningPath));
+        }
+
+        [HttpPost]
+        [Authorize(Policy = "ContentCreatorOrAbove")]
+        public async Task<IActionResult> Create([FromBody] CreateLearningPathRequest request)
+        {
+            var learningPath = new LearningPath
+            {
+                Name = request.Name,
+                Description = request.Description,
+                Photo = request.Photo,
+                CreatorId = this.UserId,
+                OrganizationId = this.OrganizationId
+            };
+
+            var created = await _learningPathService.CreateAsync(learningPath);
+            return Ok(ApiResponse<LearningPath>.SuccessResponse(created));
+        }
+
+        [HttpPut("{id}")]
+        [Authorize(Policy = "ContentCreatorOrAbove")]
+        public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateLearningPathRequest request)
+        {
+            var updated = await _learningPathService.UpdateAsync(id, request);
+            return Ok(ApiResponse<LearningPath>.SuccessResponse(updated));
+        }
+
+        [HttpDelete("{id}")]
+        [Authorize(Policy = "ContentCreatorOrAbove")]
+        public async Task<IActionResult> Delete([FromRoute] Guid id)
+        {
+            var result = await _learningPathService.DeleteAsync(id);
+            if (!result) return NotFound();
+            return Ok(ApiResponse<bool>.SuccessResponse(true));
+        }
+
+        #endregion
     }
 }

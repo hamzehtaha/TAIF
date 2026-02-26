@@ -1,0 +1,37 @@
+[
+  {
+    "firstName": "Ahmad",
+    "lastName": "Al-Rashid",
+    "bio": "Senior special education expert with 15+ years of experience in inclusive education and disability support.",
+    "expertises": ["Sign Language", "Deaf Education", "Inclusive Teaching", "Communication"],
+    "yearsOfExperience": 15
+  },
+  {
+    "firstName": "Sarah",
+    "lastName": "Johnson",
+    "bio": "Certified Braille instructor and accessibility specialist. Expert in tactile learning methods for visually impaired students.",
+    "expertises": ["Braille", "Visual Impairment", "Tactile Learning", "Accessibility"],
+    "yearsOfExperience": 10
+  },
+  {
+    "firstName": "Mohammed",
+    "lastName": "Hassan",
+    "bio": "Assistive technology specialist with expertise in screen readers, voice control, and adaptive devices for daily living.",
+    "expertises": ["Assistive Technology", "Screen Readers", "Voice Control", "Adaptive Devices"],
+    "yearsOfExperience": 12
+  },
+  {
+    "firstName": "Fatima",
+    "lastName": "Al-Zahrani",
+    "bio": "Occupational therapist specializing in sensory integration and self-regulation for individuals with autism and ADHD.",
+    "expertises": ["Sensory Integration", "Autism Support", "ADHD Strategies", "Self-Regulation"],
+    "yearsOfExperience": 8
+  },
+  {
+    "firstName": "Omar",
+    "lastName": "Khalil",
+    "bio": "Speech-language pathologist with expertise in AAC devices and communication disorders.",
+    "expertises": ["Speech Therapy", "AAC Devices", "Communication Disorders", "Language Development"],
+    "yearsOfExperience": 9
+  }
+]

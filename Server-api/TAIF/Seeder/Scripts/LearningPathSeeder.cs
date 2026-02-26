@@ -10,6 +10,7 @@ namespace TAIF.API.Seeder.Scripts
         private readonly TaifDbContext _context;
         [Obsolete]
         private readonly Microsoft.AspNetCore.Hosting.IHostingEnvironment _env;
+        private readonly Random _random = new();
 
         [Obsolete]
         public LearningPathSeeder(TaifDbContext context, Microsoft.AspNetCore.Hosting.IHostingEnvironment env)
@@ -41,19 +42,37 @@ namespace TAIF.API.Seeder.Scripts
             var learningPaths = JsonSerializer.Deserialize<List<LearningPathJson>>(json, options)
                 ?? throw new InvalidOperationException("Invalid LearningPath JSON");
 
+            // Get public organization
+            var publicOrg = _context.Organizations.FirstOrDefault(o => o.Identity == "default");
+            if (publicOrg == null)
+            {
+                Console.WriteLine("⚠️ Public organization not found. Please seed organizations first.");
+                return;
+            }
+
             var instructors = _context.Users
                 .Where(u => u.Role == UserRoleType.ContentCreator)
                 .ToList();
 
             if (instructors.Count == 0)
             {
-                Console.WriteLine("No instructors found. Please seed users first.");
+                Console.WriteLine("⚠️ No instructors found. Please seed users first.");
                 return;
             }
 
-            var courseNameToId = _context.Courses
+            // Get all existing courses for random assignment
+            var allCourses = _context.Courses
                 .Where(c => !c.IsDeleted)
-                .ToDictionary(c => c.Name!, c => c.Id, StringComparer.OrdinalIgnoreCase);
+                .Select(c => c.Id)
+                .ToList();
+
+            if (allCourses.Count == 0)
+            {
+                Console.WriteLine("⚠️ No courses found. Please seed courses first.");
+                return;
+            }
+
+            Console.WriteLine($"📚 Found {allCourses.Count} courses for random assignment");
 
             var instructorIndex = 0;
 
@@ -75,11 +94,15 @@ namespace TAIF.API.Seeder.Scripts
                     Photo = lpData.Photo,
                     CreatorId = instructor.Id,
                     TotalEnrolled = 0,
-                    DurationInSeconds = 0
+                    DurationInSeconds = 0,
+                    OrganizationId = publicOrg.Id
                 };
 
                 _context.LearningPaths.Add(learningPath);
                 await _context.SaveChangesAsync();
+
+                // Track used courses for this learning path to avoid duplicates
+                var usedCourseIds = new HashSet<Guid>();
 
                 foreach (var sectionData in lpData.Sections ?? [])
                 {
@@ -88,32 +111,48 @@ namespace TAIF.API.Seeder.Scripts
                         LearningPathId = learningPath.Id,
                         Name = sectionData.Name,
                         Description = sectionData.Description,
-                        Order = sectionData.Order
+                        Order = sectionData.Order,
+                        OrganizationId = publicOrg.Id
                     };
 
                     _context.LearningPathSections.Add(section);
                     await _context.SaveChangesAsync();
 
-                    foreach (var courseRef in sectionData.Courses ?? [])
+                    // Randomly select 1-3 courses for this section
+                    var coursesPerSection = _random.Next(1, Math.Min(4, allCourses.Count - usedCourseIds.Count + 1));
+                    var availableCourses = allCourses.Where(c => !usedCourseIds.Contains(c)).ToList();
+                    
+                    if (availableCourses.Count == 0)
                     {
-                        if (!courseNameToId.TryGetValue(courseRef.CourseName, out var courseId))
-                        {
-                            Console.WriteLine($"Course '{courseRef.CourseName}' not found for section '{sectionData.Name}'");
-                            continue;
-                        }
+                        // Reset if we've used all courses
+                        usedCourseIds.Clear();
+                        availableCourses = allCourses.ToList();
+                    }
+
+                    var selectedCourses = availableCourses
+                        .OrderBy(_ => _random.Next())
+                        .Take(coursesPerSection)
+                        .ToList();
+
+                    var courseOrder = 1;
+                    foreach (var courseId in selectedCourses)
+                    {
+                        usedCourseIds.Add(courseId);
 
                         var learningPathCourse = new LearningPathCourse
                         {
                             LearningPathSectionId = section.Id,
                             CourseId = courseId,
-                            Order = courseRef.Order,
-                            IsRequired = courseRef.IsRequired
+                            Order = courseOrder++,
+                            IsRequired = _random.Next(100) < 80, // 80% chance of being required
+                            OrganizationId = publicOrg.Id
                         };
 
                         _context.LearningPathCourses.Add(learningPathCourse);
                     }
 
                     await _context.SaveChangesAsync();
+                    Console.WriteLine($"   📖 Section '{sectionData.Name}' - {selectedCourses.Count} courses assigned");
                 }
 
                 Console.WriteLine($"✅ Learning path '{lpData.Name}' seeded with {lpData.Sections?.Count ?? 0} sections");
@@ -135,14 +174,6 @@ namespace TAIF.API.Seeder.Scripts
             public string Name { get; set; } = null!;
             public string? Description { get; set; }
             public int Order { get; set; }
-            public List<LearningPathCourseReferenceJson>? Courses { get; set; }
-        }
-
-        private class LearningPathCourseReferenceJson
-        {
-            public string CourseName { get; set; } = null!;
-            public int Order { get; set; }
-            public bool IsRequired { get; set; } = true;
         }
     }
 }

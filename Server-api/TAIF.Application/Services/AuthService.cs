@@ -13,14 +13,14 @@ public class AuthService : IAuthService
 {
     private readonly IUserRepository _userRepository;
     private readonly IOrganizationRepository _organizationRepository;
-    private readonly IInstructorProfileRepository _instructorProfileRepository;
+    private readonly IInstructorRepository _instructorProfileRepository;
     private readonly ITokenService _tokenService;
     private readonly IConfiguration _configuration;
 
     public AuthService(
         IUserRepository userRepository,
         IOrganizationRepository organizationRepository,
-        IInstructorProfileRepository instructorProfileRepository,
+        IInstructorRepository instructorProfileRepository,
         ITokenService tokenService,
         IConfiguration configuration)
     {
@@ -56,7 +56,7 @@ public class AuthService : IAuthService
             IsActive = true,
             Birthday = request.Birthday,
             Role = request.UserRoleType,
-            OrganizationId = request.UserRoleType == UserRoleType.SuperAdmin ? null : publicOrg.Id,
+            OrganizationId = publicOrg.Id,
             IsCompleted = isCompleted
         };
 
@@ -75,61 +75,6 @@ public class AuthService : IAuthService
         );
     }
 
-    public async Task<AuthResponse> RegisterInstructorAsync(RegisterInstructorRequest request)
-    {
-        var existing = await _userRepository.GetByEmailAsync(request.Email);
-        if (existing is not null)
-        {
-            throw new Exception("User already exists");
-        }
-
-        var publicOrg = await _organizationRepository.GetPublicOrganizationAsync();
-        if (publicOrg == null)
-        {
-            throw new Exception("Public organization not found. Please run seeders first.");
-        }
-
-        var user = new User
-        {
-            Id = Guid.NewGuid(),
-            FirstName = request.FirstName,
-            LastName = request.LastName,
-            Email = request.Email,
-            PasswordHash = HashPassword(request.Password),
-            IsActive = true,
-            Birthday = request.Birthday,
-            Role = UserRoleType.ContentCreator,
-            OrganizationId = publicOrg.Id,
-            IsCompleted = false
-        };
-
-        var instructorProfile = new InstructorProfile
-        {
-            Id = Guid.NewGuid(),
-            UserId = user.Id,
-            OrganizationId = publicOrg.Id,
-            YearsOfExperience = request.YearsOfExperience,
-            Rating = 0m,
-            CoursesCount = 0
-        };
-
-        var accessToken = _tokenService.GenerateAccessToken(user);
-        var refreshToken = _tokenService.GenerateRefreshToken(user);
-        var times = GetTokenExpires();
-        user.RefreshToken = refreshToken;
-        user.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(times.Item1);
-
-        await _userRepository.AddAsync(user);
-        await _instructorProfileRepository.AddAsync(instructorProfile);
-        await _userRepository.SaveChangesAsync();
-
-        return new AuthResponse(
-            accessToken,
-            DateTime.UtcNow.AddMinutes(times.Item2),
-            refreshToken,
-            user.RefreshTokenExpiresAt.Value
-        );
-    }
     public async Task<AuthResponse?> LoginAsync(string email, string password)
     {
         var user = await _userRepository.GetByEmailAsync(email);

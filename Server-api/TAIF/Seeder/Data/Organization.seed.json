@@ -1,22 +1,22 @@
 [
   {
-    "Id": "550e8400-e29b-41d4-a716-446655440000",
-    "Name": "Tech Academy",
+    "Name": "Taif Academy",
+    "Slug": "taif-academy",
+    "Type": "Private",
     "Logo": "https://images.unsplash.com/photo-1552664730-d307ca884978?w=800",
-    "Description": "Leading online platform for technology education and professional development",
-    "Email": "info@techacademy.com",
-    "Phone": "+1-800-TECH-101",
-    "IsActive": true,
-    "IsPublic":true
+    "Description": "Leading online platform for special needs education and inclusive learning",
+    "Email": "info@taifacademy.com",
+    "Phone": "+1-800-TAIF-101",
+    "IsActive": true
   },
   {
-    "Id": "550e8400-e29b-41d4-a716-446655440001",
     "Name": "Creative Learning Hub",
+    "Slug": "creative-learning-hub",
+    "Type": "Private",
     "Logo": "https://images.unsplash.com/photo-1552664730-d307ca884978?w=800",
     "Description": "Specialized in creative skills and personal development training",
     "Email": "info@creativelearning.com",
     "Phone": "+1-800-CREATE-1",
-    "IsActive": true,
-    "IsPublic": false
+    "IsActive": true
   }
 ]

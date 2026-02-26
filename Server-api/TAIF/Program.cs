@@ -97,8 +97,8 @@ builder.Services.AddScoped<IQuizSubmissionRepository, QuizSubmissionRepository>(
 builder.Services.AddScoped<IOrganizationRepository, OrganizationRepository>();
 builder.Services.AddScoped<IOrganizationService, OrganizationService>();
 
-builder.Services.AddScoped<IInstructorProfileRepository, InstructorProfileRepository>();
-builder.Services.AddScoped<IInstructorProfileService, InstructorProfileService>();
+builder.Services.AddScoped<IInstructorRepository, InstructorRepository>();
+builder.Services.AddScoped<IInstructorService, InstructorService>();
 
 builder.Services.AddScoped<ICourseStatisticsService, CourseStatisticsService>();
 
@@ -131,14 +131,8 @@ builder.Services.AddScoped<ILessonLessonItemRepository, LessonLessonItemReposito
 builder.Services.AddScoped<ILessonLessonItemService, LessonLessonItemService>();
 
 // Content type repositories and services
-builder.Services.AddScoped<IVideoRepository, VideoRepository>();
-builder.Services.AddScoped<IVideoService, VideoService>();
-
-builder.Services.AddScoped<IRichContentRepository, RichContentRepository>();
-builder.Services.AddScoped<IRichContentService, RichContentService>();
-
-builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
-builder.Services.AddScoped<IQuestionService, QuestionService>();
+builder.Services.AddScoped<IContentService, ContentService>();
+builder.Services.AddScoped<IContentRepository, ContentRepository>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -279,10 +273,12 @@ if (args.Length >= 2 && args[0].Equals("seed", StringComparison.OrdinalIgnoreCas
             {
                 "OrganizationSeeder" => 0,          // First: seed organizations (required for user assignment)
                 "UserSeeder" => 1,                  // Second: seed users (with OrganizationId)
-                "InstructorProfileSeeder" => 2,     // Third: seed instructor profiles
-                "RecommendationSeeder" => 3,        // Fourth: seed interests & tags
-                "CourseSeeder" => 4,                // Fifth: seed courses (uses users + tags)
-                _ => 5                              // Other seeders last
+                "RecommendationSeeder" => 2,        // Third: seed interests & tags
+                "EvaluationQuestionSeeder" => 3,    // Fourth: seed evaluation questions
+                "InstructorSeeder" => 4,            // Fifth: seed instructors (required by Course)
+                "CourseSeeder" => 5,                // Sixth: seed courses (uses users + tags + instructors)
+                "LearningPathSeeder" => 6,          // Seventh: seed learning paths (uses courses)
+                _ => 99                             // Other seeders last
             })
             .ToList();
         
@@ -381,13 +377,12 @@ app.Run();
 
 void InjectSeeders()
 {
-    // Only register explicit seeders - remove the reflection-based registration
-    builder.Services.AddScoped<IEntitySeeder, UserSeeder>();
+    // Only register explicit seeders - order matters for dependencies!
     builder.Services.AddScoped<IEntitySeeder, OrganizationSeeder>();
-    builder.Services.AddScoped<IEntitySeeder, InstructorProfileSeeder>();
+    builder.Services.AddScoped<IEntitySeeder, UserSeeder>();
     builder.Services.AddScoped<IEntitySeeder, RecommendationSeeder>();
+    builder.Services.AddScoped<IEntitySeeder, EvaluationQuestionSeeder>();
+    builder.Services.AddScoped<IEntitySeeder, InstructorSeeder>();
     builder.Services.AddScoped<IEntitySeeder, CourseSeeder>();
     builder.Services.AddScoped<IEntitySeeder, LearningPathSeeder>();
-    builder.Services.AddScoped<IEntitySeeder, EvaluationQuestionSeeder>();
-
 }

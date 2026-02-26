@@ -59,7 +59,6 @@ namespace TAIF.API.Seeder.Scripts
                     {
                         var newOrg = new Organization
                         {
-                            Id = org.Id,
                             Name = org.Name,
                             Slug = org.Slug ?? org.Name.ToLower().Replace(" ", "-"),
                             Type = org.Type,
@@ -80,7 +79,6 @@ namespace TAIF.API.Seeder.Scripts
 
         private class OrganizationJson
         {
-            public Guid Id { get; set; }
             public string Name { get; set; } = null!;
             public string? Slug { get; set; }
             public OrganizationType Type { get; set; } = OrganizationType.Private;

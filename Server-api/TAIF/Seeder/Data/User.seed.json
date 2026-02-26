@@ -1,51 +1,32 @@
 [
   {
-    "Id": "110e8400-e29b-41d4-a716-446655440000",
-    "FirstName": "Super",
-    "LastName": "Admin",
-    "Email": "super@taif.com",
-    "Role": "SuperAdmin"
+    "firstName": "Super",
+    "lastName": "Admin",
+    "email": "super@taif.com",
+    "role": "SuperAdmin"
   },
   {
-    "Id": "110e8400-e29b-41d4-a716-446655440010",
-    "FirstName": "Org",
-    "LastName": "Admin",
-    "Email": "admin@taif.com",
-    "Role": "Admin"
+    "firstName": "Admin",
+    "lastName": "User",
+    "email": "admin@taif.com",
+    "role": "Admin"
   },
   {
-    "Id": "220e8400-e29b-41d4-a716-446655440001",
-    "FirstName": "John",
-    "LastName": "Davis",
-    "Email": "john.davis@taif.com",
-    "Role": "ContentCreator"
+    "firstName": "Content",
+    "lastName": "Creator",
+    "email": "creator@taif.com",
+    "role": "ContentCreator"
   },
   {
-    "Id": "220e8400-e29b-41d4-a716-446655440002",
-    "FirstName": "Sarah",
-    "LastName": "Wilson",
-    "Email": "sarah.wilson@taif.com",
-    "Role": "ContentCreator"
+    "firstName": "Content",
+    "lastName": "Editor",
+    "email": "editor@taif.com",
+    "role": "ContentCreator"
   },
   {
-    "Id": "220e8400-e29b-41d4-a716-446655440003",
-    "FirstName": "Michael",
-    "LastName": "Johnson",
-    "Email": "michael.johnson@taif.com",
-    "Role": "ContentCreator"
-  },
-  {
-    "Id": "220e8400-e29b-41d4-a716-446655440004",
-    "FirstName": "Emma",
-    "LastName": "Anderson",
-    "Email": "emma.anderson@taif.com",
-    "Role": "ContentCreator"
-  },
-  {
-    "Id": "330e8400-e29b-41d4-a716-446655440001",
-    "FirstName": "Test",
-    "LastName": "Student",
-    "Email": "student@taif.com",
-    "Role": "Student"
+    "firstName": "Test",
+    "lastName": "Student",
+    "email": "student@taif.com",
+    "role": "Student"
   }
 ]

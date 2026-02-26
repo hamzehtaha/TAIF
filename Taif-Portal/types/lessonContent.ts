@@ -32,7 +32,7 @@ export interface RichTextContent {
 // =============================================================================
 export interface QuizQuestion {
   id: string;
-  text?: string;
+  questionText?: string;
   question?: string;
   options: string[];
   correctIndex?: number;

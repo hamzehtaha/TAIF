@@ -81,6 +81,65 @@ class LearningPathService {
     if (totalDuration <= 0) return 0;
     return Math.min(100, Math.round((completedDuration / totalDuration) * 100));
   }
+
+  // Admin CRUD Operations
+  async getById(id: string): Promise<any> {
+    return httpService.get<any>(`${this.baseUrl}/${id}`);
+  }
+
+  async getPaged(params: { page?: number; pageSize?: number; search?: string }): Promise<any> {
+    const searchParams = new URLSearchParams();
+    if (params.page) searchParams.append('page', params.page.toString());
+    if (params.pageSize) searchParams.append('pageSize', params.pageSize.toString());
+    if (params.search) searchParams.append('search', params.search);
+    return httpService.get<any>(`${this.baseUrl}/paged?${searchParams.toString()}`);
+  }
+
+  async create(data: { name: string; description?: string; photo?: string }): Promise<any> {
+    return httpService.post<any>(this.baseUrl, data);
+  }
+
+  async update(id: string, data: { name?: string; description?: string; photo?: string }): Promise<any> {
+    return httpService.put<any>(`${this.baseUrl}/${id}`, data);
+  }
+
+  async delete(id: string): Promise<boolean> {
+    return httpService.delete<boolean>(`${this.baseUrl}/${id}`);
+  }
+
+  // Section Operations
+  async getSections(learningPathId: string): Promise<any[]> {
+    return httpService.get<any[]>(`/api/learning-path/${learningPathId}/sections`);
+  }
+
+  async createSection(learningPathId: string, data: { name: string; description?: string; order: number }): Promise<any> {
+    return httpService.post<any>(`/api/learning-path/${learningPathId}/sections`, data);
+  }
+
+  async updateSection(sectionId: string, data: { name?: string; description?: string; order?: number }): Promise<any> {
+    return httpService.put<any>(`/api/learning-path/sections/${sectionId}`, data);
+  }
+
+  async deleteSection(sectionId: string): Promise<boolean> {
+    return httpService.delete<boolean>(`/api/learning-path/sections/${sectionId}`);
+  }
+
+  // Course Operations
+  async getSectionCourses(sectionId: string): Promise<any[]> {
+    return httpService.get<any[]>(`/api/learning-path/sections/${sectionId}/courses`);
+  }
+
+  async addCourseToSection(sectionId: string, data: { courseId: string; order: number; isRequired?: boolean }): Promise<any> {
+    return httpService.post<any>(`/api/learning-path/sections/${sectionId}/courses`, data);
+  }
+
+  async updateSectionCourse(courseId: string, data: { order?: number; isRequired?: boolean }): Promise<any> {
+    return httpService.put<any>(`/api/learning-path/sections/courses/${courseId}`, data);
+  }
+
+  async removeCourseFromSection(courseId: string): Promise<boolean> {
+    return httpService.delete<boolean>(`/api/learning-path/sections/courses/${courseId}`);
+  }
 }
 
 export const learningPathService = new LearningPathService();
