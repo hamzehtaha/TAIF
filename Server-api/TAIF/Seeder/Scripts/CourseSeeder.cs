@@ -77,7 +77,7 @@ namespace TAIF.API.Seeder.Scripts
                 var category = _context.Categories.FirstOrDefault(c => c.Name == categoryData.Name);
                 if (category == null)
                 {
-                    category = new Category { Name = categoryData.Name };
+                    category = new Category { Name = categoryData.Name , OrganizationId = publicOrg?.Id };
                     _context.Categories.Add(category);
                     await _context.SaveChangesAsync();
                 }
@@ -164,6 +164,7 @@ namespace TAIF.API.Seeder.Scripts
                             };
 
                             var content = new Content(itemData.Type, contentData);
+                            content.OrganizationId = publicOrg?.Id;
                             _context.Contents.Add(content);
                             await _context.SaveChangesAsync();
 

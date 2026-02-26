@@ -32,6 +32,8 @@ namespace TAIF.API.Seeder.Scripts
             {
                 PropertyNameCaseInsensitive = true
             };
+            // Get default (Public) Organization for assigning to courses
+            var publicOrg = _context.Organizations.FirstOrDefault(o => o.Identity == "default");
             var seedData = JsonSerializer.Deserialize<RecommendationSeedData>(json, options)
                        ?? throw new InvalidOperationException("Invalid seed JSON");
 
@@ -42,7 +44,7 @@ namespace TAIF.API.Seeder.Scripts
                 var existing = _context.Interests.FirstOrDefault(i => i.Name == interestName);
                 if (existing == null)
                 {
-                    var interest = new Interest { Name = interestName };
+                    var interest = new Interest { Name = interestName, OrganizationId = publicOrg?.Id };
                     _context.Interests.Add(interest);
                     await _context.SaveChangesAsync();
                     interestIdMap[interestName] = interest.Id;
@@ -61,7 +63,7 @@ namespace TAIF.API.Seeder.Scripts
                 var existing = _context.Tags.FirstOrDefault(t => t.Name == tagName);
                 if (existing == null)
                 {
-                    var tag = new Tag { Name = tagName };
+                    var tag = new Tag { Name = tagName, OrganizationId = publicOrg?.Id };
                     _context.Tags.Add(tag);
                     await _context.SaveChangesAsync();
                     tagIdMap[tagName] = tag.Id;
@@ -96,6 +98,7 @@ namespace TAIF.API.Seeder.Scripts
                     {
                         InterestId = interestId,
                         TagId = tagId,
+                        OrganizationId = publicOrg?.Id,
                         Weight = mapping.Weight
                     };
                     _context.InterestTagMappings.Add(newMapping);

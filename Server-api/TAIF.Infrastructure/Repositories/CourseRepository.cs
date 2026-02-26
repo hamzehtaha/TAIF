@@ -32,7 +32,6 @@ namespace TAIF.Infrastructure.Repositories
             
             if (!withDeleted)
                 query = query.Where(c => !c.IsDeleted);
-            
             return await query.FirstOrDefaultAsync(c => c.Id == id);
         }
     }
