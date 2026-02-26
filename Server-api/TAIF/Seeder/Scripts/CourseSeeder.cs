@@ -112,7 +112,7 @@ namespace TAIF.API.Seeder.Scripts
                         Photo = courseData.Photo,
                         CategoryId = category.Id,
                         Tags = tagIds,
-                        CreatedByUserId = creator.Id,
+                        CreatedBy = creator.Id,
                         OrganizationId = publicOrg?.Id
                     };
 
@@ -132,7 +132,7 @@ namespace TAIF.API.Seeder.Scripts
                             Title = lessonData.Title,
                             Photo = lessonData.Photo,
                             Description = lessonData.Description,
-                            CreatedByUserId = creator.Id,
+                            CreatedBy = creator.Id,
                             OrganizationId = publicOrg?.Id,
                             InstructorId = instructor.Id
                         };

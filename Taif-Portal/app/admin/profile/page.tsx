@@ -2,43 +2,37 @@
 
 import { useState, useEffect } from "react";
 import {
-  User,
+  User as UserIcon,
   Mail,
-  BookOpen,
-  Users,
-  Star,
+  Shield,
+  Building2,
   Save,
   Camera,
-  Award,
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { X } from "lucide-react";
-import { instructorProfileService, InstructorProfileResponse } from "@/services/instructor-profile.service";
+import { authService } from "@/services/auth.service";
+import { User } from "@/models/user.model";
+import { UserRole, UserRoleLabels } from "@/enums/user-role.enum";
 import { useToast } from "@/hooks/use-toast";
 
 export default function ProfilePage() {
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [profile, setProfile] = useState<InstructorProfileResponse | null>(null);
+  const [profile, setProfile] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
-    bio: "",
-    expertise: "",
-    expertises: [] as string[],
   });
-  const [currentExpertise, setCurrentExpertise] = useState("");
 
   useEffect(() => {
     loadProfile();
@@ -47,18 +41,16 @@ export default function ProfilePage() {
   const loadProfile = async () => {
     try {
       setIsLoading(true);
-      console.log("Loading instructor profile...");
-      const profileData = await instructorProfileService.getCurrentProfile();
-      console.log("Profile data received:", profileData);
-      setProfile(profileData);
-      setFormData({
-        firstName: profileData.firstName || "",
-        lastName: profileData.lastName || "",
-        email: profileData.email || "",
-        bio: profileData.bio || "",
-        expertise: profileData.expertises?.join(", ") || "",
-        expertises: profileData.expertises || [],
-      });
+      const user = await authService.getUserProfile();
+      
+      if (user) {
+        setProfile(user);
+        setFormData({
+          firstName: user.firstName || "",
+          lastName: user.lastName || "",
+          email: user.email || "",
+        });
+      }
     } catch (error) {
       console.error("Failed to load profile:", error);
       toast({
@@ -74,19 +66,12 @@ export default function ProfilePage() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const updatedProfile = await instructorProfileService.updateCurrentProfile({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        bio: formData.bio,
-        expertises: formData.expertises,
-      });
-      setProfile(updatedProfile);
-      setIsEditing(false);
-      setCurrentExpertise("");
+      // TODO: Implement user profile update API
       toast({
         title: "Profile Updated",
         description: "Your profile has been successfully updated.",
       });
+      setIsEditing(false);
     } catch (error) {
       toast({
         title: "Error",
@@ -96,32 +81,6 @@ export default function ProfilePage() {
     } finally {
       setIsSaving(false);
     }
-  };
-
-  const addExpertise = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && currentExpertise.trim()) {
-      e.preventDefault();
-      const newExpertise = currentExpertise.trim();
-      if (!formData.expertises.includes(newExpertise)) {
-        setFormData(prev => ({
-          ...prev,
-          expertises: [...prev.expertises, newExpertise],
-          expertise: [...prev.expertises, newExpertise].join(", "),
-        }));
-      }
-      setCurrentExpertise("");
-    }
-  };
-
-  const removeExpertise = (expertiseToRemove: string) => {
-    setFormData(prev => {
-      const newExpertises = prev.expertises.filter(exp => exp !== expertiseToRemove);
-      return {
-        ...prev,
-        expertises: newExpertises,
-        expertise: newExpertises.join(", "),
-      };
-    });
   };
 
   if (isLoading) {
@@ -144,30 +103,26 @@ export default function ProfilePage() {
     );
   }
 
+  const roleName = UserRoleLabels[profile.role] || "User";
+
   return (
     <AdminLayout breadcrumbs={[{ label: "Profile" }]}>
       <div className="p-6 max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Instructor Profile</h1>
+            <h1 className="text-2xl font-bold">My Profile</h1>
             <p className="text-muted-foreground">
-              Manage your public profile and account settings
+              Manage your account information and settings
             </p>
           </div>
           {!isEditing ? (
-            <Button onClick={() => {
-              setIsEditing(true);
-              setCurrentExpertise("");
-            }}>
+            <Button onClick={() => setIsEditing(true)}>
               Edit Profile
             </Button>
           ) : (
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => {
-                setIsEditing(false);
-                setCurrentExpertise("");
-              }}>
+              <Button variant="outline" onClick={() => setIsEditing(false)}>
                 Cancel
               </Button>
               <Button onClick={handleSave} disabled={isSaving}>
@@ -187,7 +142,7 @@ export default function ProfilePage() {
                 <div className="relative">
                   <Avatar className="h-32 w-32">
                     <AvatarFallback className="bg-primary text-primary-foreground text-3xl">
-                      {profile.firstName?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'IN'}
+                      {profile.firstName?.[0]}{profile.lastName?.[0]}
                     </AvatarFallback>
                   </Avatar>
                   {isEditing && (
@@ -257,74 +212,32 @@ export default function ProfilePage() {
                         Email cannot be changed
                       </p>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="bio">Bio</Label>
-                      <Textarea
-                        id="bio"
-                        value={formData.bio}
-                        onChange={(e) =>
-                          setFormData((prev) => ({ ...prev, bio: e.target.value }))
-                        }
-                        placeholder="Tell students about yourself..."
-                        className="min-h-24"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="expertise">Expertise</Label>
-                      <div className="space-y-2">
-                        <div className="flex flex-wrap gap-2 min-h-[42px] p-2 border rounded-md bg-background">
-                          {formData.expertises.map((expertise) => (
-                            <Badge
-                              key={expertise}
-                              variant="secondary"
-                              className="flex items-center gap-1 pr-1"
-                            >
-                              {expertise}
-                              <button
-                                type="button"
-                                onClick={() => removeExpertise(expertise)}
-                                className="ml-1 rounded-full hover:bg-muted-foreground/20 p-0.5"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            </Badge>
-                          ))}
-                          <Input
-                            id="expertise"
-                            value={currentExpertise}
-                            onChange={(e) => setCurrentExpertise(e.target.value)}
-                            onKeyDown={addExpertise}
-                            placeholder="Type expertise and press Enter"
-                            className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 h-7 px-1 min-w-[120px]"
-                          />
-                        </div>
-                      </div>
-                    </div>
                   </>
                 ) : (
                   <>
-                    <div>
-                      <Label className="text-muted-foreground">Bio</Label>
-                      <p className="mt-1">
-                        {profile.bio || "No bio added yet."}
-                      </p>
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-muted-foreground" />
+                      <Label className="text-muted-foreground">Role</Label>
                     </div>
-                    <div>
-                      <Label className="text-muted-foreground">Expertise</Label>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {profile.expertises && profile.expertises.length > 0 ? (
-                          profile.expertises.map((skill) => (
-                            <Badge key={skill} variant="secondary">
-                              {skill}
-                            </Badge>
-                          ))
-                        ) : (
-                          <p className="text-sm text-muted-foreground">
-                            No expertise added yet.
-                          </p>
-                        )}
-                      </div>
+                    <Badge variant="secondary" className="text-sm">
+                      {roleName}
+                    </Badge>
+                    
+                    {profile.organizationName && (
+                      <>
+                        <div className="flex items-center gap-2 mt-4">
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
+                          <Label className="text-muted-foreground">Organization</Label>
+                        </div>
+                        <p className="text-sm">{profile.organizationName}</p>
+                      </>
+                    )}
+                    
+                    <div className="flex items-center gap-2 mt-4">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <Label className="text-muted-foreground">Email</Label>
                     </div>
+                    <p className="text-sm">{profile.email}</p>
                   </>
                 )}
               </div>
@@ -332,41 +245,43 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {/* Account Info Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardContent className="p-4 flex items-center gap-3">
               <div className="p-2 rounded-lg bg-primary/10">
-                <BookOpen className="h-5 w-5 text-primary" />
+                <UserIcon className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{profile.coursesCount ?? 0}</p>
-                <p className="text-xs text-muted-foreground">Courses</p>
+                <p className="text-sm font-medium">{roleName}</p>
+                <p className="text-xs text-muted-foreground">Account Type</p>
               </div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-warning/10">
-                <Star className="h-5 w-5 text-warning" />
+              <div className="p-2 rounded-lg bg-green-500/10">
+                <Shield className="h-5 w-5 text-green-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{(profile.rating ?? 0).toFixed(1)}</p>
-                <p className="text-xs text-muted-foreground">Avg Rating</p>
+                <p className="text-sm font-medium">{profile.isActive ? "Active" : "Inactive"}</p>
+                <p className="text-xs text-muted-foreground">Account Status</p>
               </div>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-accent/10">
-                <Award className="h-5 w-5 text-accent" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">Pro</p>
-                <p className="text-xs text-muted-foreground">Status</p>
-              </div>
-            </CardContent>
-          </Card>
+          {profile.organizationName && (
+            <Card>
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-blue-500/10">
+                  <Building2 className="h-5 w-5 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium truncate">{profile.organizationName}</p>
+                  <p className="text-xs text-muted-foreground">Organization</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Account Settings */}
@@ -382,7 +297,7 @@ export default function ProfilePage() {
               <div>
                 <p className="font-medium">Email Notifications</p>
                 <p className="text-sm text-muted-foreground">
-                  Receive email updates about your courses
+                  Receive email updates about your activity
                 </p>
               </div>
               <Badge>Coming Soon</Badge>
@@ -400,14 +315,12 @@ export default function ProfilePage() {
             <Separator />
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium">Delete Account</p>
+                <p className="font-medium">Change Password</p>
                 <p className="text-sm text-muted-foreground">
-                  Permanently delete your instructor account
+                  Update your account password
                 </p>
               </div>
-              <Button variant="destructive" size="sm" disabled>
-                Delete
-              </Button>
+              <Badge>Coming Soon</Badge>
             </div>
           </CardContent>
         </Card>

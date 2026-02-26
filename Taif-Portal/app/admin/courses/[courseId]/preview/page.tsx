@@ -46,6 +46,7 @@ import { cn } from "@/lib/utils";
 import { Course } from "@/models/course.model";
 import { Lesson } from "@/models/lesson.model";
 import { LessonItem } from "@/models/lesson-item.model";
+import { QuestionContent, VideoContent, RichTextContent } from "@/types/lessonContent";
 
 interface CourseLesson {
   id: string;
@@ -148,14 +149,16 @@ export default function CoursePreviewPage() {
     const content = typeof selectedItem.content === 'string' ? selectedItem.content : '';
 
     if (selectedItem.type === "video") {
+      const videoContent = lessonItemService.parseContent<VideoContent>(selectedItem.content);
+      const videoUrl = videoContent?.url;
       return (
         <div className="space-y-4">
           <div className="aspect-video bg-black rounded-lg flex items-center justify-center">
-            {selectedItem.url ? (
+            {videoUrl ? (
               <video
                 controls
                 className="w-full h-full rounded-lg"
-                src={selectedItem.url}
+                src={videoUrl}
               >
                 Your browser does not support the video tag.
               </video>
@@ -179,29 +182,85 @@ export default function CoursePreviewPage() {
     }
 
     if (selectedItem.type === "text") {
+      const textContent = lessonItemService.parseContent<RichTextContent>(selectedItem.content);
+      const htmlContent = textContent?.html || textContent?.text || '';
       return (
         <div className="space-y-4">
           <h3 className="font-semibold text-lg">{selectedItem.name}</h3>
           <Separator />
           <div
             className="prose prose-sm max-w-none dark:prose-invert"
-            dangerouslySetInnerHTML={{ __html: content || "<p>No content</p>" }}
+            dangerouslySetInnerHTML={{ __html: htmlContent || "<p>No content</p>" }}
           />
         </div>
       );
     }
 
     if (selectedItem.type === "question") {
+      const quizContent = lessonItemService.parseContent<QuestionContent>(selectedItem.content);
+      
+      // Normalize questions from different formats
+      const questions = quizContent?.questions || 
+        (quizContent?.question ? [{
+          id: 'q1',
+          text: quizContent.question,
+          options: quizContent.options || [],
+          correctAnswerIndex: quizContent.correctAnswerIndex ?? 0
+        }] : []);
+
+      if (questions.length === 0) {
+        return (
+          <div className="space-y-4">
+            <div className="p-4 bg-muted rounded-lg">
+              <h3 className="font-semibold text-lg">{selectedItem.name}</h3>
+            </div>
+            <p className="text-muted-foreground text-center">No questions available for this quiz.</p>
+          </div>
+        );
+      }
+
       return (
         <div className="space-y-4">
           <div className="p-4 bg-muted rounded-lg">
             <h3 className="font-semibold text-lg">{selectedItem.name}</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              {questions.length} question{questions.length > 1 ? 's' : ''}
+            </p>
           </div>
-          <div className="prose prose-sm">
-            <p>{content || 'No question content'}</p>
+          
+          <div className="space-y-4">
+            {questions.map((q, idx) => {
+              const questionText = q.questionText || q.question || '';
+              const options = q.options || [];
+              
+              return (
+                <div key={q.id || idx} className="p-4 border rounded-lg">
+                  <div className="flex items-start gap-3 mb-3">
+                    <span className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/10 text-primary font-semibold flex items-center justify-center text-sm">
+                      {idx + 1}
+                    </span>
+                    <p className="font-medium pt-0.5">{questionText}</p>
+                  </div>
+                  <div className="space-y-2 ml-10">
+                    {options.map((option, optIdx) => (
+                      <div
+                        key={optIdx}
+                        className="p-2.5 rounded-lg border bg-muted/30 flex items-center gap-2"
+                      >
+                        <span className="w-5 h-5 rounded-full border flex items-center justify-center text-xs font-medium">
+                          {String.fromCharCode(65 + optIdx)}
+                        </span>
+                        <span>{option}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
+          
           <p className="text-xs text-muted-foreground text-center">
-            (Question preview - full quiz functionality coming soon)
+            (Preview mode - students will be able to interact with the quiz)
           </p>
         </div>
       );

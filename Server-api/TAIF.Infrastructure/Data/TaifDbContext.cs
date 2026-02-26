@@ -85,11 +85,6 @@ namespace TAIF.Infrastructure.Data
             // Course configuration
             modelBuilder.Entity<Course>(entity =>
             {
-                entity.HasOne(c => c.CreatedBy)
-                      .WithMany(u => u.CreatedCourses)
-                      .HasForeignKey(c => c.CreatedByUserId)
-                      .OnDelete(DeleteBehavior.Restrict);
-
                 entity.HasOne(c => c.Category)
                       .WithMany()
                       .HasForeignKey(c => c.CategoryId)
@@ -101,7 +96,7 @@ namespace TAIF.Infrastructure.Data
                       .OnDelete(DeleteBehavior.SetNull);
 
                 entity.HasIndex(c => c.OrganizationId);
-                entity.HasIndex(c => new { c.OrganizationId, c.CreatedByUserId });
+                entity.HasIndex(c => c.CreatedBy);
             });
 
             // Category configuration
@@ -118,11 +113,6 @@ namespace TAIF.Infrastructure.Data
             // Lesson configuration
             modelBuilder.Entity<Lesson>(entity =>
             {
-                entity.HasOne(l => l.CreatedBy)
-                      .WithMany(u => u.CreatedLessons)
-                      .HasForeignKey(l => l.CreatedByUserId)
-                      .OnDelete(DeleteBehavior.Restrict);
-
                 entity.HasOne(l => l.Organization)
                       .WithMany()
                       .HasForeignKey(l => l.OrganizationId)
@@ -130,6 +120,7 @@ namespace TAIF.Infrastructure.Data
 
                 entity.HasIndex(l => l.OrganizationId);
                 entity.HasIndex(l => new { l.OrganizationId, l.IsDeleted });
+                entity.HasIndex(l => l.CreatedBy);
             });
 
             // CourseLesson junction table configuration (M-M: Course <-> Lesson)
@@ -508,6 +499,9 @@ namespace TAIF.Infrastructure.Data
         /// </summary>
         private void ApplyTenantOnInsert()
         {
+            // Apply CreatedBy/UpdatedBy for all Base entities
+            ApplyAuditFields();
+
             if (_tenantProvider?.OrganizationId == null)
                 return;
 
@@ -522,6 +516,40 @@ namespace TAIF.Infrastructure.Data
                 {
                     entry.Entity.OrganizationId = _tenantProvider.OrganizationId;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Automatically sets CreatedBy on new entities and UpdatedBy on modified entities.
+        /// </summary>
+        private void ApplyAuditFields()
+        {
+            if (_tenantProvider?.UserId == null)
+                return;
+
+            var userId = _tenantProvider.UserId.Value;
+
+            // Set CreatedBy for added entities
+            var addedEntities = ChangeTracker.Entries<Base>()
+                .Where(e => e.State == EntityState.Added)
+                .ToList();
+
+            foreach (var entry in addedEntities)
+            {
+                if (entry.Entity.CreatedBy == null || entry.Entity.CreatedBy == Guid.Empty)
+                {
+                    entry.Entity.CreatedBy = userId;
+                }
+            }
+
+            // Set UpdatedBy for modified entities
+            var modifiedEntities = ChangeTracker.Entries<Base>()
+                .Where(e => e.State == EntityState.Modified)
+                .ToList();
+
+            foreach (var entry in modifiedEntities)
+            {
+                entry.Entity.UpdatedBy = userId;
             }
         }
     }

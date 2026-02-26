@@ -100,6 +100,7 @@ export default function CourseDetailPage() {
 
   const [currentCourse, setCurrentCourse] = useState<Course | null>(null);
   const [courseLessons, setCourseLessons] = useState<CourseLesson[]>([]);
+  const [availableLessons, setAvailableLessons] = useState<CourseLesson[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [allTags, setAllTags] = useState<Tag[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -126,16 +127,18 @@ export default function CourseDetailPage() {
   const loadCourseData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [course, rawLessons, cats, tags] = await Promise.all([
+      const [course, rawLessons, cats, tags, allLessons] = await Promise.all([
         courseService.getCourseById(courseId),
         lessonService.getLessonsByCourse(courseId),
         categoryService.getCategories(),
         tagService.getAllTags(),
+        lessonService.getAllLessons(),
       ]);
       
       setCurrentCourse(course);
       setCategories(cats);
       setAllTags(tags);
+      setCourseStatus(course.status || 'draft');
       
       // Load lesson items for each lesson
       const lessonsWithItems: CourseLesson[] = await Promise.all(
@@ -153,6 +156,20 @@ export default function CourseDetailPage() {
       
       setCourseLessons(lessonsWithItems);
       setReorderedLessons([...lessonsWithItems].sort((a, b) => a.order - b.order));
+      
+      // Filter out lessons already in this course
+      const assignedLessonIds = new Set(rawLessons.map(l => l.id));
+      const available: CourseLesson[] = allLessons
+        .filter(l => !assignedLessonIds.has(l.id))
+        .map(l => ({
+          id: l.id,
+          title: l.title,
+          description: l.description,
+          order: 0,
+          items: [],
+        }));
+      setAvailableLessons(available);
+      
       setEditForm({
         title: course.title,
         description: course.description || '',
@@ -171,9 +188,7 @@ export default function CourseDetailPage() {
     loadCourseData();
   }, [loadCourseData]);
 
-  // Get available lessons - empty for now since we don't have standalone lessons concept
-  const availableLessons: CourseLesson[] = [];
-
+  
   if (isLoading || !currentCourse) {
     return (
       <AdminLayout>
@@ -188,6 +203,7 @@ export default function CourseDetailPage() {
         name: editForm.title,
         description: editForm.description,
         tags: editForm.tags,
+        categoryId: editForm.categoryId,
       });
       await loadCourseData();
       setIsEditing(false);
@@ -232,18 +248,33 @@ export default function CourseDetailPage() {
   };
 
   const handlePublish = async () => {
-    // TODO: Backend doesn't support status yet
-    setCourseStatus('published');
+    try {
+      await courseService.publishCourse(courseId);
+      setCourseStatus('published');
+      await loadCourseData();
+    } catch (error) {
+      console.error('Failed to publish course:', error);
+    }
   };
 
   const handleArchive = async () => {
-    // TODO: Backend doesn't support status yet
-    setCourseStatus('archived');
+    try {
+      await courseService.archiveCourse(courseId);
+      setCourseStatus('archived');
+      await loadCourseData();
+    } catch (error) {
+      console.error('Failed to archive course:', error);
+    }
   };
 
   const handleUnpublish = async () => {
-    // TODO: Backend doesn't support status yet
-    setCourseStatus('draft');
+    try {
+      await courseService.unpublishCourse(courseId);
+      setCourseStatus('draft');
+      await loadCourseData();
+    } catch (error) {
+      console.error('Failed to unpublish course:', error);
+    }
   };
 
   const handleCreateLesson = async () => {
@@ -271,21 +302,35 @@ export default function CourseDetailPage() {
   };
 
   const handleAddExistingLessons = async () => {
-    // Not supported by backend - lessons are tied to courses on creation
-    setSelectedLessonIds([]);
-    setLessonDialogOpen(false);
+    if (selectedLessonIds.length === 0) return;
+    
+    try {
+      // Assign each selected lesson to this course
+      const currentMaxOrder = reorderedLessons.length;
+      await Promise.all(
+        selectedLessonIds.map((lessonId, index) => 
+          courseService.assignLessonToCourse(courseId, lessonId, currentMaxOrder + index + 1)
+        )
+      );
+      
+      setSelectedLessonIds([]);
+      setLessonDialogOpen(false);
+      await loadCourseData();
+    } catch (error) {
+      console.error('Failed to add lessons:', error);
+    }
   };
 
   const handleReorderLessons = async (newOrder: CourseLesson[]) => {
     setReorderedLessons(newOrder);
     
-    // Update order on backend for each lesson
+    // Send all items with new order in a single bulk request
     try {
-      await Promise.all(
-        newOrder.map((lesson, index) => 
-          courseService.updateLessonOrder(courseId, lesson.id, index + 1)
-        )
-      );
+      const items = newOrder.map((lesson, index) => ({
+        id: lesson.id,
+        order: index + 1
+      }));
+      await courseService.bulkReorderLessons(courseId, items);
     } catch (error) {
       console.error('Failed to reorder lessons:', error);
       // Reload to get correct order from backend
@@ -511,23 +556,13 @@ export default function CourseDetailPage() {
               </div>
               <div className="flex gap-2">
                 <Button
-                  variant="outline"
                   onClick={() => {
                     setLessonDialogMode("select");
                     setLessonDialogOpen(true);
                   }}
                 >
-                  <Library className="mr-2 h-4 w-4" />
-                  Add Existing
-                </Button>
-                <Button
-                  onClick={() => {
-                    setLessonDialogMode("create");
-                    setLessonDialogOpen(true);
-                  }}
-                >
                   <Plus className="mr-2 h-4 w-4" />
-                  Create New
+                  Add Lesson
                 </Button>
               </div>
             </div>
@@ -821,59 +856,13 @@ export default function CourseDetailPage() {
       }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>
-              {lessonDialogMode === "create" ? "Create New Lesson" : "Add Existing Lessons"}
-            </DialogTitle>
+            <DialogTitle>Add Lessons to Course</DialogTitle>
             <DialogDescription>
-              {lessonDialogMode === "create"
-                ? "Create a new lesson for this course"
-                : "Select from your lesson library to add to this course"}
+              Select lessons from your library to add to this course
             </DialogDescription>
           </DialogHeader>
 
-          {/* Mode Toggle */}
-          <div className="flex gap-2 border-b pb-4">
-            <Button
-              variant={lessonDialogMode === "create" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setLessonDialogMode("create")}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Create New
-            </Button>
-            <Button
-              variant={lessonDialogMode === "select" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setLessonDialogMode("select")}
-            >
-              <Library className="mr-2 h-4 w-4" />
-              Select Existing
-            </Button>
-          </div>
-
-          {lessonDialogMode === "create" ? (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="lesson-title">Lesson Title *</Label>
-                <Input
-                  id="lesson-title"
-                  placeholder="e.g., Introduction to HTML"
-                  value={newLessonTitle}
-                  onChange={(e) => setNewLessonTitle(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lesson-description">Description (Optional)</Label>
-                <Textarea
-                  id="lesson-description"
-                  placeholder="Brief description of what this lesson covers..."
-                  value={newLessonDescription}
-                  onChange={(e) => setNewLessonDescription(e.target.value)}
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
+          <div className="space-y-4">
               <ScrollArea className="h-72">
                 <div className="space-y-2 pr-4">
                   {availableLessons.length > 0 ? (
@@ -909,34 +898,26 @@ export default function CourseDetailPage() {
                     <div className="text-center py-8 text-muted-foreground">
                       <BookOpen className="h-12 w-12 mx-auto mb-3 opacity-50" />
                       <p className="mb-2">No lessons available</p>
-                      <p className="text-xs">Create standalone lessons first or switch to &quot;Create New&quot;</p>
+                      <p className="text-xs">Create standalone lessons first from the Lessons section</p>
                     </div>
                   )}
                 </div>
               </ScrollArea>
-              {selectedLessonIds.length > 0 && (
-                <p className="text-sm text-muted-foreground">
-                  {selectedLessonIds.length} lesson(s) selected
-                </p>
-              )}
-            </div>
-          )}
+            {selectedLessonIds.length > 0 && (
+              <p className="text-sm text-muted-foreground">
+                {selectedLessonIds.length} lesson(s) selected
+              </p>
+            )}
+          </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setLessonDialogOpen(false)}>
               Cancel
             </Button>
-            {lessonDialogMode === "create" ? (
-              <Button onClick={handleCreateLesson} disabled={!newLessonTitle.trim()}>
-                <Plus className="mr-2 h-4 w-4" />
-                Create Lesson
-              </Button>
-            ) : (
-              <Button onClick={handleAddExistingLessons} disabled={selectedLessonIds.length === 0}>
-                <Check className="mr-2 h-4 w-4" />
-                Add {selectedLessonIds.length > 0 ? `(${selectedLessonIds.length})` : ""}
-              </Button>
-            )}
+            <Button onClick={handleAddExistingLessons} disabled={selectedLessonIds.length === 0}>
+              <Check className="mr-2 h-4 w-4" />
+              Add {selectedLessonIds.length > 0 ? `(${selectedLessonIds.length})` : ""}Lessons
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

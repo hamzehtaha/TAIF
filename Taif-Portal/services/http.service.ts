@@ -158,7 +158,18 @@ class HttpService {
             });
 
             if (retryResponse.ok) {
-              const data = await retryResponse.json();
+              const jsonResponse = await retryResponse.json();
+              let data: T;
+              // Unwrap BackendApiResponse if present
+              if (jsonResponse && typeof jsonResponse === 'object' && 'isSuccess' in jsonResponse && 'data' in jsonResponse) {
+                const backendResponse = jsonResponse as BackendApiResponse<T>;
+                if (!backendResponse.isSuccess) {
+                  throw new Error(backendResponse.message || 'Request failed');
+                }
+                data = backendResponse.data;
+              } else {
+                data = jsonResponse as T;
+              }
               return {
                 data,
                 status: retryResponse.status,
@@ -180,7 +191,19 @@ class HttpService {
               })
                 .then(async (retryResponse) => {
                   if (retryResponse.ok) {
-                    const data = await retryResponse.json();
+                    const jsonResponse = await retryResponse.json();
+                    let data: T;
+                    // Unwrap BackendApiResponse if present
+                    if (jsonResponse && typeof jsonResponse === 'object' && 'isSuccess' in jsonResponse && 'data' in jsonResponse) {
+                      const backendResponse = jsonResponse as BackendApiResponse<T>;
+                      if (!backendResponse.isSuccess) {
+                        reject(new Error(backendResponse.message || 'Request failed'));
+                        return;
+                      }
+                      data = backendResponse.data;
+                    } else {
+                      data = jsonResponse as T;
+                    }
                     resolve({
                       data,
                       status: retryResponse.status,
@@ -278,6 +301,19 @@ class HttpService {
     const response = await this.request<T>(endpoint, {
       ...options,
       method: "DELETE",
+    });
+    return response.data;
+  }
+
+  async patch<T>(
+    endpoint: string,
+    data: unknown,
+    options?: RequestOptions
+  ): Promise<T> {
+    const response = await this.request<T>(endpoint, {
+      ...options,
+      method: "PATCH",
+      body: JSON.stringify(data),
     });
     return response.data;
   }

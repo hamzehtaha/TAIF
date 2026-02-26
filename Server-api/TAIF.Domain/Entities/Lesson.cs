@@ -10,8 +10,6 @@ namespace TAIF.Domain.Entities
         public string? Photo { get; set; }
         public Guid? InstructorId { get; set; }
         public Instructor? Instructor { get; set; }
-        public Guid CreatedByUserId { get; set; }
-        public User CreatedBy { get; set; } = null!;
         public ICollection<CourseLesson> CourseLessons { get; set; } = new List<CourseLesson>();
         public ICollection<LessonLessonItem> LessonLessonItems { get; set; } = new List<LessonLessonItem>();
         public double TotalDurationInSeconds { get; set; } = 0;

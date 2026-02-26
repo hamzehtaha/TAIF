@@ -1,9 +1,17 @@
+export type CourseStatus = 'draft' | 'published' | 'archived';
+
 export interface CourseDto {
   id: string;
   name: string;
   description: string;
   photo: string;
   categoryId: string;
+  category?: {
+    id: string;
+    name: string;
+  };
+  tags?: string[];
+  status?: number; // 0=Draft, 1=Published, 2=Archived
   createdAt?: string;
   updatedAt?: string;
   isDeleted?: boolean;
@@ -28,5 +36,6 @@ export interface UpdateCourseRequest {
   name?: string;
   description?: string;
   photo?: string;
+  categoryId?: string;
   tags?: string[];
 }

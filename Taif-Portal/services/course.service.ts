@@ -9,12 +9,12 @@ class CourseService {
 
   async getCourses(): Promise<Course[]> {
     const dtos = await httpService.get<CourseDto[]>(this.serviceBaseUrl);
-    return dtos.map(CourseMapper.map);
+    return dtos.map(dto => CourseMapper.map(dto));
   }
 
   async getRecommendedCourses(limit: number = 10): Promise<Course[]> {
     const dtos = await httpService.get<CourseDto[]>(`${this.serviceBaseUrl}/recommended?limit=${limit}`);
-    return dtos.map(CourseMapper.map);
+    return dtos.map(dto => CourseMapper.map(dto));
   }
 
   async getCourseById(id: string): Promise<Course> {
@@ -24,7 +24,7 @@ class CourseService {
 
   async getCoursesByCategory(categoryId: string): Promise<Course[]> {
     const dtos = await httpService.get<CourseDto[]>(`${this.serviceBaseUrl}/category/${categoryId}`);
-    return dtos.map(CourseMapper.map);
+    return dtos.map(dto => CourseMapper.map(dto));
   }
 
 
@@ -44,7 +44,7 @@ class CourseService {
 
   async getMyCourses(): Promise<Course[]> {
     const dtos = await httpService.get<CourseDto[]>(`${this.serviceBaseUrl}/my-courses`);
-    return dtos.map(CourseMapper.map);
+    return dtos.map(dto => CourseMapper.map(dto));
   }
 
   async getMyCoursesCount(): Promise<number> {
@@ -82,6 +82,31 @@ class CourseService {
 
   async updateLessonOrder(courseId: string, lessonId: string, newOrder: number): Promise<any> {
     return httpService.put<any>(`/api/content/courses/${courseId}/lessons/${lessonId}/order`, { newOrder });
+  }
+
+  async bulkReorderLessons(courseId: string, items: { id: string; order: number }[]): Promise<boolean> {
+    return httpService.put<boolean>(`/api/content/courses/${courseId}/lessons/reorder`, { items });
+  }
+
+  // Course Status APIs
+  async publishCourse(id: string): Promise<Course> {
+    const dto = await httpService.post<CourseDto>(`${this.serviceBaseUrl}/${id}/publish`, {});
+    return CourseMapper.map(dto);
+  }
+
+  async archiveCourse(id: string): Promise<Course> {
+    const dto = await httpService.post<CourseDto>(`${this.serviceBaseUrl}/${id}/archive`, {});
+    return CourseMapper.map(dto);
+  }
+
+  async unpublishCourse(id: string): Promise<Course> {
+    const dto = await httpService.post<CourseDto>(`${this.serviceBaseUrl}/${id}/unpublish`, {});
+    return CourseMapper.map(dto);
+  }
+
+  async updateCourseStatus(id: string, status: number): Promise<Course> {
+    const dto = await httpService.patch<CourseDto>(`${this.serviceBaseUrl}/${id}/status`, { status });
+    return CourseMapper.map(dto);
   }
 }
 

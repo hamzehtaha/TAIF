@@ -8,4 +8,5 @@ public interface ICourseLessonService : IService<CourseLesson>
     Task<CourseLesson> AssignLessonToCourseAsync(Guid courseId, Guid lessonId, int? order = null);
     Task<bool> UnassignLessonFromCourseAsync(Guid courseId, Guid lessonId);
     Task<bool> UpdateOrderAsync(Guid courseId, Guid lessonId, int newOrder);
+    Task<bool> BulkReorderAsync(Guid courseId, List<(Guid LessonId, int Order)> items);
 }

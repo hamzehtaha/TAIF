@@ -18,6 +18,9 @@ import {
   Building2,
   GraduationCap,
   FolderTree,
+  Sparkles,
+  Tags,
+  Route,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -55,6 +58,11 @@ const courseNavItems = [
     title: "Categories",
     href: "/admin/categories",
     icon: FolderTree,
+  },
+  {
+    title: "Learning Paths",
+    href: "/admin/learning-paths",
+    icon: Route,
   },
   {
     title: "Courses",
@@ -111,6 +119,14 @@ const adminNavItems = [
     title: "Students",
     href: "/admin/students",
     icon: GraduationCap,
+  },
+];
+
+const recommendationNavItems = [
+  {
+    title: "Interests & Tags",
+    href: "/admin/interests-tags",
+    icon: Tags,
   },
 ];
 
@@ -226,6 +242,29 @@ export function AdminSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {adminNavItems.map((item) => (
+                <SidebarMenuItem key={item.href}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive(item.href)}
+                    tooltip={item.title}
+                  >
+                    <Link href={item.href}>
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Recommendations */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Recommendations</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {recommendationNavItems.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
                     asChild

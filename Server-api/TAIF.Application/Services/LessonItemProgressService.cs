@@ -261,11 +261,44 @@ namespace TAIF.Application.Services
 
             try
             {
-                return JsonSerializer.Deserialize<object>(content.ContentJson);
+                using var doc = JsonDocument.Parse(content.ContentJson);
+                return StripCorrectAnswers(doc.RootElement);
             }
             catch
             {
                 return null;
+            }
+        }
+
+        private static object? StripCorrectAnswers(JsonElement element)
+        {
+            if (element.ValueKind == JsonValueKind.Object)
+            {
+                var dict = new Dictionary<string, object?>();
+                foreach (var prop in element.EnumerateObject())
+                {
+                    // Skip correctAnswerIndex and correctIndex properties
+                    if (prop.Name.Equals("correctAnswerIndex", StringComparison.OrdinalIgnoreCase) ||
+                        prop.Name.Equals("correctIndex", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+                    dict[prop.Name] = StripCorrectAnswers(prop.Value);
+                }
+                return dict;
+            }
+            else if (element.ValueKind == JsonValueKind.Array)
+            {
+                var list = new List<object?>();
+                foreach (var item in element.EnumerateArray())
+                {
+                    list.Add(StripCorrectAnswers(item));
+                }
+                return list;
+            }
+            else
+            {
+                return JsonSerializer.Deserialize<object>(element.GetRawText());
             }
         }
     }

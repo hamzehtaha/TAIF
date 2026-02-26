@@ -66,9 +66,7 @@ namespace TAIF.Controllers
                 Title = request.Title,
                 Description = request.Description,
                 Photo = request.Photo,
-                InstructorId = request.InstructorId,
-                CreatedByUserId = this.UserId,
-                OrganizationId = this.OrganizationId
+                InstructorId = request.InstructorId
             };
             var created_lesson = await _lessonService.CreateAsync(lesson);
             return Ok(ApiResponse<Lesson>.SuccessResponse(created_lesson));

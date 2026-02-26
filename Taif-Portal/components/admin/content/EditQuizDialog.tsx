@@ -46,13 +46,21 @@ export function EditQuizDialog({ content, quizData, open, onOpenChange, onSucces
       setFormData({
         title: quizData.title || "",
       });
-      setQuestions(quizData.questions && quizData.questions.length > 0 ? quizData.questions : [
-        {
-          questionText: "",
-          options: ["", "", "", ""],
-          correctAnswerIndex: 0,
-        },
-      ]);
+      // Ensure all question fields have proper default values (not null)
+      const sanitizedQuestions = quizData.questions && quizData.questions.length > 0 
+        ? quizData.questions.map(q => ({
+            questionText: q.questionText || "",
+            options: (q.options || ["", "", "", ""]).map(opt => opt || ""),
+            correctAnswerIndex: q.correctAnswerIndex ?? 0,
+          }))
+        : [
+            {
+              questionText: "",
+              options: ["", "", "", ""],
+              correctAnswerIndex: 0,
+            },
+          ];
+      setQuestions(sanitizedQuestions);
     }
   }, [quizData]);
 
@@ -222,7 +230,7 @@ export function EditQuizDialog({ content, quizData, open, onOpenChange, onSucces
 
                     <Input
                       placeholder="Enter question text"
-                      value={question.questionText}
+                      value={question.questionText || ""}
                       onChange={(e) => updateQuestion(qIndex, "questionText", e.target.value)}
                       required
                     />
@@ -240,7 +248,7 @@ export function EditQuizDialog({ content, quizData, open, onOpenChange, onSucces
                           />
                           <Input
                             placeholder={`Option ${oIndex + 1}`}
-                            value={option}
+                            value={option || ""}
                             onChange={(e) => updateOption(qIndex, oIndex, e.target.value)}
                             required
                           />

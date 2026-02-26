@@ -43,8 +43,10 @@ export const useCourseStore = create<CourseStore>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const courses = await courseService.getCourses();
-      set({ courses, isLoading: false });
+      console.log('Loaded courses:', courses, 'Count:', courses?.length);
+      set({ courses: courses || [], isLoading: false });
     } catch (error) {
+      console.error('Failed to load courses:', error);
       set({ error: 'Failed to load courses', isLoading: false });
     }
   },

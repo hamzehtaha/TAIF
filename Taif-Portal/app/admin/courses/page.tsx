@@ -177,11 +177,13 @@ export default function CoursesPage() {
     setIsSubmitting(true);
     try {
       if (editingCourse) {
+        alert("Editing course:" + JSON.stringify(editingCourse));
         await updateCourse(editingCourse.id, {
           name: formTitle,
           description: formDescription,
           photo: formPhoto,
           tags: formTags,
+          categoryId: formCategoryId,
         });
       } else {
         await createCourse({

@@ -63,4 +63,20 @@ public class LessonLessonItemService : ServiceBase<LessonLessonItem>, ILessonLes
         return lessonLessonItem;
     }
 
+    public async Task<bool> BulkReorderAsync(Guid lessonId, List<(Guid LessonItemId, int Order)> items)
+    {
+        var lessonItems = await _lessonLessonItemRepository.GetByLessonIdAsync(lessonId);
+        var itemMap = lessonItems.ToDictionary(lli => lli.LessonItemId);
+
+        foreach (var (lessonItemId, order) in items)
+        {
+            if (itemMap.TryGetValue(lessonItemId, out var lessonLessonItem))
+            {
+                lessonLessonItem.Order = order;
+            }
+        }
+
+        await _lessonLessonItemRepository.SaveChangesAsync();
+        return true;
+    }
 }

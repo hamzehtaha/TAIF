@@ -15,6 +15,11 @@ namespace TAIF.Application.Services
             _recommendationService = recommendationService;
         }
 
+        public override async Task<Course?> GetByIdAsync(Guid id, bool withDeleted = false)
+        {
+            return await _courseRepository.GetByIdWithCategoryAsync(id, withDeleted);
+        }
+
         public async Task<List<Course>> GetByCategoryIdAsync(Guid categoryId)
         {
             return await _courseRepository.GetByCategoryIdAsync(categoryId);

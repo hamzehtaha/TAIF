@@ -6,6 +6,7 @@ using TAIF.Application.DTOs.Requests;
 using TAIF.Application.DTOs.Responses;
 using TAIF.Application.Interfaces.Services;
 using TAIF.Domain.Entities;
+using System.Linq;
 
 namespace TAIF.Controllers
 {
@@ -67,6 +68,16 @@ namespace TAIF.Controllers
             var result = await _courseLessonService.UpdateOrderAsync(courseId, lessonId, request.NewOrder);
             if (!result) return NotFound(ApiResponse<string>.FailResponse("Lesson assignment not found"));
             return Ok(ApiResponse<bool>.SuccessResponse(true));
+        }
+
+        [HttpPut("courses/{courseId}/lessons/reorder")]
+        public async Task<IActionResult> BulkReorderCourseLessons(
+            [FromRoute] Guid courseId,
+            [FromBody] BulkReorderRequest request)
+        {
+            var items = request.Items.Select(i => (i.Id, i.Order)).ToList();
+            var result = await _courseLessonService.BulkReorderAsync(courseId, items);
+            return Ok(ApiResponse<bool>.SuccessResponse(result));
         }
 
         #endregion
@@ -132,6 +143,16 @@ namespace TAIF.Controllers
                 Order = result.Order
             };
             return Ok(ApiResponse<LessonLessonItemResponse>.SuccessResponse(response));
+        }
+
+        [HttpPut("lessons/{lessonId}/items/reorder")]
+        public async Task<IActionResult> BulkReorderLessonItems(
+            [FromRoute] Guid lessonId,
+            [FromBody] BulkReorderRequest request)
+        {
+            var items = request.Items.Select(i => (i.Id, i.Order)).ToList();
+            var result = await _lessonLessonItemService.BulkReorderAsync(lessonId, items);
+            return Ok(ApiResponse<bool>.SuccessResponse(result));
         }
 
         #endregion

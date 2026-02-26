@@ -79,6 +79,10 @@ class LessonService {
   async updateLessonItemOrder(lessonId: string, lessonItemId: string, newOrder: number): Promise<any> {
     return httpService.put<any>(`/api/content/lessons/${lessonId}/items/${lessonItemId}/order`, { newOrder });
   }
+
+  async bulkReorderLessonItems(lessonId: string, items: { id: string; order: number }[]): Promise<boolean> {
+    return httpService.put<boolean>(`/api/content/lessons/${lessonId}/items/reorder`, { items });
+  }
 }
 
 export const lessonService = new LessonService();

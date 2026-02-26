@@ -1,4 +1,5 @@
-﻿using TAIF.Domain.Entities;
+﻿using Microsoft.EntityFrameworkCore;
+using TAIF.Domain.Entities;
 using TAIF.Infrastructure.Data;
 using TAIF.Application.Interfaces.Repositories;
 
@@ -20,7 +21,19 @@ namespace TAIF.Infrastructure.Repositories
 
         public async Task<List<Course>> GetByUserIdAsync(Guid userId)
         {
-            return await FindNoTrackingAsync(course => course.CreatedByUserId == userId);
+            return await FindNoTrackingAsync(course => course.CreatedBy == userId);
+        }
+
+        public async Task<Course?> GetByIdWithCategoryAsync(Guid id, bool withDeleted = false)
+        {
+            var query = _context.Set<Course>()
+                .Include(c => c.Category)
+                .AsQueryable();
+            
+            if (!withDeleted)
+                query = query.Where(c => !c.IsDeleted);
+            
+            return await query.FirstOrDefaultAsync(c => c.Id == id);
         }
     }
 }

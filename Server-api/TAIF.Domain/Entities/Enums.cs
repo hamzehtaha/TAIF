@@ -8,5 +8,12 @@
             RichText = 1,
             Quiz = 2,
         }
+
+        public enum CourseStatus
+        {
+            Draft = 0,
+            Published = 1,
+            Archived = 2,
+        }
     }
 }
