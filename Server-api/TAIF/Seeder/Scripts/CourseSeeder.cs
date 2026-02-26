@@ -112,6 +112,7 @@ namespace TAIF.API.Seeder.Scripts
                         Photo = courseData.Photo,
                         CategoryId = category.Id,
                         Tags = tagIds,
+                        Status = CourseStatus.Published,
                         CreatedBy = creator.Id,
                         OrganizationId = publicOrg?.Id
                     };
