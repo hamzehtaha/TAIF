@@ -17,10 +17,14 @@ class AuthResponseModel {
 
   factory AuthResponseModel.fromJson(Map<String, dynamic> json) {
     return AuthResponseModel(
-      accessToken: json['accessToken'] as String,
-      accessTokenExpiresAt: DateTime.parse(json['accessTokenExpiresAt'] as String),
-      refreshToken: json['refreshToken'] as String,
-      refreshTokenExpiresAt: DateTime.parse(json['refreshTokenExpiresAt'] as String),
+      accessToken: json['accessToken'] as String? ?? '',
+      accessTokenExpiresAt: json['accessTokenExpiresAt'] != null
+          ? DateTime.tryParse(json['accessTokenExpiresAt'] as String) ?? DateTime.now().add(const Duration(hours: 1))
+          : DateTime.now().add(const Duration(hours: 1)),
+      refreshToken: json['refreshToken'] as String? ?? '',
+      refreshTokenExpiresAt: json['refreshTokenExpiresAt'] != null
+          ? DateTime.tryParse(json['refreshTokenExpiresAt'] as String) ?? DateTime.now().add(const Duration(days: 7))
+          : DateTime.now().add(const Duration(days: 7)),
     );
   }
 

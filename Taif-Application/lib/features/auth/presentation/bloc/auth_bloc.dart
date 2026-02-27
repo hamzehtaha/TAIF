@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/utils/token_storage.dart';
+import '../../../../core/utils/user_storage.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 import '../../domain/entities/auth_tokens.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -13,10 +14,12 @@ import 'auth_state.dart';
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthRepository _authRepository;
   final TokenStorage _tokenStorage;
+  final UserStorage _userStorage;
 
   AuthBloc()
       : _authRepository = AuthRepositoryImpl(),
         _tokenStorage = TokenStorage(),
+        _userStorage = UserStorage(),
         super(const AuthInitial()) {
     on<LoginRequested>(_onLoginRequested);
     on<RegisterRequested>(_onRegisterRequested);
@@ -40,8 +43,30 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
       // Store tokens securely
       await _storeTokens(tokens);
+      
+      // Small delay to ensure token is written to storage
+      await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      AppLogger.info('User logged in: ${event.email}');
+      // Fetch and store complete user data from /api/User/me
+      // Pass token directly to avoid flutter_secure_storage race condition on Windows
+      AppLogger.info('Token from login - accessToken exists: ${tokens.accessToken.isNotEmpty}, refreshToken exists: ${tokens.refreshToken.isNotEmpty}');
+      try {
+        AppLogger.info('About to call getCurrentUser with token length: ${tokens.accessToken.length}');
+        final user = await _authRepository.getCurrentUser(authToken: tokens.accessToken);
+        AppLogger.info('getCurrentUser returned successfully');
+        await _userStorage.storeUser(user);
+        AppLogger.info('User logged in: ${user.fullName} (${user.displayRole})');
+      } catch (userError) {
+        // Fallback: store basic info if API call fails
+        AppLogger.warning('Failed to fetch user details: $userError');
+        await _userStorage.storeUserInfo(
+          userId: event.email,
+          firstName: '',
+          lastName: '',
+          email: event.email,
+        );
+      }
+
       emit(Authenticated(accessToken: tokens.accessToken));
     } catch (e) {
       AppLogger.error('Login failed: $e');
@@ -68,7 +93,23 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       // Store tokens securely
       await _storeTokens(tokens);
 
-      AppLogger.info('User registered: ${event.email}');
+      // Fetch and store complete user data from /api/User/me
+      // Pass token directly to avoid flutter_secure_storage race condition on Windows
+      try {
+        final user = await _authRepository.getCurrentUser(authToken: tokens.accessToken);
+        await _userStorage.storeUser(user);
+        AppLogger.info('User registered: ${user.fullName} (${user.displayRole})');
+      } catch (userError) {
+        // Fallback: store basic info from registration data
+        AppLogger.warning('Failed to fetch user details: $userError');
+        await _userStorage.storeUserInfo(
+          userId: event.email,
+          firstName: event.firstName,
+          lastName: event.lastName,
+          email: event.email,
+        );
+      }
+
       emit(Authenticated(accessToken: tokens.accessToken));
     } catch (e) {
       AppLogger.error('Registration failed: $e');
@@ -90,12 +131,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       // Clear stored tokens
       await _tokenStorage.clearTokens();
 
+      // Clear user info
+      await _userStorage.clearUserInfo();
+
       AppLogger.info('User logged out');
       emit(const Unauthenticated());
     } catch (e) {
       AppLogger.error('Logout error: $e');
       // Still clear tokens and emit unauthenticated
       await _tokenStorage.clearTokens();
+      await _userStorage.clearUserInfo();
       emit(const Unauthenticated());
     }
   }

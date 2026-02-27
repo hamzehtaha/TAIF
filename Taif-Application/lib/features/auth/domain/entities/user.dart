@@ -10,7 +10,11 @@ class User extends Equatable {
   final DateTime? birthday;
   final bool isActive;
   final bool isCompleted;
+  final bool emailVerified;
   final String? userRoleType;
+  final String? roleName;
+  final String? organizationId;
+  final String? organizationName;
   final DateTime createdAt;
   final DateTime? updatedAt;
 
@@ -22,13 +26,20 @@ class User extends Equatable {
     this.birthday,
     this.isActive = true,
     this.isCompleted = false,
+    this.emailVerified = false,
     this.userRoleType,
+    this.roleName,
+    this.organizationId,
+    this.organizationName,
     required this.createdAt,
     this.updatedAt,
   });
 
   /// Get full name
   String get fullName => '$firstName $lastName';
+
+  /// Get display role name (roleName or userRoleType or 'Student')
+  String get displayRole => roleName ?? userRoleType ?? 'Student';
 
   @override
   List<Object?> get props => [
@@ -39,7 +50,11 @@ class User extends Equatable {
         birthday,
         isActive,
         isCompleted,
+        emailVerified,
         userRoleType,
+        roleName,
+        organizationId,
+        organizationName,
         createdAt,
         updatedAt,
       ];

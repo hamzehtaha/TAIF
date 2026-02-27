@@ -29,7 +29,8 @@ abstract class AuthRepository {
   Future<void> logout();
 
   /// Get current user profile
-  Future<User> getCurrentUser();
+  /// Optionally pass authToken to bypass storage (for immediate use after login)
+  Future<User> getCurrentUser({String? authToken});
 
   /// Check if user is authenticated
   Future<bool> isAuthenticated();

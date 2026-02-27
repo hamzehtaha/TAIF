@@ -1,3 +1,5 @@
+import 'dart:io';
+
 /// Centralized environment configuration for TAIF
 /// Single source of truth for all environment-specific settings
 enum Environment { dev, staging, prod }
@@ -23,9 +25,19 @@ class EnvConfig {
     required this.maxRetryAttempts,
   });
 
+  /// Get base URL - uses 10.0.2.2 for Android emulator, localhost for others
+  static String get _baseUrl {
+    if (Platform.isAndroid) {
+      // Android emulator uses 10.0.2.2 to reach host localhost
+      return 'https://10.0.2.2:7277/api';
+    }
+    // Windows, iOS, macOS, Linux use localhost
+    return 'https://localhost:7277/api';
+  }
+
   /// Development environment
-  static const EnvConfig dev = EnvConfig._(
-    apiBaseUrl: 'https://localhost:7277/api',
+  static EnvConfig get dev => EnvConfig._(
+    apiBaseUrl: _baseUrl,
     appName: 'TAIF Dev',
     enableLogging: true,
     enableAnalytics: false,
@@ -36,8 +48,8 @@ class EnvConfig {
   );
 
   /// Staging environment
-  static const EnvConfig staging = EnvConfig._(
-    apiBaseUrl: 'https://localhost:7277/api',
+  static EnvConfig get staging => EnvConfig._(
+    apiBaseUrl: _baseUrl,
     appName: 'TAIF Staging',
     enableLogging: true,
     enableAnalytics: true,
@@ -48,8 +60,8 @@ class EnvConfig {
   );
 
   /// Production environment
-  static const EnvConfig prod = EnvConfig._(
-    apiBaseUrl: 'https://localhost:7277/api',
+  static EnvConfig get prod => EnvConfig._(
+    apiBaseUrl: _baseUrl,
     appName: 'TAIF',
     enableLogging: false,
     enableAnalytics: true,

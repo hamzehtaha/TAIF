@@ -10,7 +10,11 @@ class UserResponseModel {
   final DateTime? birthday;
   final bool isActive;
   final bool isCompleted;
+  final bool emailVerified;
   final String? userRoleType;
+  final String? roleName;
+  final String? organizationId;
+  final String? organizationName;
   final DateTime createdAt;
   final DateTime? updatedAt;
 
@@ -22,7 +26,11 @@ class UserResponseModel {
     this.birthday,
     required this.isActive,
     required this.isCompleted,
+    this.emailVerified = false,
     this.userRoleType,
+    this.roleName,
+    this.organizationId,
+    this.organizationName,
     required this.createdAt,
     this.updatedAt,
   });
@@ -38,7 +46,11 @@ class UserResponseModel {
           : null,
       isActive: json['isActive'] as bool? ?? true,
       isCompleted: json['isCompleted'] as bool? ?? false,
+      emailVerified: json['emailVerified'] as bool? ?? false,
       userRoleType: json['userRoleType'] as String?,
+      roleName: json['roleName'] as String?,
+      organizationId: json['organizationId'] as String?,
+      organizationName: json['organizationName'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: json['updatedAt'] != null 
           ? DateTime.tryParse(json['updatedAt'] as String) 
@@ -55,7 +67,11 @@ class UserResponseModel {
         birthday: birthday,
         isActive: isActive,
         isCompleted: isCompleted,
+        emailVerified: emailVerified,
         userRoleType: userRoleType,
+        roleName: roleName,
+        organizationId: organizationId,
+        organizationName: organizationName,
         createdAt: createdAt,
         updatedAt: updatedAt,
       );
