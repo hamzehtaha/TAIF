@@ -59,9 +59,10 @@ namespace TAIF.Application.Services
                 var dict = new Dictionary<string, object?>();
                 foreach (var prop in element.EnumerateObject())
                 {
-                    // Skip correctAnswerIndex and correctIndex properties
+                    // Strip all correct-answer-related fields
                     if (prop.Name.Equals("correctAnswerIndex", StringComparison.OrdinalIgnoreCase) ||
-                        prop.Name.Equals("correctIndex", StringComparison.OrdinalIgnoreCase))
+                        prop.Name.Equals("correctIndex", StringComparison.OrdinalIgnoreCase) ||
+                        prop.Name.Equals("correctAnswerId", StringComparison.OrdinalIgnoreCase))
                     {
                         continue;
                     }
@@ -73,15 +74,18 @@ namespace TAIF.Application.Services
             {
                 var list = new List<object?>();
                 foreach (var item in element.EnumerateArray())
-                {
                     list.Add(StripCorrectAnswers(item));
-                }
                 return list;
             }
             else
             {
                 return JsonSerializer.Deserialize<object>(element.GetRawText());
             }
+        }
+
+        public async Task<LessonItem?> GetByIdWithContentAsync(Guid id)
+        {
+            return await _lessonItemRepository.GetByIdWithContentAsync(id);
         }
     }
 }

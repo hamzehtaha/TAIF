@@ -33,8 +33,12 @@ namespace TAIF.API.Seeder.Scripts
             if (!File.Exists(filePath))
                 throw new FileNotFoundException(filePath);
 
+
+
             var json = await File.ReadAllTextAsync(filePath);
 
+            // PropertyNameCaseInsensitive lets the JSON use PascalCase wrapper fields
+            // while [JsonPropertyName] camelCase attributes on entities are respected
             var options = new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true,
@@ -44,13 +48,19 @@ namespace TAIF.API.Seeder.Scripts
             var seedData = JsonSerializer.Deserialize<SeedDataJson>(json, options)
                 ?? throw new InvalidOperationException("Invalid seed JSON");
 
-            // Build tag name to ID map for course tag resolution
             var tagNameToId = _context.Tags.ToDictionary(t => t.Name, t => t.Id, StringComparer.OrdinalIgnoreCase);
+            var publicOrg   = _context.Organizations.FirstOrDefault(o => o.Identity == "default");
+            var allSkills = _context.Skills
+            .Where(s => s.OrganizationId == publicOrg!.Id)
+            .Select(s => s.Id)
+            .ToList();
+            if (!allSkills.Any())
+            {
+                Console.WriteLine("⚠️ No skills found. Please seed skills first.");
+                return;
+            }
 
-            // Get default (Public) Organization for assigning to courses
-            var publicOrg = _context.Organizations.FirstOrDefault(o => o.Identity == "default");
-
-            // Get content creators (users with ContentCreator role)
+            var random = new Random();
             var contentCreators = _context.Users
                 .Where(u => u.Role == UserRoleType.ContentCreator)
                 .ToList();
@@ -61,7 +71,6 @@ namespace TAIF.API.Seeder.Scripts
                 return;
             }
 
-            // Get instructors for assigning to lessons
             var instructors = _context.Instructors.ToList();
             if (instructors.Count == 0)
             {
@@ -69,7 +78,7 @@ namespace TAIF.API.Seeder.Scripts
                 return;
             }
 
-            var creatorIndex = 0;
+            var creatorIndex    = 0;
             var instructorIndex = 0;
 
             foreach (var categoryData in seedData.Categories)
@@ -77,7 +86,7 @@ namespace TAIF.API.Seeder.Scripts
                 var category = _context.Categories.FirstOrDefault(c => c.Name == categoryData.Name);
                 if (category == null)
                 {
-                    category = new Category { Name = categoryData.Name , OrganizationId = publicOrg?.Id };
+                    category = new Category { Name = categoryData.Name, OrganizationId = publicOrg?.Id };
                     _context.Categories.Add(category);
                     await _context.SaveChangesAsync();
                 }
@@ -87,33 +96,27 @@ namespace TAIF.API.Seeder.Scripts
                     if (_context.Courses.Any(c => c.Name == courseData.Name))
                         continue;
 
-                    // Resolve tag names to tag IDs
                     var tagIds = new List<Guid>();
                     foreach (var tagName in courseData.Tags ?? [])
                     {
                         if (tagNameToId.TryGetValue(tagName, out var tagId))
-                        {
                             tagIds.Add(tagId);
-                        }
                         else
-                        {
                             Console.WriteLine($"⚠️ Tag '{tagName}' not found for course '{courseData.Name}'");
-                        }
                     }
 
-                    // Round-robin assign courses to content creators
                     var creator = contentCreators[creatorIndex % contentCreators.Count];
                     creatorIndex++;
 
                     var course = new Course
                     {
-                        Name = courseData.Name,
-                        Description = courseData.Description,
-                        Photo = courseData.Photo,
-                        CategoryId = category.Id,
-                        Tags = tagIds,
-                        Status = CourseStatus.Published,
-                        CreatedBy = creator.Id,
+                        Name          = courseData.Name,
+                        Description   = courseData.Description,
+                        Photo         = courseData.Photo,
+                        CategoryId    = category.Id,
+                        Tags          = tagIds,
+                        Status        = CourseStatus.Published,
+                        CreatedBy     = creator.Id,
                         OrganizationId = publicOrg?.Id
                     };
 
@@ -123,74 +126,73 @@ namespace TAIF.API.Seeder.Scripts
                     var lessonOrder = 1;
                     foreach (var lessonData in courseData.Lessons ?? [])
                     {
-                        // Round-robin assign instructors to lessons
                         var instructor = instructors[instructorIndex % instructors.Count];
                         instructorIndex++;
 
-                        // Create the lesson (now independent entity)
                         var lesson = new Lesson
                         {
-                            Title = lessonData.Title,
-                            Photo = lessonData.Photo,
-                            Description = lessonData.Description,
-                            CreatedBy = creator.Id,
+                            Title          = lessonData.Title,
+                            Photo          = lessonData.Photo,
+                            Description    = lessonData.Description,
+                            CreatedBy      = creator.Id,
                             OrganizationId = publicOrg?.Id,
-                            InstructorId = instructor.Id
+                            InstructorId   = instructor.Id
                         };
 
                         _context.lessons.Add(lesson);
                         await _context.SaveChangesAsync();
 
-                        // Create CourseLesson junction entry
-                        var courseLesson = new CourseLesson
+                        _context.CourseLessons.Add(new CourseLesson
                         {
-                            CourseId = course.Id,
-                            LessonId = lesson.Id,
-                            Order = lessonData.Order > 0 ? lessonData.Order : lessonOrder++,
+                            CourseId       = course.Id,
+                            LessonId       = lesson.Id,
+                            Order          = lessonData.Order > 0 ? lessonData.Order : lessonOrder++,
                             OrganizationId = publicOrg?.Id
-                        };
-                        _context.CourseLessons.Add(courseLesson);
+                        });
                         await _context.SaveChangesAsync();
 
                         var itemOrder = 1;
                         foreach (var itemData in lessonData.LessonItems ?? [])
                         {
-                            // Create content entity first
+                            // JSON now matches entity property names exactly —
+                            // deserialize directly into the entity type, no mapping needed.
                             IContentData contentData = itemData.Type switch
                             {
-                                LessonItemType.Video => JsonSerializer.Deserialize<Video>(itemData.Content.GetRawText()) ?? new Video(),
-                                LessonItemType.RichText => JsonSerializer.Deserialize<RichText>(itemData.Content.GetRawText()) ?? new RichText(),
-                                LessonItemType.Quiz => JsonSerializer.Deserialize<Quiz>(itemData.Content.GetRawText()) ?? new Quiz(),
+                                LessonItemType.Video    => itemData.Content.Deserialize<Video>(options)
+                                                           ?? throw new InvalidOperationException($"Invalid Video content for '{itemData.Name}'"),
+                                LessonItemType.RichText => itemData.Content.Deserialize<RichText>(options)
+                                                           ?? throw new InvalidOperationException($"Invalid RichText content for '{itemData.Name}'"),
+                                LessonItemType.Quiz     => itemData.Content.Deserialize<Quiz>(options)
+                                                           ?? throw new InvalidOperationException($"Invalid Quiz content for '{itemData.Name}'"),
                                 _ => throw new InvalidOperationException($"Unknown content type: {itemData.Type}")
                             };
 
-                            var content = new Content(itemData.Type, contentData);
-                            content.OrganizationId = publicOrg?.Id;
+                            var content = new Content(itemData.Type, contentData)
+                            {
+                                OrganizationId = publicOrg?.Id
+                            };
                             _context.Contents.Add(content);
                             await _context.SaveChangesAsync();
 
-                            // Create the lesson item referencing the content
                             var lessonItem = new LessonItem
                             {
                                 Name = itemData.Name,
                                 Type = itemData.Type,
                                 DurationInSeconds = itemData.DurationInSeconds,
                                 ContentId = content.Id,
-                                OrganizationId = publicOrg?.Id
+                                OrganizationId = publicOrg?.Id,
+                                SkillIds = GetRandomSkills(allSkills, random)
                             };
-
                             _context.LessonItems.Add(lessonItem);
                             await _context.SaveChangesAsync();
 
-                            // Create LessonLessonItem junction entry
-                            var lessonLessonItem = new LessonLessonItem
+                            _context.LessonLessonItems.Add(new LessonLessonItem
                             {
-                                LessonId = lesson.Id,
-                                LessonItemId = lessonItem.Id,
-                                Order = itemData.Order > 0 ? itemData.Order : itemOrder++,
+                                LessonId       = lesson.Id,
+                                LessonItemId   = lessonItem.Id,
+                                Order          = itemData.Order > 0 ? itemData.Order : itemOrder++,
                                 OrganizationId = publicOrg?.Id
-                            };
-                            _context.LessonLessonItems.Add(lessonLessonItem);
+                            });
                         }
 
                         await _context.SaveChangesAsync();
@@ -201,7 +203,18 @@ namespace TAIF.API.Seeder.Scripts
             Console.WriteLine("✅ Courses seeded successfully");
         }
 
-        // ================= JSON MODELS =================
+        private List<Guid> GetRandomSkills(List<Guid> allSkills, Random random, int min = 1, int max = 3)
+        {
+            int count = random.Next(min, Math.Min(max, allSkills.Count) + 1);
+
+            return allSkills
+                .OrderBy(_ => random.Next())
+                .Take(count)
+                .ToList();
+        }
+        // ================= SEED WRAPPER MODELS =================
+        // Only represent the Course.seed.json structure (categories/courses/lessons/items).
+        // Content is deserialized directly into entity types (Video, RichText, Quiz).
 
         private class SeedDataJson
         {
@@ -236,7 +249,7 @@ namespace TAIF.API.Seeder.Scripts
         {
             public string Name { get; set; } = null!;
             public LessonItemType Type { get; set; }
-            public JsonElement Content { get; set; }
+            public JsonElement Content { get; set; }   // deserialized directly into Video / RichText / Quiz
             public double DurationInSeconds { get; set; }
             public int Order { get; set; }
         }

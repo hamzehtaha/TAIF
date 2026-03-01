@@ -8,10 +8,7 @@ namespace TAIF.Application.DTOs.Payloads
 {
     public record QuizAnswerPayload
     {
-        public string QuestionId { get; init; } = null!;
-        public int SelectedAnswerIndex { get; init; }
-        public int CorrectAnswerIndex { get; init; }
-        public bool IsCorrect { get; init; }
+        public string QuestionId { get; set; } = string.Empty;
+        public string SelectedOptionId { get; set; } = string.Empty;
     }
-
 }

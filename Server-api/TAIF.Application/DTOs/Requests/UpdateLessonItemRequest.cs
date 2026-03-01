@@ -11,5 +11,6 @@ namespace TAIF.Application.DTOs.Requests
         public LessonItemType? Type { get; set; }
         public Guid? LessonId { get; set; }
         public double? DurationInSeconds { get; set; }
+        public List<Guid> SkillIds { get; set; } = new();
     }
 }

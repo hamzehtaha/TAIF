@@ -1,4 +1,5 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'logger.dart';
 
 /// TAIF Secure Token Storage
 /// Handles JWT and refresh token storage securely
@@ -20,12 +21,29 @@ class TokenStorage {
 
   /// Store access token securely
   Future<void> storeAccessToken(String token) async {
-    await _secureStorage.write(key: _accessTokenKey, value: token);
+    try {
+      await _secureStorage.write(key: _accessTokenKey, value: token);
+      AppLogger.info('Token stored successfully');
+    } catch (e) {
+      AppLogger.error('Failed to store access token: $e');
+      // Try to clear and retry
+      await _secureStorage.deleteAll();
+      await _secureStorage.write(key: _accessTokenKey, value: token);
+    }
   }
 
   /// Get stored access token
-  Future<String?> getAccessToken() async =>
-      await _secureStorage.read(key: _accessTokenKey);
+  Future<String?> getAccessToken() async {
+    try {
+      final token = await _secureStorage.read(key: _accessTokenKey);
+      AppLogger.info('Retrieved token: ${token != null ? 'exists' : 'null'}');
+      return token;
+    } catch (e) {
+      AppLogger.error('Failed to get access token: $e');
+      await _secureStorage.deleteAll();
+      return null;
+    }
+  }
 
   /// Store refresh token securely
   Future<void> storeRefreshToken(String token) async {
@@ -61,9 +79,12 @@ class TokenStorage {
 
   /// Clear all stored tokens (logout)
   Future<void> clearTokens() async {
-    await _secureStorage.delete(key: _accessTokenKey);
-    await _secureStorage.delete(key: _refreshTokenKey);
-    await _secureStorage.delete(key: _tokenExpiryKey);
+    try {
+      await _secureStorage.deleteAll();
+      AppLogger.info('Tokens cleared');
+    } catch (e) {
+      AppLogger.error('Failed to clear tokens: $e');
+    }
   }
 
   /// Check if user is authenticated

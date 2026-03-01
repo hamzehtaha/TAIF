@@ -12,22 +12,10 @@
 @import connectivity_plus;
 #endif
 
-#if __has_include(<device_info_plus/FPPDeviceInfoPlusPlugin.h>)
-#import <device_info_plus/FPPDeviceInfoPlusPlugin.h>
-#else
-@import device_info_plus;
-#endif
-
 #if __has_include(<flutter_secure_storage_darwin/FlutterSecureStorageDarwinPlugin.h>)
 #import <flutter_secure_storage_darwin/FlutterSecureStorageDarwinPlugin.h>
 #else
 @import flutter_secure_storage_darwin;
-#endif
-
-#if __has_include(<package_info_plus/FPPPackageInfoPlusPlugin.h>)
-#import <package_info_plus/FPPPackageInfoPlusPlugin.h>
-#else
-@import package_info_plus;
 #endif
 
 #if __has_include(<path_provider_foundation/PathProviderPlugin.h>)
@@ -46,9 +34,7 @@
 
 + (void)registerWithRegistry:(NSObject<FlutterPluginRegistry>*)registry {
   [ConnectivityPlusPlugin registerWithRegistrar:[registry registrarForPlugin:@"ConnectivityPlusPlugin"]];
-  [FPPDeviceInfoPlusPlugin registerWithRegistrar:[registry registrarForPlugin:@"FPPDeviceInfoPlusPlugin"]];
   [FlutterSecureStorageDarwinPlugin registerWithRegistrar:[registry registrarForPlugin:@"FlutterSecureStorageDarwinPlugin"]];
-  [FPPPackageInfoPlusPlugin registerWithRegistrar:[registry registrarForPlugin:@"FPPPackageInfoPlusPlugin"]];
   [PathProviderPlugin registerWithRegistrar:[registry registrarForPlugin:@"PathProviderPlugin"]];
   [SqflitePlugin registerWithRegistrar:[registry registrarForPlugin:@"SqflitePlugin"]];
 }

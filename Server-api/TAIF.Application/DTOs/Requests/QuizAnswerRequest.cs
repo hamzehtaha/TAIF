@@ -8,7 +8,7 @@ namespace TAIF.Application.DTOs.Requests
 {
     public record QuizAnswerRequest
     {
-        public string QuestionId { get; set; } = null!;
-        public int AnswerIndex { get; set; }
+        public string QuestionId { get; set; } = string.Empty;
+        public string SelectedOptionId { get; set; } = string.Empty;
     }
 }

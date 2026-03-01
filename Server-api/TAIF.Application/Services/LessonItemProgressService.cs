@@ -1,6 +1,5 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
-using TAIF.Application.DTOs;
 using TAIF.Application.DTOs.Payloads;
 using TAIF.Application.DTOs.Requests;
 using TAIF.Application.DTOs.Responses;
@@ -23,7 +22,7 @@ namespace TAIF.Application.Services
         private readonly ILogger<LessonItemProgressService> _logger;
 
         public LessonItemProgressService(
-            ILessonItemProgressRepository repository, 
+            ILessonItemProgressRepository repository,
             ILessonItemService lessonItemService,
             ILessonItemRepository lessonItemRepository,
             IQuizSubmissionService quizSubmissionService,
@@ -41,189 +40,260 @@ namespace TAIF.Application.Services
             _courseRepository = courseRepository;
             _logger = logger;
         }
-        
+
         public async Task<QuizResultResponse> SubmitQuizAsync(Guid userId, SubmitQuizRequest request)
         {
+            // Get lesson item with content
             var lessonItem = await _lessonItemRepository.GetByIdWithContentAsync(request.LessonItemId);
             if (lessonItem == null || lessonItem.Type != LessonItemType.Quiz)
             {
-                throw new Exception("Lesson item type is not question");
+                throw new Exception("Lesson item is not a quiz");
             }
+
             if (lessonItem.Content == null || string.IsNullOrEmpty(lessonItem.Content.ContentJson))
             {
-                throw new Exception("Lesson item has no content");
+                throw new Exception("Quiz has no content");
             }
-            using var doc = JsonDocument.Parse(lessonItem.Content.ContentJson);
 
-            var questions = doc.RootElement
-                .GetProperty("questions")
-                .EnumerateArray()
-                .Select(q => new
-                {
-                    Id = q.GetProperty("id").GetString()!,
-                    CorrectIndex = q.GetProperty("correctIndex").GetInt32()
-                })
-                .ToDictionary(q => q.Id);
+            var quiz = JsonSerializer.Deserialize<Quiz>(lessonItem.Content.ContentJson);
+            if (quiz == null || quiz.Questions == null || quiz.Questions.Count == 0)
+            {
+                throw new Exception("Invalid quiz structure");
+            }
 
-            var results = new List<QuestionAnswersResponse>();
+            // Validate and score answers
+            var results = new List<QuestionAnswerResult>();
             var answerPayloads = new List<QuizAnswerPayload>();
             int correctCount = 0;
 
             foreach (var answer in request.Answers)
             {
-                if (!questions.TryGetValue(answer.QuestionId, out var question))
+                var question = quiz.Questions.FirstOrDefault(q => q.Id == answer.QuestionId);
+                if (question == null)
+                {
+                    _logger.LogWarning("Question not found: {QuestionId}", answer.QuestionId);
                     continue;
+                }
 
-                bool isCorrect = question.CorrectIndex == answer.AnswerIndex;
+                bool isCorrect = answer.SelectedOptionId == question.CorrectAnswerId;
                 if (isCorrect) correctCount++;
 
-                results.Add(new QuestionAnswersResponse
+                results.Add(new QuestionAnswerResult
                 {
                     QuestionId = answer.QuestionId,
-                    IsCorrect = isCorrect
+                    IsCorrect = isCorrect,
+                    Explanation = isCorrect ? null : question.Explanation
                 });
+
                 answerPayloads.Add(new QuizAnswerPayload
                 {
                     QuestionId = answer.QuestionId,
-                    SelectedAnswerIndex = answer.AnswerIndex,
-                    CorrectAnswerIndex = question.CorrectIndex,
-                    IsCorrect = isCorrect
+                    SelectedOptionId = answer.SelectedOptionId
                 });
             }
 
-            int score = (int)Math.Round((double)correctCount / questions.Count * 100);
+            // Calculate score
+            int score = quiz.Questions.Count > 0
+                ? (int)Math.Round((double)correctCount / quiz.Questions.Count * 100)
+                : 0;
 
+            // Separate "all answered" from "passed"
+            bool allAnswered = request.Answers.Count == quiz.Questions.Count;
+
+            // A submission is "completed" only when it passes the minimum threshold
+            // (default to 100 if no MinPassScore is defined on the quiz)
+            bool isCompleted = allAnswered && score == 100;
+
+            // Serialize answers
             var answersJson = JsonSerializer.Serialize(answerPayloads);
 
-            var userAnswer = await _quizSubmissionService.GetUserSubmissionAsync(userId, request.LessonItemId);
-            if (userAnswer is null)
+            // Check if user already has a submission
+            var existingSubmission = await _quizSubmissionService.GetUserSubmissionAsync(userId, request.LessonItemId);
+
+            QuizSubmission submission;
+            if (existingSubmission != null)
             {
-                await _quizSubmissionService.CreateAsync(new QuizSubmission
-                {
-                    UserId = userId,
-                    LessonItemId = request.LessonItemId,
-                    AnswersJson = answersJson,
-                    Score = score,
-                    TotalQuestions = questions.Count,
-                    CorrectAnswers = correctCount
-                });
+                // Update existing submission (overwrite)
+                existingSubmission.AnswersJson = answersJson;
+                existingSubmission.Score = score;
+                existingSubmission.IsCompleted = isCompleted;
+                submission = await _quizSubmissionService.UpdateAsync(existingSubmission.Id, existingSubmission);
             }
             else
             {
-                await _quizSubmissionService.UpdateAsync(userAnswer.Id, new QuizSubmission
+                // Create new submission
+                submission = await _quizSubmissionService.CreateAsync(new QuizSubmission
                 {
                     UserId = userId,
                     LessonItemId = request.LessonItemId,
                     AnswersJson = answersJson,
                     Score = score,
-                    TotalQuestions = questions.Count,
-                    CorrectAnswers = correctCount
+                    IsCompleted = isCompleted
                 });
             }
+
+            // Mark lesson item as completed if score is 100%
+            if (score == 100 && isCompleted)
+            {
+                await SetLessonItemAsCompleted(userId, new SetLessonItemAsCompletedRequest
+                {
+                    LessonItemId = request.LessonItemId,
+                    LessonID = request.LessonId, 
+                    CourseId = request.CourseId 
+                });
+            }
+
             return new QuizResultResponse
             {
+                SubmissionId = submission.Id,
                 Results = results,
-                Score = score
+                Score = score,
+                IsCompleted = isCompleted
             };
         }
-        
+
         public async Task<List<LessonItemResponse>> GetLessonItemsProgressAsync(Guid userId, Guid lessonId, bool withDeleted = false)
         {
-            // Use the repository method that works with the M-M junction table
             var lessonItems = await _lessonItemRepository.GetByLessonIdAsync(lessonId, withDeleted);
-            List<LessonItemProgress> lessonItemProgress = await _lessonItemProgressRepository.FindAsync((x) => x.UserId.Equals(userId) && x.LessonID.Equals(lessonId));
+            var lessonItemIds = lessonItems.Select(li => li.Id).ToList();
+
+            // Query by LessonItemId membership — works regardless of how LessonID was stored
+            var lessonItemProgress = await _lessonItemProgressRepository.FindAsync(
+                x => x.UserId == userId && lessonItemIds.Contains(x.LessonItemId));
+
             var progressLookup = lessonItemProgress.ToDictionary(x => x.LessonItemId, x => x.IsCompleted);
-            List<LessonItemResponse> lessonItemsResponse = lessonItems
-                .Select(li => new LessonItemResponse
-                {
-                    Id = li.Id,
-                    Name = li.Name,
-                    Description = li.Description,
-                    ContentId = li.ContentId,
-                    Content = GetContentData(li.Content),
-                    Type = li.Type,
-                    DurationInSeconds = li.DurationInSeconds,
-                    IsCompleted = progressLookup.TryGetValue(li.Id, out var completed) && completed
-                }).ToList();
-            return lessonItemsResponse;
+
+            return lessonItems.Select(li => new LessonItemResponse
+            {
+                Id = li.Id,
+                Name = li.Name,
+                Description = li.Description,
+                ContentId = li.ContentId,
+                Content = GetContentData(li.Content),
+                Type = li.Type,
+                DurationInSeconds = li.DurationInSeconds,
+                IsCompleted = progressLookup.TryGetValue(li.Id, out var completed) && completed
+            }).ToList();
         }
-        
-        public async Task<LessonItemProgress> SetLessonItemAsCompleted(Guid UserId, SetLessonItemAsCompletedRequest dto)
+
+        public async Task<LessonItemProgress> SetLessonItemAsCompleted(Guid userId, SetLessonItemAsCompletedRequest dto)
         {
-            _logger.LogInformation("Setting lesson item {LessonItemId} as completed for user {UserId}", 
-                dto.LessonItemId, UserId);
+            _logger.LogInformation("Setting lesson item {LessonItemId} as completed for user {UserId}",
+                dto.LessonItemId, userId);
 
             var lessonItem = await _lessonItemService.GetByIdAsync(dto.LessonItemId);
-            if (lessonItem is null)
+            if (lessonItem == null)
             {
                 throw new Exception("Lesson item not found");
             }
 
-            LessonItemProgress lessonItemProgress = new LessonItemProgress
-            {
-                UserId = UserId,
-                LessonItemId = dto.LessonItemId,
-                CourseID = dto.CourseId,
-                LessonID = dto.LessonID,
-                IsCompleted = true,
-                CompletedDurationInSeconds = lessonItem.DurationInSeconds
-            };
-            
-            await _lessonItemProgressRepository.AddAsync(lessonItemProgress);
-            await _repository.SaveChangesAsync();
+            // Check if progress already exists
+            var existingProgress = await _lessonItemProgressRepository.FindAsync(
+                p => p.UserId == userId && p.LessonItemId == dto.LessonItemId
+            );
 
-            _logger.LogInformation("Lesson item {LessonItemId} marked as completed for user {UserId}", 
-                dto.LessonItemId, UserId);
+            var progress = existingProgress.FirstOrDefault();
 
-            try
+            if (progress != null)
             {
-                await TryAutoCompleteCourseAsync(UserId, dto.CourseId);
+                // Update existing progress
+                progress.IsCompleted = true;
+                progress.CompletedAt = DateTime.UtcNow;
+                progress.CompletedDurationInSeconds = lessonItem.DurationInSeconds;
+                
+                // Update LessonID and CourseID if provided and different from Empty
+                if (dto.LessonID != Guid.Empty)
+                {
+                    progress.LessonID = dto.LessonID;
+                }
+                if (dto.CourseId != Guid.Empty)
+                {
+                    progress.CourseID = dto.CourseId;
+                }
+                
+                await _lessonItemProgressRepository.SaveChangesAsync();
             }
-            catch (Exception ex)
+            else
             {
-                _logger.LogError(ex, "Error during auto-completion check for course {CourseId}", dto.CourseId);
+                // Get lessonId - check if empty and try to get from lesson item
+                Guid lessonId = dto.LessonID;
+                if (lessonId == Guid.Empty)
+                {
+                    var firstRelation = lessonItem.LessonLessonItems?.FirstOrDefault();
+                    if (firstRelation != null)
+                    {
+                        lessonId = firstRelation.LessonId;
+                    }
+                }
+
+                // Get courseId
+                Guid courseId = dto.CourseId;
+
+                // Create new progress
+                var newProgress = new LessonItemProgress
+                {
+                    UserId = userId,
+                    LessonItemId = dto.LessonItemId,
+                    LessonID = lessonId,
+                    CourseID = courseId,
+                    IsCompleted = true,
+                    CompletedAt = DateTime.UtcNow,
+                    CompletedDurationInSeconds = lessonItem.DurationInSeconds
+                };
+
+                await _lessonItemProgressRepository.AddAsync(newProgress);
+                await _repository.SaveChangesAsync();
+                progress = newProgress;
             }
 
-            return lessonItemProgress;
+            _logger.LogInformation("Lesson item {LessonItemId} marked as completed for user {UserId}",
+                dto.LessonItemId, userId);
+
+            // Try auto-complete course if CourseId is provided
+            if (dto.CourseId != Guid.Empty)
+            {
+                try
+                {
+                    await TryAutoCompleteCourseAsync(userId, dto.CourseId);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error during auto-completion check for course {CourseId}", dto.CourseId);
+                }
+            }
+
+            return progress;
         }
 
         private async Task TryAutoCompleteCourseAsync(Guid userId, Guid courseId)
         {
-            _logger.LogDebug("Trying auto-completion for course {CourseId} and user {UserId}", 
-                courseId, userId);
-
             var enrollment = await _enrollmentRepository.FindOneAsync(
                 e => e.UserId == userId && e.CourseId == courseId);
 
-            if (enrollment == null || enrollment.IsCompleted)
-            {
-                _logger.LogDebug("Course {CourseId} already completed or no enrollment for user {UserId}", 
-                    courseId, userId);
-                return;
-            }
+            if (enrollment == null || enrollment.IsCompleted) return;
 
             var course = await _courseRepository.GetByIdAsync(courseId);
-            
-            if (course == null || course.TotalLessonItems == 0)
-            {
-                _logger.LogDebug("Course {CourseId} not found or has no items", courseId);
-                return;
-            }
+            if (course == null) return;
 
-            bool isEligible = await _enrollmentRepository.HasUserCompletedAllLessonItemsAsync(
-                userId, courseId, course.TotalLessonItems);
+            // Get all LessonItem IDs for this course (via CourseLessons - LessonItems)
+            var allItemIds = course.CourseLessons
+                .SelectMany(cl => cl.Lesson?.LessonLessonItems ?? Enumerable.Empty<LessonLessonItem>())
+                .Select(lli => lli.LessonItemId)
+                .Distinct()
+                .ToList();
 
-            if (isEligible)
+            if (!allItemIds.Any()) return;
+
+            var completedCount = await _lessonItemProgressRepository.GetCompletedItemCountAsync(userId, courseId);
+
+            if (completedCount >= allItemIds.Count)
             {
                 enrollment.IsCompleted = true;
                 enrollment.CompletedAt = DateTime.UtcNow;
                 await _enrollmentRepository.SaveChangesAsync();
-
-                _logger.LogInformation("Auto-completed course {CourseId} for user {UserId}", 
-                    courseId, userId);
+                _logger.LogInformation("Course {CourseId} auto-completed for user {UserId}", courseId, userId);
             }
         }
-
         /// <summary>
         /// Gets the total completed duration in seconds for a user's progress in a specific course
         /// </summary>
@@ -238,7 +308,7 @@ namespace TAIF.Application.Services
         public async Task<double> GetUserCompletedDurationForLearningPathAsync(Guid userId, Guid learningPathId)
         {
             var courseIds = await _learningPathRepository.GetCourseIdsInLearningPathAsync(learningPathId);
-            
+
             if (!courseIds.Any())
                 return 0;
 
@@ -254,51 +324,18 @@ namespace TAIF.Application.Services
             return await _lessonItemProgressRepository.GetCompletedItemCountAsync(userId, courseId);
         }
 
-        private static object? GetContentData(Content? content)
+        private object? GetContentData(Content? content)
         {
             if (content == null || string.IsNullOrEmpty(content.ContentJson))
                 return null;
 
             try
             {
-                using var doc = JsonDocument.Parse(content.ContentJson);
-                return StripCorrectAnswers(doc.RootElement);
+                return JsonSerializer.Deserialize<object>(content.ContentJson);
             }
             catch
             {
                 return null;
-            }
-        }
-
-        private static object? StripCorrectAnswers(JsonElement element)
-        {
-            if (element.ValueKind == JsonValueKind.Object)
-            {
-                var dict = new Dictionary<string, object?>();
-                foreach (var prop in element.EnumerateObject())
-                {
-                    // Skip correctAnswerIndex and correctIndex properties
-                    if (prop.Name.Equals("correctAnswerIndex", StringComparison.OrdinalIgnoreCase) ||
-                        prop.Name.Equals("correctIndex", StringComparison.OrdinalIgnoreCase))
-                    {
-                        continue;
-                    }
-                    dict[prop.Name] = StripCorrectAnswers(prop.Value);
-                }
-                return dict;
-            }
-            else if (element.ValueKind == JsonValueKind.Array)
-            {
-                var list = new List<object?>();
-                foreach (var item in element.EnumerateArray())
-                {
-                    list.Add(StripCorrectAnswers(item));
-                }
-                return list;
-            }
-            else
-            {
-                return JsonSerializer.Deserialize<object>(element.GetRawText());
             }
         }
     }

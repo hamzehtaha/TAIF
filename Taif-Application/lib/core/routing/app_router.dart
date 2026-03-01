@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../features/home/presentation/screens/home_screen.dart';
+import '../../features/main/presentation/screens/main_shell.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
+import '../../features/interests/presentation/screens/user_interests_screen.dart';
 
 /// TAIF Navigation Routes
 /// Centralized route definitions
@@ -15,6 +16,7 @@ class AppRoutes {
   static const String profile = '/profile';
   static const String settings = '/settings';
   static const String example = '/example';
+  static const String userInterests = '/interests';
 }
 
 /// TAIF Router Configuration
@@ -24,10 +26,10 @@ class AppRouter {
         initialLocation: AppRoutes.login,
         debugLogDiagnostics: true,
         routes: [
-          // Home
+          // Home (with bottom navigation)
           GoRoute(
             path: AppRoutes.home,
-            builder: (context, state) => const HomeScreen(),
+            builder: (context, state) => const MainShell(),
           ),
 
           // Auth
@@ -38,6 +40,12 @@ class AppRouter {
           GoRoute(
             path: AppRoutes.register,
             builder: (context, state) => const RegisterScreen(),
+          ),
+
+          // User Interests (post-signup)
+          GoRoute(
+            path: AppRoutes.userInterests,
+            builder: (context, state) => const UserInterestsScreen(),
           ),
 
           // Profile

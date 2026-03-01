@@ -69,9 +69,23 @@ namespace TAIF.Infrastructure.Repositories
             if (!withDeleted)
                 query = query.Where(ulpp => !ulpp.IsDeleted);
 
-            return await query
+            var progress = await query
                 .Include(ulpp => ulpp.LearningPath)
+                    .ThenInclude(lp => lp.Sections)
+                        .ThenInclude(s => s.Courses)
+                            .ThenInclude(c => c.Course)
                 .FirstOrDefaultAsync();
+            
+            if (progress?.LearningPath != null)
+            {
+                progress.LearningPath.Sections = progress.LearningPath.Sections.OrderBy(s => s.Order).ToList();
+                foreach (var section in progress.LearningPath.Sections)
+                {
+                    section.Courses = section.Courses.OrderBy(c => c.Order).ToList();
+                }
+            }
+
+            return progress;
         }
 
         public async Task<Dictionary<Guid, int>> GetEnrollmentCountsPerLearningPathAsync()

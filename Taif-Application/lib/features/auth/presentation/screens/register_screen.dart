@@ -151,7 +151,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
           body: BlocListener<AuthBloc, AuthState>(
             listener: (context, state) {
               if (state is Authenticated) {
-                context.go(AppRoutes.home);
+                // Navigate to interests screen after signup
+                context.go(AppRoutes.userInterests);
               } else if (state is AuthError) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(

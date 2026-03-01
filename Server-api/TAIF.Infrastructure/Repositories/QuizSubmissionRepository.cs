@@ -9,13 +9,10 @@ using TAIF.Infrastructure.Data;
 
 namespace TAIF.Infrastructure.Repositories
 {
-    public class QuizSubmissionRepository: RepositoryBase<QuizSubmission>, IQuizSubmissionRepository
+    public class QuizSubmissionRepository : RepositoryBase<QuizSubmission>, IQuizSubmissionRepository
     {
-        private readonly TaifDbContext _context;
-
-        public QuizSubmissionRepository(TaifDbContext context): base(context)
+        public QuizSubmissionRepository(TaifDbContext context) : base(context)
         {
-            _context = context;
         }
 
         public async Task<QuizSubmission?> GetByUserAndLessonItemAsync(Guid userId, Guid lessonItemId)

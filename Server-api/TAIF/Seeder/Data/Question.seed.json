@@ -1,0 +1,17 @@
+[
+  {
+    "info": "What is the purpose of Speech Therapy?",
+    "goals": "Understand speech therapy benefits",
+    "answers": [
+      "It helps improve speech clarity",
+      "It improves muscle coordination",
+      "It strengthens memory skills"
+    ],
+    "correctAnswerIndex": 0,
+    "minPercentage": 80,
+    "skills": [
+      "Speech Therapy"
+    ],
+    "organizationSlug": "taif-academy"
+  }
+]

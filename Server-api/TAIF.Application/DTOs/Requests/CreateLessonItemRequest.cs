@@ -16,5 +16,6 @@ namespace TAIF.Application.DTOs.Requests
         public Guid LessonId { get; set; }
         public double DurationInSeconds { get; set; } = 0;
         public Guid? OrganizationId { get; set; } // Only SuperAdmin can set this
+        public List<Guid> SkillIds { get; set; } = new();
     }
 }

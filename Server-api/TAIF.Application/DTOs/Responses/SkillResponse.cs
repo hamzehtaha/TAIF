@@ -1,0 +1,16 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace TAIF.Application.DTOs.Responses
+{
+    public class SkillResponse
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public Guid? OrganizationId { get; set; }
+    }
+}

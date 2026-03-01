@@ -7,7 +7,7 @@
           "Name": "Sign Language Fundamentals",
           "Description": "Comprehensive course teaching basic to intermediate sign language skills for deaf and hard of hearing individuals. Learn essential communication techniques and daily conversation signs.",
           "Photo": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800",
-          "Tags": ["Sign Language", "ASL", "Finger Spelling", "Deaf Communication", "Visual Learning"],
+          "Tags": [ "Sign Language", "ASL", "Finger Spelling", "Deaf Communication", "Visual Learning" ],
           "Lessons": [
             {
               "Title": "Introduction to Sign Language Alphabet",
@@ -20,8 +20,8 @@
                   "DurationInSeconds": 300,
                   "Order": 1,
                   "Content": {
-                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                    "description": "Learn the first five letters of the sign language alphabet with proper hand positioning and movement."
+                    "title": "A-E Finger Spelling",
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
                   }
                 },
                 {
@@ -57,14 +57,21 @@
                 {
                   "Name": "Alphabet Practice Quiz",
                   "Type": "Quiz",
+                  "DurationInSeconds": 0,
                   "Order": 5,
                   "Content": {
+                    "title": "Alphabet Practice Quiz",
                     "questions": [
                       {
-                        "id": "q1",
-                        "text": "Which hand shape represents the letter A?",
-                        "options": ["Closed fist", "Open palm", "Two fingers"],
-                        "correctIndex": 0
+                        "id": "asl_q1",
+                        "questionText": "Which hand shape represents the letter A?",
+                        "shuffleOptions": false,
+                        "options": [
+                          { "id": "asl_q1_opt0", "text": "Closed fist" },
+                          { "id": "asl_q1_opt1", "text": "Open palm" },
+                          { "id": "asl_q1_opt2", "text": "Two fingers" }
+                        ],
+                        "correctAnswerId": "asl_q1_opt0"
                       }
                     ]
                   }
@@ -99,8 +106,10 @@
                 {
                   "Name": "Greetings Reading",
                   "Type": "RichText",
+                  "DurationInSeconds": 0,
                   "Order": 3,
                   "Content": {
+                    "title": "Greetings Reading",
                     "html": "<p>Sign language greetings are essential for daily communication. Practice these signs regularly.</p>"
                   }
                 }
@@ -112,7 +121,7 @@
           "Name": "Braille Reading and Writing",
           "Description": "Complete Braille literacy program for visually impaired individuals. Master the Braille alphabet, numbers, punctuation, and develop fluent reading and writing skills.",
           "Photo": "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=800",
-          "Tags": ["Braille Reading", "Braille Writing", "Tactile Learning", "Visual Learning"],
+          "Tags": [ "Braille Reading", "Braille Writing", "Tactile Learning", "Visual Learning" ],
           "Lessons": [
             {
               "Title": "Braille Basics and Alphabet",
@@ -132,8 +141,10 @@
                 {
                   "Name": "Braille Cell Structure",
                   "Type": "RichText",
+                  "DurationInSeconds": 0,
                   "Order": 2,
                   "Content": {
+                    "title": "Braille Cell Structure",
                     "html": "<p>The Braille cell consists of six dots arranged in two columns of three dots. Each letter is formed by a unique combination of raised dots.</p>"
                   }
                 },
@@ -150,13 +161,22 @@
                 {
                   "Name": "Alphabet Recognition Quiz",
                   "Type": "Quiz",
+                  "DurationInSeconds": 0,
                   "Order": 4,
                   "Content": {
+                    "title": "Alphabet Recognition Quiz",
                     "questions": [
                       {
-                        "question": "How many dots are in a standard Braille cell?",
-                        "options": ["4", "5", "6", "8"],
-                        "correctAnswerIndex": 2
+                        "id": "brl_q1",
+                        "questionText": "How many dots are in a standard Braille cell?",
+                        "shuffleOptions": false,
+                        "options": [
+                          { "id": "brl_q1_opt0", "text": "4" },
+                          { "id": "brl_q1_opt1", "text": "5" },
+                          { "id": "brl_q1_opt2", "text": "6" },
+                          { "id": "brl_q1_opt3", "text": "8" }
+                        ],
+                        "correctAnswerId": "brl_q1_opt2"
                       }
                     ]
                   }
@@ -174,7 +194,7 @@
           "Name": "Assistive Technology for Daily Living",
           "Description": "Comprehensive training on adaptive devices and technology that enhance independence for individuals with physical and cognitive disabilities.",
           "Photo": "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800",
-          "Tags": ["Screen Readers", "JAWS", "NVDA", "Voice Control", "Adaptive Devices"],
+          "Tags": [ "Screen Readers", "JAWS", "NVDA", "Voice Control", "Adaptive Devices" ],
           "Lessons": [
             {
               "Title": "Screen Reader Basics",
@@ -194,9 +214,11 @@
                 {
                   "Name": "Screen Reader Overview",
                   "Type": "RichText",
+                  "DurationInSeconds": 0,
                   "Order": 2,
                   "Content": {
-                    "html": "<p>Screen readers convert on-screen text into speech or Braille output.</p>"
+                    "title": "Screen Reader Overview",
+                    "html": "<p>Screen readers convert on-screen text into speech or Braille output, enabling visually impaired users to navigate digital content.</p>"
                   }
                 },
                 {
@@ -212,13 +234,22 @@
                 {
                   "Name": "Screen Reader Quiz",
                   "Type": "Quiz",
+                  "DurationInSeconds": 0,
                   "Order": 4,
                   "Content": {
+                    "title": "Screen Reader Quiz",
                     "questions": [
                       {
-                        "question": "What is the primary function of a screen reader?",
-                        "options": ["Enhance screen brightness", "Convert text into speech or Braille", "Translate languages", "Increase font size only"],
-                        "correctAnswerIndex": 1
+                        "id": "sr_q1",
+                        "questionText": "What is the primary function of a screen reader?",
+                        "shuffleOptions": false,
+                        "options": [
+                          { "id": "sr_q1_opt0", "text": "Enhance screen brightness" },
+                          { "id": "sr_q1_opt1", "text": "Convert text into speech or Braille" },
+                          { "id": "sr_q1_opt2", "text": "Translate languages" },
+                          { "id": "sr_q1_opt3", "text": "Increase font size only" }
+                        ],
+                        "correctAnswerId": "sr_q1_opt1"
                       }
                     ]
                   }
@@ -243,9 +274,11 @@
                 {
                   "Name": "Voice Dictation Explained",
                   "Type": "RichText",
+                  "DurationInSeconds": 0,
                   "Order": 2,
                   "Content": {
-                    "html": "<p>Voice dictation software allows users to convert spoken words into written text.</p>"
+                    "title": "Voice Dictation Explained",
+                    "html": "<p>Voice dictation software allows users to convert spoken words into written text, reducing reliance on keyboard input.</p>"
                   }
                 }
               ]
@@ -256,7 +289,7 @@
           "Name": "Sensory Integration and Self-Regulation",
           "Description": "Therapeutic techniques for individuals with autism, ADHD, and sensory processing disorders.",
           "Photo": "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800",
-          "Tags": ["Sensory Integration", "Self-Regulation", "Deep Pressure Therapy", "Autism Support"],
+          "Tags": [ "Sensory Integration", "Self-Regulation", "Deep Pressure Therapy", "Autism Support" ],
           "Lessons": [
             {
               "Title": "Understanding Sensory Processing",
@@ -276,9 +309,11 @@
                 {
                   "Name": "What Is Sensory Processing?",
                   "Type": "RichText",
+                  "DurationInSeconds": 0,
                   "Order": 2,
                   "Content": {
-                    "html": "<p>Sensory processing refers to how the nervous system receives messages from the senses.</p>"
+                    "title": "What Is Sensory Processing?",
+                    "html": "<p>Sensory processing refers to how the nervous system receives messages from the senses and turns them into appropriate motor and behavioral responses.</p>"
                   }
                 },
                 {
@@ -294,13 +329,22 @@
                 {
                   "Name": "Sensory Processing Quiz",
                   "Type": "Quiz",
+                  "DurationInSeconds": 0,
                   "Order": 4,
                   "Content": {
+                    "title": "Sensory Processing Quiz",
                     "questions": [
                       {
-                        "question": "Which of the following is a common sign of sensory overload?",
-                        "options": ["Increased focus", "Calm behavior", "Covering ears or avoiding stimuli", "Improved attention"],
-                        "correctAnswerIndex": 2
+                        "id": "sns_q1",
+                        "questionText": "Which of the following is a common sign of sensory overload?",
+                        "shuffleOptions": false,
+                        "options": [
+                          { "id": "sns_q1_opt0", "text": "Increased focus" },
+                          { "id": "sns_q1_opt1", "text": "Calm behavior" },
+                          { "id": "sns_q1_opt2", "text": "Covering ears or avoiding stimuli" },
+                          { "id": "sns_q1_opt3", "text": "Improved attention" }
+                        ],
+                        "correctAnswerId": "sns_q1_opt2"
                       }
                     ]
                   }

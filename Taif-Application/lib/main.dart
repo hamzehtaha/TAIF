@@ -10,6 +10,7 @@ import 'core/routing/app_router.dart';
 import 'core/utils/app_localizations.dart';
 import 'core/utils/logger.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
+import 'features/interests/presentation/bloc/interest_bloc.dart';
 
 /// TAIF Main App Entry Point
 /// Configures environment, initializes dependencies, and starts the app
@@ -42,6 +43,7 @@ void main() async {
         BlocProvider(create: (_) => ThemeBloc()),
         BlocProvider(create: (_) => LocaleBloc()),
         BlocProvider(create: (_) => AuthBloc()),
+        BlocProvider(create: (_) => InterestBloc()),
       ],
       child: const TaifApp(),
     ),

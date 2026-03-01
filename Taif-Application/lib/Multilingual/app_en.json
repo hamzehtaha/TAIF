@@ -71,5 +71,12 @@
   "birthday": "Birthday",
   "error_invalid_request": "Invalid request. Please check your input.",
   "error_invalid_credentials": "Invalid credentials. Please try again.",
-  "error_account_exists": "An account with this email already exists."
+  "error_account_exists": "An account with this email already exists.",
+  "session_expired": "Session expired. Please sign in again.",
+  "dismiss": "Dismiss",
+  "interests_title": "What are you interested in?",
+  "interests_subtitle": "Select topics you'd like to learn about. This helps us recommend courses for you.",
+  "skip_for_now": "Skip for now",
+  "selected": "selected",
+  "failed_load_interests": "Failed to load interests"
 }

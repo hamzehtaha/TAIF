@@ -3,20 +3,21 @@ using TAIF.Application.DTOs.Requests;
 using TAIF.Application.Interfaces.Repositories;
 using TAIF.Application.Interfaces.Services;
 using TAIF.Domain.Entities;
+using TAIF.Domain.Models;
 
 namespace TAIF.Application.Services
 {
-    public class UserEvaluationService
-        : ServiceBase<UserEvaluation>, IUserEvaluationService
+    public class UserEvaluationService : ServiceBase<UserEvaluation>, IUserEvaluationService
     {
         private readonly IUserEvaluationRepository _repository;
         private readonly IEvaluationAnswerRepository _answerRepository;
-
-        public UserEvaluationService(IUserEvaluationRepository repository, IEvaluationAnswerRepository answerRepository)
+        private readonly IQuestionRepository _questionRepository;
+        public UserEvaluationService(IUserEvaluationRepository repository, IEvaluationAnswerRepository answerRepository, IQuestionRepository questionRepository)
             : base(repository)
         {
             _repository = repository;
             _answerRepository = answerRepository;
+            _questionRepository = questionRepository;
         }
 
         public async Task<bool> ExistsForUserAsync(Guid userId)
@@ -28,32 +29,53 @@ namespace TAIF.Application.Services
         {
             return await _repository.GetByUserIdAsync(userId);
         }
-        public async Task<UserEvaluation> SubmitAsync(Guid userId, SubmitEvaluation dto)
+        public async Task<UserEvaluation> SubmitAsync(Guid userId,Guid organizationId, SubmitEvaluation dto)
         {
-            if (await _repository.ExistsForUserAsync(userId))
-                throw new Exception("User already completed evaluation.");
-
             if (dto.Answers == null || !dto.Answers.Any())
                 throw new Exception("Answers are required.");
 
-            var answerIds = dto.Answers.Select(a => a.AnswerId).ToList();
+            var questionIds = dto.Answers.Select(a => a.QuestionId).ToList();
 
-            var answers = await _answerRepository.FindNoTrackingAsync(
-                a => answerIds.Contains(a.Id)
+            var questions = await _questionRepository.FindNoTrackingAsync(
+                q => questionIds.Contains(q.Id)
             );
 
-            if (answers.Count != answerIds.Count)
-                throw new Exception("Invalid answers submitted.");
+            if (questions.Count != questionIds.Count)
+                throw new Exception("Invalid questions submitted.");
 
-            int totalScore = answers.Sum(a => a.Score);
+            var result = new EvaluationJsonResult();
+
+            foreach (var submitted in dto.Answers)
+            {
+                var question = questions.First(q => q.Id == submitted.QuestionId);
+
+                if (!question.AnswerIds.Contains(submitted.AnswerId))
+                    throw new Exception("Invalid answer for question.");
+
+                // Determine correct answer
+                var correctAnswerId = question.AnswerIds[question.CorrectAnswerIndex];
+
+                int percentage = submitted.AnswerId == correctAnswerId ? 100 : 0;
+
+                result.Questions.Add(new QuestionEvaluationResult
+                {
+                    QuestionId = question.Id,
+                    SelectedAnswerId = submitted.AnswerId,
+                    Percentage = percentage
+                });
+            }
+
+            // Calculate total average
+            result.TotalPercentage = result.Questions.Any()
+                ? (int)result.Questions.Average(q => q.Percentage)
+                : 0;
 
             var evaluation = new UserEvaluation
             {
                 Id = Guid.NewGuid(),
                 UserId = userId,
-                AnswersJson = JsonSerializer.Serialize(dto.Answers),
-                TotalScore = totalScore,
-                CompletedAt = DateTime.UtcNow
+                OrganizationId = organizationId,
+                Result = result
             };
 
             await _repository.AddAsync(evaluation);

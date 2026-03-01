@@ -1,0 +1,27 @@
+[
+  {
+    "name": "Speech Therapy",
+    "description": "Improving communication and speech abilities",
+    "organizationSlug": "taif-academy"
+  },
+  {
+    "name": "Motor Skills Development",
+    "description": "Enhancing fine and gross motor coordination",
+    "organizationSlug": "taif-academy"
+  },
+  {
+    "name": "Cognitive Training",
+    "description": "Improving memory, focus, and problem-solving skills",
+    "organizationSlug": "taif-academy"
+  },
+  {
+    "name": "Creative Expression",
+    "description": "Art and creative skill enhancement",
+    "organizationSlug": "creative-learning-hub"
+  },
+  {
+    "name": "Social Interaction Skills",
+    "description": "Building interpersonal and social communication abilities",
+    "organizationSlug": "creative-learning-hub"
+  }
+]

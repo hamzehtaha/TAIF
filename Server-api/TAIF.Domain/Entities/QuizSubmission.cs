@@ -10,10 +10,13 @@ namespace TAIF.Domain.Entities
     {
         public Guid UserId { get; set; }
         public Guid LessonItemId { get; set; }
-        public string AnswersJson { get; set; } = null!;
+        
+        public string AnswersJson { get; set; } = string.Empty;
         public int Score { get; set; }
-        public int TotalQuestions { get; set; }
-        public int CorrectAnswers { get; set; }
+        public bool IsCompleted { get; set; }
+        
+        // Navigation properties
+        public User User { get; set; } = null!;
         public LessonItem LessonItem { get; set; } = null!;
     }
 }

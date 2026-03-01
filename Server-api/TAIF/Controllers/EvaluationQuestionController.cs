@@ -31,19 +31,5 @@ namespace TAIF.API.Controllers
             var result = await _service.GetAllWithAnswersAsync();
             return Ok(ApiResponse<List<EvaluationQuestionResponseDto>>.SuccessResponse(result));
         }
-        [HttpPost("submit")]
-        public async Task<IActionResult> Submit([FromBody] SubmitEvaluation dto)
-        {
-            var result = await _userEvaluationService.SubmitAsync(UserId, dto);
-            var response = new SubmitEvaluationResponseDto
-            {
-                EvaluationId = result.Id,
-                TotalScore = result.TotalScore,
-                CompletedAt = result.CompletedAt
-            };
-
-            return Ok(ApiResponse<SubmitEvaluationResponseDto>
-                .SuccessResponse(response));
-        }
     }
 }

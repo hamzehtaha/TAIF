@@ -9,7 +9,8 @@ namespace TAIF.Application.DTOs.Requests
     public record SubmitQuizRequest
     {
         public Guid LessonItemId { get; set; }
-        public List<QuizAnswerRequest> Answers { get; set; } = [];
+        public Guid LessonId { get; set; }
+        public Guid CourseId { get; set; }
+        public List<QuizAnswerRequest> Answers { get; set; } = new();
     }
-
 }

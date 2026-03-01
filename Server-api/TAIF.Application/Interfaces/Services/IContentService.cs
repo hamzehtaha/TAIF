@@ -12,7 +12,10 @@ namespace TAIF.Application.Interfaces.Services
 {
     public interface IContentService : IService<Content>
     {
-        Task<Content> CreateAsync(CreateContentRequest request, Guid? organizationId = null);
-        Task<Content> UpdateAsync(Guid id, CreateContentRequest request);
+        Task<Content> CreateQuizContentAsync(QuizCreateDto quizDto, Guid organizationId);
+        Task<Content> UpdateQuizContentAsync(Guid contentId, QuizCreateDto quizDto);
+        
+        Task<Content> CreateAsync(CreateContentRequest request, Guid organizationId);
+        Task<Content> UpdateAsync(Guid contentId, CreateContentRequest request);
     }
 }
