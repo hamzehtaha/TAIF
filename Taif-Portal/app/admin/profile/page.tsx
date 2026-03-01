@@ -64,15 +64,19 @@ export default function ProfilePage() {
   };
 
   const handleSave = async () => {
+    if (!profile) return;
+    
     setIsSaving(true);
     try {
-      // TODO: Implement user profile update API
+      // TODO: Implement profile update API when available
+      // For now, just show success and close edit mode
       toast({
         title: "Profile Updated",
         description: "Your profile has been successfully updated.",
       });
       setIsEditing(false);
     } catch (error) {
+      console.error("Failed to update profile:", error);
       toast({
         title: "Error",
         description: "Failed to update profile. Please try again.",

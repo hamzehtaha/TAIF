@@ -18,12 +18,27 @@ import { Card, CardContent } from "@/components/ui/card";
 import { contentService, LessonItemType, QuizQuestion } from "@/services/content.service";
 import { useToast } from "@/hooks/use-toast";
 
-interface CreateQuizDialogProps {
-  onSuccess?: () => void;
+export interface QuizContentData {
+  title: string;
+  questions: QuizQuestion[];
 }
 
-export function CreateQuizDialog({ onSuccess }: CreateQuizDialogProps) {
-  const [open, setOpen] = useState(false);
+interface CreateQuizDialogProps {
+  onSuccess?: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  mode?: 'api' | 'local';
+  onDataReady?: (data: QuizContentData) => void;
+}
+
+export function CreateQuizDialog({ onSuccess, open: controlledOpen, onOpenChange, mode = 'api', onDataReady }: CreateQuizDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = (value: boolean) => {
+    if (!isControlled) setInternalOpen(value);
+    onOpenChange?.(value);
+  };
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   
@@ -126,14 +141,24 @@ export function CreateQuizDialog({ onSuccess }: CreateQuizDialogProps) {
       }
     }
 
+    const quizData: QuizContentData = {
+      title: formData.title,
+      questions: questions,
+    };
+
+    if (mode === 'local') {
+      onDataReady?.(quizData);
+      setFormData({ title: "" });
+      setQuestions([{ questionText: "", options: ["", "", "", ""], correctAnswerIndex: 0 }]);
+      setOpen(false);
+      return;
+    }
+
     setIsLoading(true);
     try {
       await contentService.createContent({
         type: LessonItemType.Quiz,
-        quiz: {
-          title: formData.title,
-          questions: questions,
-        },
+        quiz: quizData,
       });
 
       toast({
@@ -164,13 +189,19 @@ export function CreateQuizDialog({ onSuccess }: CreateQuizDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <HelpCircle className="h-4 w-4 mr-2" />
-          Create Quiz Content
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+      {!isControlled && (
+        <DialogTrigger asChild>
+          <Button>
+            <HelpCircle className="h-4 w-4 mr-2" />
+            Create Quiz Content
+          </Button>
+        </DialogTrigger>
+      )}
+      <DialogContent 
+        className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto"
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Create Quiz Content</DialogTitle>

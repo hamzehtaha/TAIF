@@ -20,7 +20,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { instructorProfileService, InstructorProfileResponse } from "@/services/instructor-profile.service";
+import { authService } from "@/services/auth.service";
+import { User } from "@/models/user.model";
 import { formatDistanceToNow } from "date-fns";
 
 interface DashboardStats {
@@ -51,7 +52,7 @@ interface DashboardCourse {
 }
 
 export default function InstructorDashboard() {
-  const [instructor, setInstructor] = useState<InstructorProfileResponse | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Mock data for dashboard (will be replaced with real API later)
@@ -71,10 +72,11 @@ export default function InstructorDashboard() {
     const loadData = async () => {
       try {
         setIsLoading(true);
-        const profile = await instructorProfileService.getCurrentProfile();
-        setInstructor(profile);
+        // Use authService.getUser() for basic user info from local storage
+        const currentUser = authService.getUser();
+        setUser(currentUser);
       } catch (error) {
-        console.error("Failed to load instructor profile:", error);
+        console.error("Failed to load user:", error);
       } finally {
         setIsLoading(false);
       }
@@ -86,22 +88,22 @@ export default function InstructorDashboard() {
   const stats = [
     {
       title: "Total Courses",
-      value: instructor?.coursesCount || 0,
+      value: dashboardStats.totalCourses,
       subtitle: "Your created courses",
       icon: BookOpen,
       color: "bg-primary",
     },
     {
       title: "Average Rating",
-      value: instructor?.rating?.toFixed(1) || "0.0",
+      value: dashboardStats.averageRating?.toFixed(1) || "0.0",
       subtitle: "Based on student reviews",
       icon: Star,
       color: "bg-warning",
     },
     {
-      title: "Years of Experience",
-      value: instructor?.yearsOfExperience || 0,
-      subtitle: "Teaching experience",
+      title: "Total Students",
+      value: dashboardStats.totalStudents,
+      subtitle: "Enrolled in your courses",
       icon: TrendingUp,
       color: "bg-accent",
     },
@@ -131,7 +133,7 @@ export default function InstructorDashboard() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold">
-              Welcome back, {instructor?.firstName}!
+              Welcome back, {user?.firstName}!
             </h1>
             <p className="text-muted-foreground mt-1">
               Here&apos;s what&apos;s happening with your courses today.

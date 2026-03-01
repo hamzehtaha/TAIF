@@ -19,12 +19,27 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { contentService, LessonItemType } from "@/services/content.service";
 import { useToast } from "@/hooks/use-toast";
 
-interface CreateRichTextDialogProps {
-  onSuccess?: () => void;
+export interface RichTextContentData {
+  title: string;
+  html: string;
 }
 
-export function CreateRichTextDialog({ onSuccess }: CreateRichTextDialogProps) {
-  const [open, setOpen] = useState(false);
+interface CreateRichTextDialogProps {
+  onSuccess?: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  mode?: 'api' | 'local';
+  onDataReady?: (data: RichTextContentData) => void;
+}
+
+export function CreateRichTextDialog({ onSuccess, open: controlledOpen, onOpenChange, mode = 'api', onDataReady }: CreateRichTextDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = (value: boolean) => {
+    if (!isControlled) setInternalOpen(value);
+    onOpenChange?.(value);
+  };
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   
@@ -52,14 +67,24 @@ export function CreateRichTextDialog({ onSuccess }: CreateRichTextDialogProps) {
       return;
     }
 
+    const richTextData: RichTextContentData = {
+      title: title,
+      html: html,
+    };
+
+    if (mode === 'local') {
+      onDataReady?.(richTextData);
+      setTitle("");
+      setHtml("");
+      setOpen(false);
+      return;
+    }
+
     setIsLoading(true);
     try {
       await contentService.createContent({
         type: LessonItemType.RichText,
-        richText: {
-          title: title,
-          html: html,
-        },
+        richText: richTextData,
       });
 
       toast({
@@ -84,13 +109,19 @@ export function CreateRichTextDialog({ onSuccess }: CreateRichTextDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <FileEdit className="h-4 w-4 mr-2" />
-          Create Rich Text Content
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px]">
+      {!isControlled && (
+        <DialogTrigger asChild>
+          <Button>
+            <FileEdit className="h-4 w-4 mr-2" />
+            Create Rich Text Content
+          </Button>
+        </DialogTrigger>
+      )}
+      <DialogContent 
+        className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto"
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Create Rich Text Content</DialogTitle>

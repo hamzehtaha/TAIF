@@ -21,6 +21,7 @@ import {
   Sparkles,
   Tags,
   Route,
+  Wand2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -54,6 +55,12 @@ const mainNavItems = [
 ];
 
 const courseNavItems = [
+  {
+    title: "Course Builder",
+    href: "/admin/course-builder",
+    icon: Wand2,
+    highlight: true,
+  },
   {
     title: "Categories",
     href: "/admin/categories",

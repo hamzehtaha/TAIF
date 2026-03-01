@@ -8,6 +8,7 @@ export enum LessonItemType {
 
 export interface VideoContent {
   title: string;
+  description?: string;
   url: string;
   thumbnailUrl?: string;
   durationInSeconds: number;
