@@ -41,7 +41,7 @@ namespace TAIF.Infrastructure.Data
         public DbSet<Tag> Tags { get; set; }
         public DbSet<InterestTagMapping> InterestTagMappings { get; set; }
         public DbSet<UserCourseBehavior> UserCourseBehaviors { get; set; }
-        public DbSet<QuizSubmission> QuizSubmissions => Set<QuizSubmission>();
+        public DbSet<QuizSubmission> QuizSubmissions { get; set; }
         public DbSet<LearningPath> LearningPaths { get; set; }
         public DbSet<LearningPathSection> LearningPathSections { get; set; }
         public DbSet<LearningPathCourse> LearningPathCourses { get; set; }
@@ -59,7 +59,7 @@ namespace TAIF.Infrastructure.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-
+            base.OnModelCreating(modelBuilder);
 
             // Organization configuration
             modelBuilder.Entity<Organization>(entity =>
@@ -312,13 +312,33 @@ namespace TAIF.Infrastructure.Data
 
             modelBuilder.Entity<QuizSubmission>(entity =>
             {
-                entity.HasIndex(x => new { x.UserId, x.LessonItemId })
-                      .IsUnique();
+                entity.HasKey(e => e.Id);
 
-                entity.HasOne(qs => qs.LessonItem)
-                      .WithMany()
-                      .HasForeignKey(qs => qs.LessonItemId)
-                      .OnDelete(DeleteBehavior.Cascade);
+                entity.Property(e => e.AnswersJson)
+                    .IsRequired()
+                    .HasMaxLength(int.MaxValue);
+
+                entity.Property(e => e.Score)
+                    .IsRequired();
+
+                entity.Property(e => e.IsCompleted)
+                    .IsRequired();
+
+                // Relationships
+                entity.HasOne(e => e.User)
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.LessonItem)
+                    .WithMany()
+                    .HasForeignKey(e => e.LessonItemId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                // Indexes
+                entity.HasIndex(e => e.UserId);
+                entity.HasIndex(e => e.LessonItemId);
+                entity.HasIndex(e => new { e.UserId, e.LessonItemId });
             });
 
             // Interest configuration
@@ -456,10 +476,10 @@ namespace TAIF.Infrastructure.Data
                        .IsRequired();
 
                 builder.Property(x => x.AnswerIds)
-                       .HasColumnType("jsonb");
+                       .IsRequired();
 
                 builder.Property(x => x.SkillIds)
-                       .HasColumnType("jsonb");
+                       .IsRequired();
 
                 builder.Property(x => x.CorrectAnswerIndex)
                        .IsRequired();

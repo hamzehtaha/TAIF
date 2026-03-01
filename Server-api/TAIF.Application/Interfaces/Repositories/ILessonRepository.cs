@@ -13,5 +13,10 @@ namespace TAIF.Application.Interfaces.Repositories
         /// </summary>
         Task<Dictionary<Guid, CourseStatisticsDTO>> GetCourseStatisticsAsync();
         Task<CourseStatisticsDTO?> GetCourseStatisticsForSingleCourseAsync(Guid courseId);
+        
+        /// <summary>
+        /// Gets lesson count per course using the CourseLesson junction table
+        /// </summary>
+        Task<Dictionary<Guid, int>> GetLessonCountPerCourseAsync();
     }
 }

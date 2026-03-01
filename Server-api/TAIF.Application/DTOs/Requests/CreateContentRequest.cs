@@ -12,10 +12,33 @@ namespace TAIF.Application.DTOs.Requests
 {
     public record CreateContentRequest
     {
-        public LessonItemType  Type { get; set; }
+        public LessonItemType Type { get; set; }
         public Video? Video { get; set; }
         public RichText? RichText { get; set; }
-        public Quiz? Quiz { get; set; }
-        public Guid? OrganizationId { get; set; } // Only SuperAdmin can set this
+        public QuizCreateDto? Quiz { get; set; }
+        public Guid? OrganizationId { get; set; }
+    }
+
+    public record QuizCreateDto
+    {
+        public string Title { get; set; } = string.Empty;
+        public List<QuizQuestionCreateDto> Questions { get; set; } = new();
+    }
+
+    public record QuizQuestionCreateDto
+    {
+        public string? Id { get; set; }  // Optional - sent only when editing
+        public string QuestionText { get; set; } = string.Empty;
+        public bool ShuffleOptions { get; set; } = false;
+        public List<QuizOptionDto> Options { get; set; } = new();
+        public string? CorrectAnswerId { get; set; }  // For editing
+        public int? CorrectAnswerIndex { get; set; }  // For creating
+        public string? Explanation { get; set; }
+    }
+
+    public record QuizOptionDto
+    {
+        public string? Id { get; set; }  // Optional - sent only when editing
+        public string Text { get; set; } = string.Empty;
     }
 }

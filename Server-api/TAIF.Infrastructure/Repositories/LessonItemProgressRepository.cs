@@ -17,7 +17,7 @@ namespace TAIF.Infrastructure.Repositories
         public async Task<double> GetCompletedDurationSumAsync(Guid userId, Guid courseId)
         {
             return await _taifContext.LessonItemProgress
-                .Where(p => p.UserId == userId && p.CourseID == courseId)
+                .Where(p => p.UserId == userId && p.CourseID == courseId && !p.IsDeleted)
                 .SumAsync(p => p.CompletedDurationInSeconds);
         }
 

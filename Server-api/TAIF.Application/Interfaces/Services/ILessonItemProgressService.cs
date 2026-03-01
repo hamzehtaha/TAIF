@@ -8,7 +8,7 @@ namespace TAIF.Application.Interfaces.Services
     {
         Task<QuizResultResponse> SubmitQuizAsync(Guid userId, SubmitQuizRequest request);
         Task<List<LessonItemResponse>> GetLessonItemsProgressAsync(Guid userId, Guid lessonId, bool withDeleted = false);
-        Task<LessonItemProgress> SetLessonItemAsCompleted(Guid UserId, SetLessonItemAsCompletedRequest dto);
+        Task<LessonItemProgress> SetLessonItemAsCompleted(Guid userId, SetLessonItemAsCompletedRequest dto);
         Task<double> GetUserCourseCompletedDurationAsync(Guid userId, Guid courseId);
         Task<double> GetUserCompletedDurationForLearningPathAsync(Guid userId, Guid learningPathId);
         Task<int> GetCompletedItemCountAsync(Guid userId, Guid courseId);
