@@ -33,6 +33,8 @@ namespace TAIF.API.Seeder.Scripts
             if (!File.Exists(filePath))
                 throw new FileNotFoundException(filePath);
 
+
+
             var json = await File.ReadAllTextAsync(filePath);
 
             // PropertyNameCaseInsensitive lets the JSON use PascalCase wrapper fields
@@ -48,7 +50,17 @@ namespace TAIF.API.Seeder.Scripts
 
             var tagNameToId = _context.Tags.ToDictionary(t => t.Name, t => t.Id, StringComparer.OrdinalIgnoreCase);
             var publicOrg   = _context.Organizations.FirstOrDefault(o => o.Identity == "default");
+            var allSkills = _context.Skills
+            .Where(s => s.OrganizationId == publicOrg!.Id)
+            .Select(s => s.Id)
+            .ToList();
+            if (!allSkills.Any())
+            {
+                Console.WriteLine("⚠️ No skills found. Please seed skills first.");
+                return;
+            }
 
+            var random = new Random();
             var contentCreators = _context.Users
                 .Where(u => u.Role == UserRoleType.ContentCreator)
                 .ToList();
@@ -164,11 +176,12 @@ namespace TAIF.API.Seeder.Scripts
 
                             var lessonItem = new LessonItem
                             {
-                                Name              = itemData.Name,
-                                Type              = itemData.Type,
+                                Name = itemData.Name,
+                                Type = itemData.Type,
                                 DurationInSeconds = itemData.DurationInSeconds,
-                                ContentId         = content.Id,
-                                OrganizationId    = publicOrg?.Id
+                                ContentId = content.Id,
+                                OrganizationId = publicOrg?.Id,
+                                SkillIds = GetRandomSkills(allSkills, random)
                             };
                             _context.LessonItems.Add(lessonItem);
                             await _context.SaveChangesAsync();
@@ -190,6 +203,15 @@ namespace TAIF.API.Seeder.Scripts
             Console.WriteLine("✅ Courses seeded successfully");
         }
 
+        private List<Guid> GetRandomSkills(List<Guid> allSkills, Random random, int min = 1, int max = 3)
+        {
+            int count = random.Next(min, Math.Min(max, allSkills.Count) + 1);
+
+            return allSkills
+                .OrderBy(_ => random.Next())
+                .Take(count)
+                .ToList();
+        }
         // ================= SEED WRAPPER MODELS =================
         // Only represent the Course.seed.json structure (categories/courses/lessons/items).
         // Content is deserialized directly into entity types (Video, RichText, Quiz).

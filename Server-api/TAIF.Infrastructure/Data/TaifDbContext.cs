@@ -48,7 +48,6 @@ namespace TAIF.Infrastructure.Data
         public DbSet<UserLearningPathProgress> UserLearningPathProgress { get; set; }
         public DbSet<EvaluationQuestion> EvaluationQuestions => Set<EvaluationQuestion>();
         public DbSet<EvaluationAnswer> EvaluationAnswers => Set<EvaluationAnswer>();
-        public DbSet<UserEvaluation> UserEvaluations => Set<UserEvaluation>();
         // New entities for M-M relationships and content types
         public DbSet<CourseLesson> CourseLessons { get; set; }
         public DbSet<LessonLessonItem> LessonLessonItems { get; set; }
@@ -56,7 +55,7 @@ namespace TAIF.Infrastructure.Data
         public DbSet<Question> Questions { get; set; }
         public DbSet<Answer> Answers { get; set; }
         public DbSet<Skill> Skills { get; set; }
-
+        public DbSet<UserEvaluation> UserEvaluations { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -82,6 +81,24 @@ namespace TAIF.Infrastructure.Data
                       .WithMany(o => o.Users)
                       .HasForeignKey(u => u.OrganizationId)
                       .OnDelete(DeleteBehavior.SetNull);
+            });
+            modelBuilder.Entity<UserEvaluation>(builder =>
+            {
+                builder.ToTable("UserEvaluations");
+
+                builder.HasKey(x => x.Id);
+
+                builder.Property(x => x.UserId)
+                       .IsRequired();
+
+                var property = builder.Property(x => x.Result)
+                                      .IsRequired();
+
+                if (Database.IsNpgsql())
+                    property.HasColumnType("jsonb");
+                else if (Database.IsSqlServer())
+                    property.HasColumnType("nvarchar(max)");
+
             });
             modelBuilder.Entity<Skill>(builder =>
             {

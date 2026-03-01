@@ -388,13 +388,13 @@ void InjectSeeders()
 {
     // Only register explicit seeders - order matters for dependencies!
     builder.Services.AddScoped<IEntitySeeder, OrganizationSeeder>();
+    builder.Services.AddScoped<IEntitySeeder, SkillSeeder>();
     builder.Services.AddScoped<IEntitySeeder, UserSeeder>();
     builder.Services.AddScoped<IEntitySeeder, RecommendationSeeder>();
     builder.Services.AddScoped<IEntitySeeder, EvaluationQuestionSeeder>();
     builder.Services.AddScoped<IEntitySeeder, InstructorSeeder>();
     builder.Services.AddScoped<IEntitySeeder, CourseSeeder>();
     builder.Services.AddScoped<IEntitySeeder, LearningPathSeeder>();
-    builder.Services.AddScoped<IEntitySeeder, SkillSeeder>();
     //builder.Services.AddScoped<IEntitySeeder, AnswerSeeder>();
     //builder.Services.AddScoped<IEntitySeeder, QuestionSeeder>();
 }

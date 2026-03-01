@@ -12,7 +12,7 @@ namespace TAIF.Application.Interfaces.Services
     {
         Task<bool> ExistsForUserAsync(Guid userId);
         Task<UserEvaluation?> GetByUserIdAsync(Guid userId);
-        Task<UserEvaluation> SubmitAsync(Guid userId, SubmitEvaluation dto);
+        Task<UserEvaluation> SubmitAsync(Guid userId, Guid organizationId, SubmitEvaluation dto);
 
     }
 }
