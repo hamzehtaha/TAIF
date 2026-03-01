@@ -10,7 +10,10 @@ namespace TAIF.Domain.Entities
         
         [JsonPropertyName("url")]
         public string Url { get; set; } = null!;
-        
+
+        [JsonPropertyName("description")]
+        public string Description { get; set; } = null!;
+
         [JsonPropertyName("thumbnailUrl")]
         public string? ThumbnailUrl { get; set; }
         
