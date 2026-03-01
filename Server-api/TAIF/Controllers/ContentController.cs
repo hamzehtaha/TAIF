@@ -6,8 +6,6 @@ using TAIF.Application.DTOs.Requests;
 using TAIF.Application.DTOs.Responses;
 using TAIF.Application.Interfaces.Services;
 using TAIF.Domain.Entities;
-using System.Linq;
-
 namespace TAIF.Controllers
 {
 
@@ -162,7 +160,7 @@ namespace TAIF.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateContent([FromBody] CreateContentRequest request)
         {
-            Content content = await _contentService.CreateAsync(request, this.OrganizationId);
+            Content content = await _contentService.CreateAsync(request, this.OrganizationId.Value);
             if (content is null) return BadRequest(ApiResponse<Content>.FailResponse("Failed to create content"));
             return Ok(ApiResponse<Content>.SuccessResponse(content));
         }
@@ -183,7 +181,7 @@ namespace TAIF.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateContent([FromRoute] Guid id, [FromBody] CreateContentRequest request)
+        public async Task<IActionResult> UpdateContent([FromRoute] Guid id, [FromBody] UpdateContentRequest request)
         {
             try
             {
