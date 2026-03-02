@@ -8,14 +8,15 @@ namespace TAIF.API.Seeder.Scripts
     public class SkillSeeder : IEntitySeeder
     {
         private readonly TaifDbContext _context;
-        private readonly IWebHostEnvironment _env;
-
-        public SkillSeeder(TaifDbContext context, IWebHostEnvironment env)
+        [Obsolete]
+        private readonly Microsoft.AspNetCore.Hosting.IHostingEnvironment _env;
+        [Obsolete]
+        public SkillSeeder(TaifDbContext context, Microsoft.AspNetCore.Hosting.IHostingEnvironment env)
         {
             _context = context;
             _env = env;
         }
-
+        [Obsolete]
         public async Task SeedAsync()
         {
             string seedName = "Skill";

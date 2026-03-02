@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using TAIF.Domain.Entities;
@@ -51,9 +52,10 @@ namespace TAIF.API.Seeder.Scripts
             var tagNameToId = _context.Tags.ToDictionary(t => t.Name, t => t.Id, StringComparer.OrdinalIgnoreCase);
             var publicOrg   = _context.Organizations.FirstOrDefault(o => o.Identity == "default");
             var allSkills = _context.Skills
-            .Where(s => s.OrganizationId == publicOrg!.Id)
+            .IgnoreQueryFilters()
             .Select(s => s.Id)
             .ToList();
+            Console.WriteLine($"Found {allSkills.Count} skills in the database.");
             if (!allSkills.Any())
             {
                 Console.WriteLine("⚠️ No skills found. Please seed skills first.");

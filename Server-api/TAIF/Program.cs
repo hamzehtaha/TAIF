@@ -280,17 +280,19 @@ if (args.Length >= 2 && args[0].Equals("seed", StringComparison.OrdinalIgnoreCas
         var orderedSeeders = allSeeders
             .OrderBy(s => s.GetType().Name switch
             {
-                "OrganizationSeeder" => 0,          // First: seed organizations (required for user assignment)
-                "UserSeeder" => 1,                  // Second: seed users (with OrganizationId)
-                "RecommendationSeeder" => 2,        // Third: seed interests & tags
-                "EvaluationQuestionSeeder" => 3,    // Fourth: seed evaluation questions
-                "InstructorSeeder" => 4,            // Fifth: seed instructors (required by Course)
-                "CourseSeeder" => 5,                // Sixth: seed courses (uses users + tags + instructors)
-                "LearningPathSeeder" => 6,          // Seventh: seed learning paths (uses courses)
-                _ => 99                             // Other seeders last
+                "OrganizationSeeder" => 0,
+                "SkillSeeder" => 1,
+                "UserSeeder" => 2,
+                "RecommendationSeeder" => 3,
+                "EvaluationQuestionSeeder" => 4,
+                "InstructorSeeder" => 5,
+                "CourseSeeder" => 6,
+                "LearningPathSeeder" => 7,
+                "AnswerSeeder" => 8,
+                _ => 99
             })
             .ToList();
-        
+
         foreach (var s in orderedSeeders) 
         {
             try
@@ -395,6 +397,6 @@ void InjectSeeders()
     builder.Services.AddScoped<IEntitySeeder, InstructorSeeder>();
     builder.Services.AddScoped<IEntitySeeder, CourseSeeder>();
     builder.Services.AddScoped<IEntitySeeder, LearningPathSeeder>();
-    //builder.Services.AddScoped<IEntitySeeder, AnswerSeeder>();
-    //builder.Services.AddScoped<IEntitySeeder, QuestionSeeder>();
+    builder.Services.AddScoped<IEntitySeeder, AnswerSeeder>();
+    builder.Services.AddScoped<IEntitySeeder, QuestionSeeder>();
 }
