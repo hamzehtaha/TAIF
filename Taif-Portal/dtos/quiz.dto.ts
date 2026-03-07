@@ -4,11 +4,13 @@
 
 export interface QuizAnswerRequest {
   questionId: string;
-  answerIndex: number;
+  selectedOptionId: string;
 }
 
 export interface SubmitQuizRequest {
   lessonItemId: string;
+  lessonId?: string;
+  courseId?: string;
   answers: QuizAnswerRequest[];
 }
 
@@ -36,6 +38,6 @@ export interface QuizSubmissionDto {
 
 export interface QuizAnswerPayload {
   questionId: string;
-  answerIndex: number;
+  selectedOptionId: string;
   isCorrect: boolean;
 }

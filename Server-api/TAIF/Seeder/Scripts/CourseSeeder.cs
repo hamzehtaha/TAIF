@@ -54,11 +54,11 @@ namespace TAIF.API.Seeder.Scripts
             .Where(s => s.OrganizationId == publicOrg!.Id)
             .Select(s => s.Id)
             .ToList();
-            if (!allSkills.Any())
-            {
-                Console.WriteLine("⚠️ No skills found. Please seed skills first.");
-                return;
-            }
+            //if (!allSkills.Any())
+            //{
+            //    Console.WriteLine("⚠️ No skills found. Please seed skills first.");
+            //    return;
+            //}
 
             var random = new Random();
             var contentCreators = _context.Users

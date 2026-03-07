@@ -16,6 +16,6 @@ namespace TAIF.Application.Interfaces.Services
         Task<Content> UpdateQuizContentAsync(Guid contentId, QuizCreateDto quizDto);
         
         Task<Content> CreateAsync(CreateContentRequest request, Guid organizationId);
-        Task<Content> UpdateAsync(Guid contentId, CreateContentRequest request);
+        Task<Content> UpdateAsync(Guid contentId, UpdateContentRequest request);
     }
 }

@@ -91,13 +91,13 @@ namespace TAIF.Infrastructure.Data
                 builder.Property(x => x.UserId)
                        .IsRequired();
 
-                var property = builder.Property(x => x.Result)
-                                      .IsRequired();
-
-                if (Database.IsNpgsql())
-                    property.HasColumnType("jsonb");
-                else if (Database.IsSqlServer())
-                    property.HasColumnType("nvarchar(max)");
+                //var property = builder.Property(x => x.Result)
+                //                      .IsRequired();
+                //property.HasColumnType("varchar(10)");
+                //if (Database.IsNpgsql())
+                //    property.HasColumnType("jsonb");
+                //else if (Database.IsSqlServer())
+                //    property.HasColumnType("varchar(10)");
 
             });
             modelBuilder.Entity<Skill>(builder =>

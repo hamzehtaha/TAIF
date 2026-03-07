@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { CreateQuizDialog } from "@/components/admin/content/CreateQuizDialog";
 import { EditQuizDialog } from "@/components/admin/content/EditQuizDialog";
-import { contentService, Content, QuizContent, LessonItemType } from "@/services/content.service";
+import { contentService, Content, QuizContent, LessonItemType, StoredQuizContent } from "@/services/content.service";
 import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -35,6 +35,7 @@ export default function QuestionsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [viewQuiz, setViewQuiz] = useState<QuizContent | null>(null);
+  const [viewQuizContent, setViewQuizContent] = useState<Content | null>(null);
   const [editContent, setEditContent] = useState<Content | null>(null);
   const [editQuizData, setEditQuizData] = useState<QuizContent | null>(null);
   const { toast } = useToast();
@@ -188,7 +189,10 @@ export default function QuestionsPage() {
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          onClick={() => setViewQuiz(quizData)}
+                          onClick={() => {
+                            setViewQuizContent(quiz);
+                            setViewQuiz(contentService.parseQuizForEditing(quiz));
+                          }}
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
@@ -197,7 +201,7 @@ export default function QuestionsPage() {
                           size="sm"
                           onClick={() => {
                             setEditContent(quiz);
-                            setEditQuizData(quizData);
+                            setEditQuizData(contentService.parseQuizForEditing(quiz));
                           }}
                         >
                           <Edit className="h-4 w-4" />
@@ -234,7 +238,7 @@ export default function QuestionsPage() {
       />
 
       {/* View Quiz Dialog */}
-      <Dialog open={!!viewQuiz} onOpenChange={() => setViewQuiz(null)}>
+      <Dialog open={!!viewQuiz} onOpenChange={() => { setViewQuiz(null); setViewQuizContent(null); }}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{viewQuiz?.title}</DialogTitle>

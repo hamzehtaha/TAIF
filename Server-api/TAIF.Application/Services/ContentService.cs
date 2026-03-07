@@ -62,7 +62,7 @@ namespace TAIF.Application.Services
             return content;
         }
 
-        public async Task<Content> UpdateAsync(Guid contentId, CreateContentRequest request)
+        public async Task<Content> UpdateAsync(Guid contentId, UpdateContentRequest request)
         {
             Content updatedContent;
 
@@ -85,7 +85,7 @@ namespace TAIF.Application.Services
                         ? request.Video!
                         : request.RichText!;
 
-                    _repository.Update(content);
+                    _repository.Update(content, x => x.ContentJson);
                     await _repository.SaveChangesAsync();
                     updatedContent = content;
                     break;
@@ -124,7 +124,7 @@ namespace TAIF.Application.Services
             
             existingContent.ContentData = quiz;
             
-            _repository.Update(existingContent);
+            _repository.Update(existingContent, x=> x.ContentJson);
             await _repository.SaveChangesAsync();
             return existingContent;
         }

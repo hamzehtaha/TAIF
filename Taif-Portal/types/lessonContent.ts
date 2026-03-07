@@ -30,19 +30,30 @@ export interface RichTextContent {
 // =============================================================================
 // QUIZ/QUESTION CONTENT (type: 2 / "question")
 // =============================================================================
+export interface QuizOption {
+  id: string;
+  text: string;
+}
+
 export interface QuizQuestion {
   id: string;
   questionText?: string;
   question?: string;
-  options: string[];
+  text?: string;
+  options: QuizOption[] | string[];
+  correctAnswerId?: string;
   correctIndex?: number;
   correctAnswerIndex?: number;
+  shuffleOptions?: boolean;
+  explanation?: string;
 }
 
 export interface QuestionContent {
+  title?: string;
   questions?: QuizQuestion[];
   question?: string;
-  options?: string[];
+  options?: QuizOption[] | string[];
+  correctAnswerId?: string;
   correctAnswerIndex?: number;
 }
 
@@ -51,11 +62,13 @@ export interface QuestionContent {
 // =============================================================================
 export interface QuizAnswerRequest {
   questionId: string;
-  answerIndex: number;
+  selectedOptionId: string;
 }
 
 export interface SubmitQuizRequest {
   lessonItemId: string;
+  lessonId?: string;
+  courseId?: string;
   answers: QuizAnswerRequest[];
 }
 

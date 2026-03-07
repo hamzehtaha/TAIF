@@ -19,6 +19,7 @@ export interface RichTextContent {
   html: string;
 }
 
+// Frontend format for creating/editing quizzes
 export interface QuizQuestion {
   questionText: string;
   options: string[];
@@ -30,11 +31,52 @@ export interface QuizContent {
   questions: QuizQuestion[];
 }
 
+// Backend stored format (with option IDs)
+export interface StoredQuizOption {
+  id: string;
+  text: string;
+}
+
+export interface StoredQuizQuestion {
+  id: string;
+  questionText: string;
+  options: StoredQuizOption[];
+  correctAnswerId: string;
+  shuffleOptions?: boolean;
+  explanation?: string;
+}
+
+export interface StoredQuizContent {
+  title: string;
+  questions: StoredQuizQuestion[];
+}
+
+// Backend request format (what the API expects)
+export interface QuizOptionDto {
+  id?: string;
+  text: string;
+}
+
+export interface QuizQuestionCreateDto {
+  id?: string;
+  questionText: string;
+  shuffleOptions?: boolean;
+  options: QuizOptionDto[];
+  correctAnswerId?: string;
+  correctAnswerIndex?: number;
+  explanation?: string;
+}
+
+export interface QuizCreateDto {
+  title: string;
+  questions: QuizQuestionCreateDto[];
+}
+
 export interface CreateContentRequest {
   type: LessonItemType;
   video?: VideoContent;
   richText?: RichTextContent;
-  quiz?: QuizContent;
+  quiz?: QuizContent | QuizCreateDto;
 }
 
 export interface Content {
@@ -50,8 +92,42 @@ class ContentService {
   private serviceBaseUrl = "/api/content";
 
   async createContent(request: CreateContentRequest): Promise<Content> {
-    const response = await httpService.post<Content>(this.serviceBaseUrl, request);
+    // Convert frontend quiz format to backend format if needed
+    const apiRequest = this.convertToApiRequest(request);
+    const response = await httpService.post<Content>(this.serviceBaseUrl, apiRequest);
     return response;
+  }
+
+  /**
+   * Convert frontend QuizContent format to backend QuizCreateDto format
+   */
+  private convertToApiRequest(request: CreateContentRequest): CreateContentRequest {
+    if (request.type !== LessonItemType.Quiz || !request.quiz) {
+      return request;
+    }
+
+    const quiz = request.quiz as QuizContent;
+    
+    // Check if options are already in object format (QuizOptionDto[])
+    const firstQuestion = quiz.questions?.[0];
+    if (firstQuestion && firstQuestion.options?.[0] && typeof firstQuestion.options[0] === 'object') {
+      return request; // Already in correct format
+    }
+
+    // Convert string[] options to QuizOptionDto[]
+    const convertedQuiz: QuizCreateDto = {
+      title: quiz.title,
+      questions: quiz.questions.map(q => ({
+        questionText: q.questionText,
+        options: q.options.map(opt => ({ text: opt as string })),
+        correctAnswerIndex: q.correctAnswerIndex,
+      })),
+    };
+
+    return {
+      ...request,
+      quiz: convertedQuiz,
+    };
   }
 
   async getContent(id: string): Promise<Content> {
@@ -65,7 +141,9 @@ class ContentService {
   }
 
   async updateContent(id: string, request: CreateContentRequest): Promise<Content> {
-    const response = await httpService.put<Content>(`${this.serviceBaseUrl}/${id}`, request);
+    // Convert frontend quiz format to backend format if needed
+    const apiRequest = this.convertToApiRequest(request);
+    const response = await httpService.put<Content>(`${this.serviceBaseUrl}/${id}`, apiRequest);
     return response;
   }
 
@@ -77,6 +155,32 @@ class ContentService {
   parseContentData(content: Content): VideoContent | RichTextContent | QuizContent {
     const data = JSON.parse(content.contentJson);
     return data;
+  }
+
+  /**
+   * Parse stored quiz content and convert to editable format
+   */
+  parseQuizForEditing(content: Content): QuizContent {
+    const stored = JSON.parse(content.contentJson) as StoredQuizContent;
+    return {
+      title: stored.title || '',
+      questions: (stored.questions || []).map(q => {
+        // Find the index of the correct answer
+        const correctIdx = q.options.findIndex(opt => opt.id === q.correctAnswerId);
+        return {
+          questionText: q.questionText || '',
+          options: q.options.map(opt => opt.text),
+          correctAnswerIndex: correctIdx >= 0 ? correctIdx : 0,
+        };
+      }),
+    };
+  }
+
+  /**
+   * Parse stored quiz content (returns stored format with option objects)
+   */
+  parseStoredQuiz(content: Content): StoredQuizContent {
+    return JSON.parse(content.contentJson) as StoredQuizContent;
   }
 }
 

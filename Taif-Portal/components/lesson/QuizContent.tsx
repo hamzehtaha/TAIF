@@ -15,29 +15,68 @@ interface QuizContentProps {
   onComplete?: () => void;
 }
 
+interface NormalizedOption {
+  id: string;
+  text: string;
+}
+
 interface NormalizedQuestion {
   id: string;
   text: string;
-  options: string[];
-  correctIndex: number;
+  options: NormalizedOption[];
+  correctAnswerId: string;
+}
+
+function normalizeOptions(options: QuestionContent['options']): NormalizedOption[] {
+  if (!options || options.length === 0) return [];
+  
+  return options.map((opt, idx) => {
+    if (typeof opt === 'string') {
+      return { id: `opt_${idx}`, text: opt };
+    }
+    return { id: opt.id, text: opt.text };
+  });
 }
 
 function normalizeQuestions(content: QuestionContent): NormalizedQuestion[] {
   if (content.questions && content.questions.length > 0) {
-    return content.questions.map((q, idx) => ({
-      id: q.id || `q${idx}`,
-      text: q.text || q.question || "",
-      options: q.options || [],
-      correctIndex: q.correctIndex ?? q.correctAnswerIndex ?? 0,
-    }));
+    return content.questions.map((q, idx) => {
+      const normalizedOpts = normalizeOptions(q.options);
+      let correctId = q.correctAnswerId || '';
+      
+      // Fallback: if correctAnswerId not set, use correctIndex/correctAnswerIndex
+      if (!correctId && normalizedOpts.length > 0) {
+        const correctIdx = q.correctIndex ?? q.correctAnswerIndex ?? 0;
+        if (correctIdx >= 0 && correctIdx < normalizedOpts.length) {
+          correctId = normalizedOpts[correctIdx].id;
+        }
+      }
+      
+      return {
+        id: q.id || `q${idx}`,
+        text: q.questionText || q.text || q.question || "",
+        options: normalizedOpts,
+        correctAnswerId: correctId,
+      };
+    });
   }
   
   if (content.question && content.options) {
+    const normalizedOpts = normalizeOptions(content.options);
+    let correctId = content.correctAnswerId || '';
+    
+    if (!correctId && normalizedOpts.length > 0) {
+      const correctIdx = content.correctAnswerIndex ?? 0;
+      if (correctIdx >= 0 && correctIdx < normalizedOpts.length) {
+        correctId = normalizedOpts[correctIdx].id;
+      }
+    }
+    
     return [{
       id: "q1",
       text: content.question,
-      options: content.options,
-      correctIndex: content.correctAnswerIndex ?? 0,
+      options: normalizedOpts,
+      correctAnswerId: correctId,
     }];
   }
   
@@ -46,7 +85,7 @@ function normalizeQuestions(content: QuestionContent): NormalizedQuestion[] {
 
 export function QuizContent({ lessonItemId, content, onComplete }: QuizContentProps) {
   const questions = normalizeQuestions(content);
-  const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [result, setResult] = useState<QuizResultResponse | null>(null);
@@ -62,10 +101,10 @@ export function QuizContent({ lessonItemId, content, onComplete }: QuizContentPr
           setLastSubmission(submission);
           if (submission.score === 100) {
             const parsedAnswers = quizService.parseAnswersJson(submission.answersJson);
-            const answersMap: Record<string, number> = {};
+            const answersMap: Record<string, string> = {};
             const results: { questionId: string; isCorrect: boolean }[] = [];
             parsedAnswers.forEach((a: QuizAnswerPayload) => {
-              answersMap[a.questionId] = a.answerIndex;
+              answersMap[a.questionId] = a.selectedOptionId;
               results.push({ questionId: a.questionId, isCorrect: a.isCorrect });
             });
             setAnswers(answersMap);
@@ -83,12 +122,12 @@ export function QuizContent({ lessonItemId, content, onComplete }: QuizContentPr
     loadLastSubmission();
   }, [lessonItemId]);
 
-  const handleSelectAnswer = (questionId: string, answerIndex: number) => {
+  const handleSelectAnswer = (questionId: string, optionId: string) => {
     if (result && !viewingLastAttempt) return;
     if (viewingLastAttempt) return;
     setAnswers(prev => ({
       ...prev,
-      [questionId]: answerIndex,
+      [questionId]: optionId,
     }));
   };
 
@@ -104,9 +143,9 @@ export function QuizContent({ lessonItemId, content, onComplete }: QuizContentPr
     try {
       const response = await quizService.submitQuiz(
         lessonItemId,
-        Object.entries(answers).map(([questionId, answerIndex]) => ({
+        Object.entries(answers).map(([questionId, selectedOptionId]) => ({
           questionId,
-          answerIndex,
+          selectedOptionId,
         }))
       );
       setResult(response);
@@ -132,10 +171,10 @@ export function QuizContent({ lessonItemId, content, onComplete }: QuizContentPr
   const handleViewLastAttempt = () => {
     if (!lastSubmission) return;
     const parsedAnswers = quizService.parseAnswersJson(lastSubmission.answersJson);
-    const answersMap: Record<string, number> = {};
+    const answersMap: Record<string, string> = {};
     const results: { questionId: string; isCorrect: boolean }[] = [];
     parsedAnswers.forEach((a: QuizAnswerPayload) => {
-      answersMap[a.questionId] = a.answerIndex;
+      answersMap[a.questionId] = a.selectedOptionId;
       results.push({ questionId: a.questionId, isCorrect: a.isCorrect });
     });
     setAnswers(answersMap);
@@ -232,14 +271,14 @@ export function QuizContent({ lessonItemId, content, onComplete }: QuizContentPr
 
                 <div className="space-y-2 ml-11">
                   {question.options.map((option, optIdx) => {
-                    const isSelected = selectedAnswer === optIdx;
-                    const isCorrect = result && optIdx === question.correctIndex;
+                    const isSelected = selectedAnswer === option.id;
+                    const isCorrect = result && option.id === question.correctAnswerId;
                     const isWrong = result && isSelected && !questionResult?.isCorrect;
                     
                     return (
                       <button
-                        key={optIdx}
-                        onClick={() => handleSelectAnswer(question.id, optIdx)}
+                        key={option.id}
+                        onClick={() => handleSelectAnswer(question.id, option.id)}
                         disabled={!!result || viewingLastAttempt}
                         className={cn(
                           "w-full text-left p-3 rounded-lg border-2 transition-all flex items-center gap-3",
@@ -259,7 +298,7 @@ export function QuizContent({ lessonItemId, content, onComplete }: QuizContentPr
                         )}>
                           {String.fromCharCode(65 + optIdx)}
                         </span>
-                        <span className="flex-1">{option}</span>
+                        <span className="flex-1">{option.text}</span>
                         {result && isCorrect && <CheckCircle className="w-5 h-5 text-success" />}
                         {result && isWrong && <XCircle className="w-5 h-5 text-destructive" />}
                       </button>
