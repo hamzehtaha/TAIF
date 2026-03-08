@@ -28,6 +28,7 @@ public class CreateLearningPathSectionRequest
     [StringLength(2000, ErrorMessage = "Description must not exceed 2000 characters.")]
     public string? Description { get; set; }
 
+    [Range(0, int.MaxValue, ErrorMessage = "Order must be zero or a positive number.")]
     public int Order { get; set; }
 
     public List<CreateLearningPathCourseRequest>? Courses { get; set; }
@@ -39,6 +40,7 @@ public class CreateLearningPathCourseRequest
     [NonEmptyGuid(ErrorMessage = "Course ID must not be an empty GUID.")]
     public Guid CourseId { get; set; }
 
+    [Range(0, int.MaxValue, ErrorMessage = "Order must be zero or a positive number.")]
     public int Order { get; set; }
 
     public bool IsRequired { get; set; } = true;
