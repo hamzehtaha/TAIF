@@ -3,12 +3,16 @@
 import { Video, Play, Pause } from "lucide-react";
 import { LessonItem } from "@/models/lesson-item.model";
 import { cn } from "@/lib/utils";
+import { VideoPlayer as MuxVideoPlayer } from "@/components/video";
+import { VideoContent } from "@/services/content.service";
 
 interface VideoPlayerSectionProps {
   item: LessonItem | null;
   isPlaying?: boolean;
   onPlayToggle?: () => void;
   className?: string;
+  onTimeUpdate?: (currentTime: number, duration: number) => void;
+  onEnded?: () => void;
 }
 
 export function VideoPlayerSection({
@@ -16,6 +20,8 @@ export function VideoPlayerSection({
   isPlaying = false,
   onPlayToggle,
   className,
+  onTimeUpdate,
+  onEnded,
 }: VideoPlayerSectionProps) {
   if (!item) {
     return (
@@ -28,12 +34,43 @@ export function VideoPlayerSection({
     );
   }
 
-  // If item has a video URL, show iframe
-  if (item.type === "video" && item.url) {
+  // Extract video content from item
+  const videoContent = item.content as VideoContent | undefined;
+
+  // If video has playbackId (Mux video), use MuxVideoPlayer
+  if (item.type === "video" && videoContent?.playbackId) {
+    return (
+      <div className={cn("aspect-video", className)}>
+        <MuxVideoPlayer
+          playbackId={videoContent.playbackId}
+          onTimeUpdate={onTimeUpdate}
+          onEnded={onEnded}
+          className="w-full h-full"
+        />
+      </div>
+    );
+  }
+
+  // If video has videoAssetId but no playbackId yet, use the video ID
+  if (item.type === "video" && videoContent?.videoAssetId) {
+    return (
+      <div className={cn("aspect-video", className)}>
+        <MuxVideoPlayer
+          videoId={videoContent.videoAssetId}
+          onTimeUpdate={onTimeUpdate}
+          onEnded={onEnded}
+          className="w-full h-full"
+        />
+      </div>
+    );
+  }
+
+  // If item has a video URL (legacy/external), show iframe
+  if (item.type === "video" && videoContent?.url) {
     return (
       <div className={cn("bg-black aspect-video", className)}>
         <iframe
-          src={item.url}
+          src={videoContent.url}
           className="w-full h-full"
           allowFullScreen
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -42,7 +79,7 @@ export function VideoPlayerSection({
     );
   }
 
-  // Placeholder for video content
+  // Placeholder for video content without playback info
   if (item.type === "video") {
     return (
       <div className={cn("bg-black aspect-video relative", className)}>

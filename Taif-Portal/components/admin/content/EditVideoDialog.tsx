@@ -29,9 +29,13 @@ import { Separator } from "@/components/ui/separator";
 import { contentService, LessonItemType, Content, VideoContent } from "@/services/content.service";
 import {
   mediaStreamingService,
-  UploadProgress,
   UploadResult,
 } from "@/services/media-streaming.service";
+import {
+  videoService,
+  VideoUploadResponse,
+  VideoAssetStatus,
+} from "@/services/video.service";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -60,6 +64,10 @@ export function EditVideoDialog({ content, videoData, open, onOpenChange, onSucc
   const [videoUploadResult, setVideoUploadResult] = useState<UploadResult | null>(null);
   const [existingVideoUrl, setExistingVideoUrl] = useState<string>("");
   const [videoDuration, setVideoDuration] = useState(0);
+  const [muxUploadResponse, setMuxUploadResponse] = useState<VideoUploadResponse | null>(null);
+  const [muxPlaybackId, setMuxPlaybackId] = useState<string | null>(null);
+  const [existingVideoAssetId, setExistingVideoAssetId] = useState<string | null>(null);
+  const [existingPlaybackId, setExistingPlaybackId] = useState<string | null>(null);
 
   // Thumbnail state
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
@@ -79,10 +87,12 @@ export function EditVideoDialog({ content, videoData, open, onOpenChange, onSucc
       setExistingVideoUrl(videoData.url || "");
       setExistingThumbnailUrl(videoData.thumbnailUrl || "");
       setVideoDuration(videoData.durationInSeconds || 0);
+      setExistingVideoAssetId(videoData.videoAssetId || null);
+      setExistingPlaybackId(videoData.playbackId || null);
       // Mark as complete since we have existing data
-      if (videoData.url) {
+      if (videoData.url || videoData.videoAssetId) {
         setVideoUploadState("complete");
-        setVideoUploadResult({ url: videoData.url, filename: "existing-video", size: 0, mimeType: "video/mp4" });
+        setVideoUploadResult({ url: videoData.url || "", filename: "existing-video", size: 0, mimeType: "video/mp4" });
       }
     }
   }, [videoData, open]);
@@ -95,12 +105,16 @@ export function EditVideoDialog({ content, videoData, open, onOpenChange, onSucc
     setVideoUploadState("idle");
     setVideoUploadProgress(0);
     setVideoUploadResult(null);
+    setMuxUploadResponse(null);
+    setMuxPlaybackId(null);
     setThumbnailFile(null);
     setThumbnailPreviewUrl(null);
     setThumbnailUploadResult(null);
     setFormData({ title: "", description: "" });
     setExistingVideoUrl("");
     setExistingThumbnailUrl("");
+    setExistingVideoAssetId(null);
+    setExistingPlaybackId(null);
     setVideoDuration(0);
     setCopiedUrl(false);
   };
@@ -110,18 +124,74 @@ export function EditVideoDialog({ content, videoData, open, onOpenChange, onSucc
     setVideoUploadProgress(0);
 
     try {
-      const result = await mediaStreamingService.uploadVideo(file, (progress: UploadProgress) => {
-        setVideoUploadProgress(progress.percentage);
+      // Step 1: Get Mux direct upload URL from backend
+      const uploadResponse = await videoService.createUpload({
+        title: formData.title || file.name,
+        description: formData.description,
+        originalFileName: file.name,
+      });
+      setMuxUploadResponse(uploadResponse);
+
+      // Step 2: Upload directly to Mux
+      const xhr = new XMLHttpRequest();
+      
+      await new Promise<void>((resolve, reject) => {
+        xhr.upload.addEventListener("progress", (event) => {
+          if (event.lengthComputable) {
+            const progress = Math.round((event.loaded / event.total) * 100);
+            setVideoUploadProgress(progress);
+          }
+        });
+
+        xhr.addEventListener("load", () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve();
+          } else {
+            reject(new Error(`Upload failed with status ${xhr.status}`));
+          }
+        });
+
+        xhr.addEventListener("error", () => reject(new Error("Upload failed")));
+
+        xhr.open("PUT", uploadResponse.uploadUrl);
+        xhr.setRequestHeader("Content-Type", file.type);
+        xhr.send(file);
       });
 
       setVideoUploadState("processing");
-      setVideoUploadResult(result);
-      setVideoDuration(result.duration || 0);
-      setExistingVideoUrl(result.url);
-      setVideoUploadState("complete");
+
+      // Step 3: Poll for video ready status
+      const pollForReady = async (): Promise<void> => {
+        const status = await videoService.getVideoStatus(uploadResponse.videoAssetId);
+        
+        if (status.isReady) {
+          const videoInfo = await videoService.getVideo(uploadResponse.videoAssetId);
+          setMuxPlaybackId(videoInfo.playbackId || null);
+          setVideoDuration(videoInfo.durationInSeconds || 0);
+          setVideoUploadResult({
+            url: videoInfo.playbackUrl || "",
+            filename: file.name,
+            size: file.size,
+            duration: videoInfo.durationInSeconds,
+            mimeType: file.type,
+          });
+          setExistingVideoAssetId(uploadResponse.videoAssetId);
+          setExistingPlaybackId(videoInfo.playbackId || null);
+          setVideoUploadState("complete");
+          return;
+        } else if (status.status === VideoAssetStatus.Failed) {
+          throw new Error(status.errorMessage || "Video processing failed");
+        }
+        
+        // Continue polling
+        await new Promise(r => setTimeout(r, 3000));
+        return pollForReady();
+      };
+
+      await pollForReady();
     } catch (error) {
       setVideoUploadState("error");
-      toast({ title: "Upload failed", description: "Failed to upload video.", variant: "destructive" });
+      toast({ title: "Upload failed", description: error instanceof Error ? error.message : "Failed to upload video.", variant: "destructive" });
     }
   };
 
@@ -206,7 +276,8 @@ export function EditVideoDialog({ content, videoData, open, onOpenChange, onSucc
     }
 
     const finalVideoUrl = videoUploadResult?.url || existingVideoUrl;
-    if (!finalVideoUrl) {
+    const hasVideoAsset = muxUploadResponse?.videoAssetId || existingVideoAssetId;
+    if (!finalVideoUrl && !hasVideoAsset) {
       toast({ title: "Validation Error", description: "Please upload a video first", variant: "destructive" });
       return;
     }
@@ -220,9 +291,12 @@ export function EditVideoDialog({ content, videoData, open, onOpenChange, onSucc
         video: {
           title: formData.title,
           description: formData.description || undefined,
-          url: finalVideoUrl,
+          url: finalVideoUrl || undefined,
           thumbnailUrl: finalThumbnailUrl,
           durationInSeconds: videoDuration,
+          videoAssetId: muxUploadResponse?.videoAssetId || existingVideoAssetId || undefined,
+          playbackId: muxPlaybackId || existingPlaybackId || undefined,
+          provider: (muxUploadResponse || existingVideoAssetId) ? "Mux" : undefined,
         },
       });
 
@@ -422,7 +496,7 @@ export function EditVideoDialog({ content, videoData, open, onOpenChange, onSucc
             <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting || !currentVideoUrl || !formData.title.trim()}>
+            <Button type="submit" disabled={isSubmitting || (!currentVideoUrl && !existingVideoAssetId && !muxUploadResponse?.videoAssetId) || !formData.title.trim()}>
               {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Update Video
             </Button>

@@ -1,11 +1,16 @@
 "use client";
 
 import { Video } from "lucide-react";
+import { VideoPlayer as MuxVideoPlayer } from "@/components/video";
 
 interface VideoPlayerProps {
-  url: string;
+  url?: string;
   title: string;
   description?: string;
+  playbackId?: string;
+  videoAssetId?: string;
+  onTimeUpdate?: (currentTime: number, duration: number) => void;
+  onEnded?: () => void;
 }
 
 /**
@@ -32,8 +37,55 @@ function getEmbedUrl(url: string): string {
   return url;
 }
 
-export function VideoPlayer({ url, title, description }: VideoPlayerProps) {
-  const embedUrl = getEmbedUrl(url);
+export function VideoPlayer({ 
+  url, 
+  title, 
+  description, 
+  playbackId,
+  videoAssetId,
+  onTimeUpdate,
+  onEnded,
+}: VideoPlayerProps) {
+  // If playbackId is available, use Mux Player
+  if (playbackId) {
+    return (
+      <div className="flex-shrink-0">
+        <MuxVideoPlayer
+          playbackId={playbackId}
+          onTimeUpdate={onTimeUpdate}
+          onEnded={onEnded}
+          className="w-full"
+        />
+        {description && (
+          <div className="px-6 py-4 bg-muted/30 border-b">
+            <p className="text-sm text-muted-foreground">{description}</p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // If videoAssetId is available, fetch playback info via Mux Player
+  if (videoAssetId) {
+    return (
+      <div className="flex-shrink-0">
+        <MuxVideoPlayer
+          videoId={videoAssetId}
+          onTimeUpdate={onTimeUpdate}
+          onEnded={onEnded}
+          className="w-full"
+        />
+        {description && (
+          <div className="px-6 py-4 bg-muted/30 border-b">
+            <p className="text-sm text-muted-foreground">{description}</p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Fallback to iframe for legacy URLs
+  const embedUrl = url ? getEmbedUrl(url) : "";
 
   if (!embedUrl) {
     return (

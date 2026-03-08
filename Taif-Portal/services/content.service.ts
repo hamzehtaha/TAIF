@@ -9,9 +9,12 @@ export enum LessonItemType {
 export interface VideoContent {
   title: string;
   description?: string;
-  url: string;
+  url?: string;
   thumbnailUrl?: string;
   durationInSeconds: number;
+  videoAssetId?: string;
+  playbackId?: string;
+  provider?: string;
 }
 
 export interface RichTextContent {

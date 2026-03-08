@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Mime;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
-using TAIF.Domain.Entities;
+﻿using TAIF.Domain.Entities;
 using static TAIF.Domain.Entities.Enums;
 
 namespace TAIF.Application.DTOs.Requests

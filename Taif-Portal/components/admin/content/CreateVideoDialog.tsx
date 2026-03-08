@@ -27,21 +27,28 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { contentService, LessonItemType } from "@/services/content.service";
+import { contentService, LessonItemType, VideoContent } from "@/services/content.service";
 import {
   mediaStreamingService,
-  UploadProgress,
   UploadResult,
 } from "@/services/media-streaming.service";
+import {
+  videoService,
+  VideoUploadResponse,
+  VideoAssetStatus,
+} from "@/services/video.service";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 export interface VideoContentData {
   title: string;
   description?: string;
-  url: string;
+  url?: string;
   thumbnailUrl?: string;
   durationInSeconds: number;
+  videoAssetId?: string;
+  playbackId?: string;
+  provider?: string;
 }
 
 interface CreateVideoDialogProps {
@@ -80,6 +87,8 @@ export function CreateVideoDialog({
   const [videoUploadState, setVideoUploadState] = useState<UploadState>("idle");
   const [videoUploadProgress, setVideoUploadProgress] = useState(0);
   const [videoUploadResult, setVideoUploadResult] = useState<UploadResult | null>(null);
+  const [muxUploadResponse, setMuxUploadResponse] = useState<VideoUploadResponse | null>(null);
+  const [muxPlaybackId, setMuxPlaybackId] = useState<string | null>(null);
 
   // Thumbnail state
   const [thumbnailMode, setThumbnailMode] = useState<ThumbnailMode>("none");
@@ -104,6 +113,8 @@ export function CreateVideoDialog({
     setVideoUploadState("idle");
     setVideoUploadProgress(0);
     setVideoUploadResult(null);
+    setMuxUploadResponse(null);
+    setMuxPlaybackId(null);
     setThumbnailMode("none");
     setThumbnailFile(null);
     setThumbnailPreviewUrl(null);
@@ -118,17 +129,72 @@ export function CreateVideoDialog({
     setVideoUploadProgress(0);
 
     try {
-      const result = await mediaStreamingService.uploadVideo(file, (progress: UploadProgress) => {
-        setVideoUploadProgress(progress.percentage);
+      // Step 1: Get Mux direct upload URL from backend
+      const uploadResponse = await videoService.createUpload({
+        title: formData.title || file.name,
+        description: formData.description,
+        originalFileName: file.name,
+      });
+      setMuxUploadResponse(uploadResponse);
+
+      // Step 2: Upload directly to Mux
+      const xhr = new XMLHttpRequest();
+      
+      await new Promise<void>((resolve, reject) => {
+        xhr.upload.addEventListener("progress", (event) => {
+          if (event.lengthComputable) {
+            const progress = Math.round((event.loaded / event.total) * 100);
+            setVideoUploadProgress(progress);
+          }
+        });
+
+        xhr.addEventListener("load", () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve();
+          } else {
+            reject(new Error(`Upload failed with status ${xhr.status}`));
+          }
+        });
+
+        xhr.addEventListener("error", () => reject(new Error("Upload failed")));
+
+        xhr.open("PUT", uploadResponse.uploadUrl);
+        xhr.setRequestHeader("Content-Type", file.type);
+        xhr.send(file);
       });
 
       setVideoUploadState("processing");
-      setVideoUploadResult(result);
-      setVideoDuration(result.duration || 0);
-      setVideoUploadState("complete");
+
+      // Step 3: Poll for video ready status
+      const pollForReady = async (): Promise<void> => {
+        const status = await videoService.getVideoStatus(uploadResponse.videoAssetId);
+        
+        if (status.isReady) {
+          const videoInfo = await videoService.getVideo(uploadResponse.videoAssetId);
+          setMuxPlaybackId(videoInfo.playbackId || null);
+          setVideoDuration(videoInfo.durationInSeconds || 0);
+          setVideoUploadResult({
+            url: videoInfo.playbackUrl || "",
+            filename: file.name,
+            size: file.size,
+            duration: videoInfo.durationInSeconds,
+            mimeType: file.type,
+          });
+          setVideoUploadState("complete");
+          return;
+        } else if (status.status === VideoAssetStatus.Failed) {
+          throw new Error(status.errorMessage || "Video processing failed");
+        }
+        
+        // Continue polling
+        await new Promise(r => setTimeout(r, 3000));
+        return pollForReady();
+      };
+
+      await pollForReady();
     } catch (error) {
       setVideoUploadState("error");
-      toast({ title: "Upload failed", description: "Failed to upload video.", variant: "destructive" });
+      toast({ title: "Upload failed", description: error instanceof Error ? error.message : "Failed to upload video.", variant: "destructive" });
     }
   };
 
@@ -216,7 +282,7 @@ export function CreateVideoDialog({
       return;
     }
 
-    if (!videoUploadResult?.url) {
+    if (!videoUploadResult?.url && !muxUploadResponse?.videoAssetId) {
       toast({ title: "Validation Error", description: "Please upload a video first", variant: "destructive" });
       return;
     }
@@ -231,9 +297,12 @@ export function CreateVideoDialog({
       const videoData: VideoContentData = {
         title: formData.title,
         description: formData.description || undefined,
-        url: videoUploadResult.url,
+        url: videoUploadResult?.url,
         thumbnailUrl: thumbnailUrl,
         durationInSeconds: videoDuration,
+        videoAssetId: muxUploadResponse?.videoAssetId,
+        playbackId: muxPlaybackId || undefined,
+        provider: "Mux",
       };
 
       if (mode === 'local') {

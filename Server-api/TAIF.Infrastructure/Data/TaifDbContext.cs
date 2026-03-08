@@ -7,9 +7,11 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using TAIF.Application.Interfaces;
 using TAIF.Domain.Entities;
+using TAIF.Domain.Models;
 
 namespace TAIF.Infrastructure.Data
 {
@@ -56,6 +58,7 @@ namespace TAIF.Infrastructure.Data
         public DbSet<Answer> Answers { get; set; }
         public DbSet<Skill> Skills { get; set; }
         public DbSet<UserEvaluation> UserEvaluations { get; set; }
+        public DbSet<VideoAsset> VideoAssets { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -91,13 +94,12 @@ namespace TAIF.Infrastructure.Data
                 builder.Property(x => x.UserId)
                        .IsRequired();
 
-                var property = builder.Property(x => x.Result)
-                                      .IsRequired();
-
-                if (Database.IsNpgsql())
-                    property.HasColumnType("jsonb");
-                else if (Database.IsSqlServer())
-                    property.HasColumnType("nvarchar(max)");
+                builder.Property(x => x.Result)
+                       .IsRequired()
+                       .HasConversion(
+                           v => JsonSerializer.Serialize(v, JsonSerializerOptions.Default),
+                           v => JsonSerializer.Deserialize<EvaluationJsonResult>(v, JsonSerializerOptions.Default) ?? new EvaluationJsonResult())
+                       .HasColumnType("nvarchar(max)");
 
             });
             modelBuilder.Entity<Skill>(builder =>
@@ -503,6 +505,26 @@ namespace TAIF.Infrastructure.Data
 
                 builder.Property(x => x.MinPercentage)
                        .IsRequired();
+            });
+
+            // VideoAsset configuration
+            modelBuilder.Entity<VideoAsset>(entity =>
+            {
+                entity.HasOne(v => v.LessonItem)
+                      .WithMany()
+                      .HasForeignKey(v => v.LessonItemId)
+                      .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasOne(v => v.Organization)
+                      .WithMany()
+                      .HasForeignKey(v => v.OrganizationId)
+                      .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasIndex(v => v.ProviderUploadId);
+                entity.HasIndex(v => v.ProviderAssetId);
+                entity.HasIndex(v => v.LessonItemId);
+                entity.HasIndex(v => v.OrganizationId);
+                entity.HasIndex(v => v.Status);
             });
 
             // Apply global query filters for multi-tenancy

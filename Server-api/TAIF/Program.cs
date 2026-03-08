@@ -1,21 +1,19 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi;
 using Microsoft.OpenApi.Models;
 using Serilog;
-using System.Reflection;
 using System.Text;
 using TAIF.API.Middleware;
 using TAIF.API.Seeder;
 using TAIF.API.Seeder.Scripts;
-using TAIF.Application.DTOs;
+using TAIF.Application.DTOs.VideoDtos;
 using TAIF.Application.Interfaces.Repositories;
 using TAIF.Application.Interfaces.Services;
 using TAIF.Application.Services;
 using TAIF.Infrastructure.Data;
 using TAIF.Infrastructure.Repositories;
+using TAIF.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -142,6 +140,12 @@ builder.Services.AddScoped<IAnswerRepository, AnswerRepository>();
 
 builder.Services.AddScoped<ISkillService, SkillService>();
 builder.Services.AddScoped<ISkillRepository, SkillRepository>();
+
+// Video services - Mux integration with provider abstraction
+builder.Services.Configure<MuxOptions>(builder.Configuration.GetSection(MuxOptions.SectionName));
+builder.Services.AddHttpClient<IVideoProvider, MuxVideoProvider>();
+builder.Services.AddScoped<IVideoAssetRepository, VideoAssetRepository>();
+builder.Services.AddScoped<IVideoAssetService, VideoAssetService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
