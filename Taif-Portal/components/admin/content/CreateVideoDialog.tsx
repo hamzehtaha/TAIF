@@ -43,12 +43,11 @@ import { cn } from "@/lib/utils";
 export interface VideoContentData {
   title: string;
   description?: string;
-  url?: string;
   thumbnailUrl?: string;
   durationInSeconds: number;
   videoAssetId?: string;
   playbackId?: string;
-  provider?: string;
+  provider: string;
 }
 
 interface CreateVideoDialogProps {
@@ -172,7 +171,14 @@ export function CreateVideoDialog({
         if (status.isReady) {
           const videoInfo = await videoService.getVideo(uploadResponse.videoAssetId);
           setMuxPlaybackId(videoInfo.playbackId || null);
-          setVideoDuration(videoInfo.durationInSeconds || 0);
+          // Use Mux duration if available, otherwise keep local duration
+          if (videoInfo.durationInSeconds > 0) {
+            setVideoDuration(videoInfo.durationInSeconds);
+          }
+          // Use Mux thumbnail automatically if no custom thumbnail was uploaded
+          if (videoInfo.thumbnailUrl && thumbnailMode === "none") {
+            setThumbnailPreviewUrl(videoInfo.thumbnailUrl);
+          }
           setVideoUploadResult({
             url: videoInfo.playbackUrl || "",
             filename: file.name,
@@ -289,15 +295,13 @@ export function CreateVideoDialog({
 
     setIsSubmitting(true);
     try {
-      let thumbnailUrl: string | undefined;
-      if (thumbnailMode === "upload" && thumbnailUploadResult?.url) {
-        thumbnailUrl = thumbnailUploadResult.url;
-      }
+      // Use custom thumbnail if uploaded, otherwise use Mux-generated thumbnail
+      const thumbnailUrl = thumbnailUploadResult?.url || 
+        (muxPlaybackId ? `https://image.mux.com/${muxPlaybackId}/thumbnail.jpg` : undefined);
 
       const videoData: VideoContentData = {
         title: formData.title,
         description: formData.description || undefined,
-        url: videoUploadResult?.url,
         thumbnailUrl: thumbnailUrl,
         durationInSeconds: videoDuration,
         videoAssetId: muxUploadResponse?.videoAssetId,

@@ -65,20 +65,6 @@ export function VideoPlayerSection({
     );
   }
 
-  // If item has a video URL (legacy/external), show iframe
-  if (item.type === "video" && videoContent?.url) {
-    return (
-      <div className={cn("bg-black aspect-video", className)}>
-        <iframe
-          src={videoContent.url}
-          className="w-full h-full"
-          allowFullScreen
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        />
-      </div>
-    );
-  }
-
   // Placeholder for video content without playback info
   if (item.type === "video") {
     return (

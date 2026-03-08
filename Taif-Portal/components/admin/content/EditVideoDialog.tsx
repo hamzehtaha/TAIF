@@ -38,6 +38,7 @@ import {
 } from "@/services/video.service";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import MuxPlayer from "@mux/mux-player-react";
 
 interface EditVideoDialogProps {
   content: Content | null;
@@ -62,7 +63,6 @@ export function EditVideoDialog({ content, videoData, open, onOpenChange, onSucc
   const [videoUploadState, setVideoUploadState] = useState<UploadState>("idle");
   const [videoUploadProgress, setVideoUploadProgress] = useState(0);
   const [videoUploadResult, setVideoUploadResult] = useState<UploadResult | null>(null);
-  const [existingVideoUrl, setExistingVideoUrl] = useState<string>("");
   const [videoDuration, setVideoDuration] = useState(0);
   const [muxUploadResponse, setMuxUploadResponse] = useState<VideoUploadResponse | null>(null);
   const [muxPlaybackId, setMuxPlaybackId] = useState<string | null>(null);
@@ -84,15 +84,14 @@ export function EditVideoDialog({ content, videoData, open, onOpenChange, onSucc
   useEffect(() => {
     if (videoData && open) {
       setFormData({ title: videoData.title || "", description: videoData.description || "" });
-      setExistingVideoUrl(videoData.url || "");
       setExistingThumbnailUrl(videoData.thumbnailUrl || "");
       setVideoDuration(videoData.durationInSeconds || 0);
       setExistingVideoAssetId(videoData.videoAssetId || null);
       setExistingPlaybackId(videoData.playbackId || null);
       // Mark as complete since we have existing data
-      if (videoData.url || videoData.videoAssetId) {
+      if (videoData.videoAssetId) {
         setVideoUploadState("complete");
-        setVideoUploadResult({ url: videoData.url || "", filename: "existing-video", size: 0, mimeType: "video/mp4" });
+        setVideoUploadResult({ url: "", filename: "existing-video", size: 0, mimeType: "video/mp4" });
       }
     }
   }, [videoData, open]);
@@ -111,7 +110,6 @@ export function EditVideoDialog({ content, videoData, open, onOpenChange, onSucc
     setThumbnailPreviewUrl(null);
     setThumbnailUploadResult(null);
     setFormData({ title: "", description: "" });
-    setExistingVideoUrl("");
     setExistingThumbnailUrl("");
     setExistingVideoAssetId(null);
     setExistingPlaybackId(null);
@@ -167,7 +165,10 @@ export function EditVideoDialog({ content, videoData, open, onOpenChange, onSucc
         if (status.isReady) {
           const videoInfo = await videoService.getVideo(uploadResponse.videoAssetId);
           setMuxPlaybackId(videoInfo.playbackId || null);
-          setVideoDuration(videoInfo.durationInSeconds || 0);
+          // Use Mux duration if available, otherwise keep local duration
+          if (videoInfo.durationInSeconds > 0) {
+            setVideoDuration(videoInfo.durationInSeconds);
+          }
           setVideoUploadResult({
             url: videoInfo.playbackUrl || "",
             filename: file.name,
@@ -249,9 +250,10 @@ export function EditVideoDialog({ content, videoData, open, onOpenChange, onSucc
   };
 
   const handleCopyUrl = () => {
-    const url = videoUploadResult?.url || existingVideoUrl;
-    if (url) {
-      navigator.clipboard.writeText(url);
+    const playbackId = muxPlaybackId || existingPlaybackId;
+    if (playbackId) {
+      const muxUrl = `https://stream.mux.com/${playbackId}.m3u8`;
+      navigator.clipboard.writeText(muxUrl);
       setCopiedUrl(true);
       setTimeout(() => setCopiedUrl(false), 2000);
     }
@@ -264,7 +266,8 @@ export function EditVideoDialog({ content, videoData, open, onOpenChange, onSucc
     setVideoUploadState("idle");
     setVideoUploadProgress(0);
     setVideoUploadResult(null);
-    setExistingVideoUrl("");
+    setExistingVideoAssetId(null);
+    setExistingPlaybackId(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -275,28 +278,29 @@ export function EditVideoDialog({ content, videoData, open, onOpenChange, onSucc
       return;
     }
 
-    const finalVideoUrl = videoUploadResult?.url || existingVideoUrl;
     const hasVideoAsset = muxUploadResponse?.videoAssetId || existingVideoAssetId;
-    if (!finalVideoUrl && !hasVideoAsset) {
+    if (!hasVideoAsset) {
       toast({ title: "Validation Error", description: "Please upload a video first", variant: "destructive" });
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const finalThumbnailUrl = thumbnailUploadResult?.url || existingThumbnailUrl || undefined;
+      // Use custom thumbnail if uploaded, existing thumbnail, or generate from Mux playbackId
+      const playbackId = muxPlaybackId || existingPlaybackId;
+      const finalThumbnailUrl = thumbnailUploadResult?.url || existingThumbnailUrl || 
+        (playbackId ? `https://image.mux.com/${playbackId}/thumbnail.jpg` : undefined);
 
       await contentService.updateContent(content.id, {
         type: LessonItemType.Video,
         video: {
           title: formData.title,
           description: formData.description || undefined,
-          url: finalVideoUrl || undefined,
           thumbnailUrl: finalThumbnailUrl,
           durationInSeconds: videoDuration,
           videoAssetId: muxUploadResponse?.videoAssetId || existingVideoAssetId || undefined,
-          playbackId: muxPlaybackId || existingPlaybackId || undefined,
-          provider: (muxUploadResponse || existingVideoAssetId) ? "Mux" : undefined,
+          playbackId: playbackId || undefined,
+          provider: "Mux",
         },
       });
 
@@ -315,7 +319,7 @@ export function EditVideoDialog({ content, videoData, open, onOpenChange, onSucc
     onOpenChange(newOpen);
   };
 
-  const currentVideoUrl = videoUploadResult?.url || existingVideoUrl;
+  const hasExistingVideo = existingPlaybackId || existingVideoAssetId;
   const currentThumbnailUrl = thumbnailPreviewUrl || existingThumbnailUrl;
 
   return (
@@ -398,7 +402,7 @@ export function EditVideoDialog({ content, videoData, open, onOpenChange, onSucc
 
               {/* Right Column - Video Upload/Preview */}
               <div className="space-y-4">
-                {!videoFile && !existingVideoUrl ? (
+                {!videoFile && !existingPlaybackId && !existingVideoAssetId ? (
                   <div
                     className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:border-primary hover:bg-muted/50 transition-colors"
                     onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
@@ -426,11 +430,18 @@ export function EditVideoDialog({ content, videoData, open, onOpenChange, onSucc
                       <div className="relative aspect-video bg-black">
                         {videoPreviewUrl ? (
                           <video src={videoPreviewUrl} className="w-full h-full object-contain" controls={videoUploadState === "complete"} muted />
-                        ) : existingVideoUrl ? (
+                        ) : existingPlaybackId ? (
+                          <MuxPlayer
+                            playbackId={existingPlaybackId}
+                            metadata={{ video_title: formData.title }}
+                            accentColor="#3b82f6"
+                            style={{ width: '100%', height: '100%' }}
+                          />
+                        ) : existingVideoAssetId ? (
                           <div className="w-full h-full flex items-center justify-center bg-muted">
                             <div className="text-center">
                               <Video className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-                              <p className="text-sm text-muted-foreground">Current video</p>
+                              <p className="text-sm text-muted-foreground">Mux Video (processing)</p>
                             </div>
                           </div>
                         ) : null}
@@ -466,7 +477,7 @@ export function EditVideoDialog({ content, videoData, open, onOpenChange, onSucc
                         </div>
                       )}
 
-                      {currentVideoUrl && (
+                      {hasExistingVideo && (
                         <div className="p-3 border-t space-y-2">
                           <div className="flex items-center justify-between">
                             <span className="text-xs text-muted-foreground">Video link</span>
@@ -474,9 +485,9 @@ export function EditVideoDialog({ content, videoData, open, onOpenChange, onSucc
                               {copiedUrl ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
                             </Button>
                           </div>
-                          <a href={currentVideoUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline block truncate">
-                            {currentVideoUrl}
-                          </a>
+                          <p className="text-sm text-muted-foreground truncate">
+                            Mux Video: {existingPlaybackId || muxPlaybackId || existingVideoAssetId}
+                          </p>
                           <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => videoInputRef.current?.click()}>
                             <Upload className="h-4 w-4 mr-2" />
                             Replace video
@@ -496,7 +507,7 @@ export function EditVideoDialog({ content, videoData, open, onOpenChange, onSucc
             <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting || (!currentVideoUrl && !existingVideoAssetId && !muxUploadResponse?.videoAssetId) || !formData.title.trim()}>
+            <Button type="submit" disabled={isSubmitting || (!existingVideoAssetId && !muxUploadResponse?.videoAssetId) || !formData.title.trim()}>
               {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Update Video
             </Button>

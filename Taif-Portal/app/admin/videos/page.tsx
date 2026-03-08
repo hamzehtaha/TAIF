@@ -81,7 +81,7 @@ export default function VideosPage() {
       const query = searchQuery.toLowerCase();
       result = result.filter(video => {
         const videoData = contentService.parseContentData(video) as VideoContent;
-        return videoData.title?.toLowerCase().includes(query) || videoData.url.toLowerCase().includes(query);
+        return videoData.title?.toLowerCase().includes(query) || videoData.description?.toLowerCase().includes(query);
       });
     }
     setFilteredVideos(result);
@@ -193,11 +193,11 @@ export default function VideosPage() {
                     )}
                   </div>
                   <CardContent className="p-4">
-                    <h3 className="font-semibold truncate" title={videoData.title || videoData.url}>
+                    <h3 className="font-semibold truncate" title={videoData.title}>
                       {videoData.title || 'Untitled Video'}
                     </h3>
-                    <p className="text-xs text-muted-foreground truncate mt-1" title={videoData.url}>
-                      {videoData.url}
+                    <p className="text-xs text-muted-foreground truncate mt-1">
+                      {videoData.provider || 'Mux'} Video {videoData.playbackId ? `• ${videoData.playbackId}` : ''}
                     </p>
                     <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
                       <Calendar className="h-3 w-3" />
@@ -212,11 +212,13 @@ export default function VideosPage() {
                     <div className="flex items-center justify-between mt-3 gap-2">
                       <Badge variant="outline">Video</Badge>
                       <div className="flex gap-1">
-                        <Button variant="ghost" size="sm" asChild>
-                          <a href={videoData.url} target="_blank" rel="noopener noreferrer">
-                            <Eye className="h-4 w-4" />
-                          </a>
-                        </Button>
+                        {videoData.playbackId && (
+                          <Button variant="ghost" size="sm" asChild>
+                            <a href={`https://stream.mux.com/${videoData.playbackId}.m3u8`} target="_blank" rel="noopener noreferrer">
+                              <Eye className="h-4 w-4" />
+                            </a>
+                          </Button>
+                        )}
                         <Button 
                           variant="ghost" 
                           size="sm"
@@ -258,7 +260,7 @@ export default function VideosPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold truncate">{videoData.title || 'Untitled Video'}</h3>
-                        <p className="text-xs text-muted-foreground truncate">{videoData.url}</p>
+                        <p className="text-xs text-muted-foreground truncate">{videoData.provider || 'Mux'} Video</p>
                         <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
                           {videoData.durationInSeconds > 0 && (
                             <span>{formatDuration(videoData.durationInSeconds)}</span>
@@ -267,11 +269,13 @@ export default function VideosPage() {
                         </div>
                       </div>
                       <div className="flex gap-1 flex-shrink-0">
-                        <Button variant="ghost" size="sm" asChild>
-                          <a href={videoData.url} target="_blank" rel="noopener noreferrer">
-                            <Eye className="h-4 w-4" />
-                          </a>
-                        </Button>
+                        {videoData.playbackId && (
+                          <Button variant="ghost" size="sm" asChild>
+                            <a href={`https://stream.mux.com/${videoData.playbackId}.m3u8`} target="_blank" rel="noopener noreferrer">
+                              <Eye className="h-4 w-4" />
+                            </a>
+                          </Button>
+                        )}
                         <Button 
                           variant="ghost" 
                           size="sm"

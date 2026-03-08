@@ -337,7 +337,8 @@ export default function CourseBuilderPage() {
       addLessonItem(selectedLessonForContent, "video", {
         title: data.title,
         description: data.description,
-        url: data.url,
+        playbackId: data.playbackId,
+        videoAssetId: data.videoAssetId,
         durationInSeconds: data.durationInSeconds,
       });
     }
@@ -470,8 +471,8 @@ export default function CourseBuilderPage() {
             durationInSeconds: item.durationInSeconds,
           });
 
-          // Assign to lesson
-          await lessonService.assignLessonItem(createdLesson.id, createdItem.id, j);
+          // Assign to lesson (order is 1-indexed)
+          await lessonService.assignLessonItem(createdLesson.id, createdItem.id, j + 1);
         }
       }
 

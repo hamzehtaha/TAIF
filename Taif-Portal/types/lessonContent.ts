@@ -15,8 +15,13 @@ import { LessonItemType } from "@/enums/lesson-item-type.enum";
 // VIDEO CONTENT (type: 0 / "video")
 // =============================================================================
 export interface VideoContent {
-  url: string;
+  title: string;
   description?: string;
+  thumbnailUrl?: string;
+  durationInSeconds: number;
+  videoAssetId?: string;
+  playbackId?: string;
+  provider: string;
 }
 
 // =============================================================================

@@ -47,6 +47,7 @@ import { Course } from "@/models/course.model";
 import { Lesson } from "@/models/lesson.model";
 import { LessonItem } from "@/models/lesson-item.model";
 import { QuestionContent, VideoContent, RichTextContent } from "@/types/lessonContent";
+import { VideoPlayer as MuxVideoPlayer } from "@/components/video";
 
 interface CourseLesson {
   id: string;
@@ -150,22 +151,22 @@ export default function CoursePreviewPage() {
 
     if (selectedItem.type === "video") {
       const videoContent = lessonItemService.parseContent<VideoContent>(selectedItem.content);
-      const videoUrl = videoContent?.url;
+      const hasVideo = videoContent?.playbackId || videoContent?.videoAssetId;
       return (
         <div className="space-y-4">
-          <div className="aspect-video bg-black rounded-lg flex items-center justify-center">
-            {videoUrl ? (
-              <video
-                controls
-                className="w-full h-full rounded-lg"
-                src={videoUrl}
-              >
-                Your browser does not support the video tag.
-              </video>
+          <div className="aspect-video bg-black rounded-lg overflow-hidden">
+            {hasVideo ? (
+              <MuxVideoPlayer
+                playbackId={videoContent?.playbackId}
+                videoId={videoContent?.videoAssetId}
+                className="w-full h-full"
+              />
             ) : (
-              <div className="text-center text-white/70">
-                <Play className="h-16 w-16 mx-auto mb-2 opacity-50" />
-                <p>Video URL not configured</p>
+              <div className="w-full h-full flex items-center justify-center text-center text-white/70">
+                <div>
+                  <Play className="h-16 w-16 mx-auto mb-2 opacity-50" />
+                  <p>Video not configured</p>
+                </div>
               </div>
             )}
           </div>

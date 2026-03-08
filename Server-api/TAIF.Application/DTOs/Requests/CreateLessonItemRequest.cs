@@ -21,9 +21,7 @@ namespace TAIF.Application.DTOs.Requests
         [EnumDataType(typeof(LessonItemType), ErrorMessage = "Type must be a valid lesson item type.")]
         public LessonItemType Type { get; set; }
 
-        [Required(ErrorMessage = "Lesson ID is required.")]
-        [NonEmptyGuid(ErrorMessage = "Lesson ID must not be an empty GUID.")]
-        public Guid LessonId { get; set; }
+        public Guid LessonId { get; set; } = Guid.Empty;
 
         [Range(0, double.MaxValue, ErrorMessage = "Duration must be zero or a positive number.")]
         public double DurationInSeconds { get; set; } = 0;

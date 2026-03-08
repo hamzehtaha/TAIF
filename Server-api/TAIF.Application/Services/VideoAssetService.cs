@@ -28,13 +28,15 @@ namespace TAIF.Application.Services
 
         public async Task<VideoUploadResponseDto> CreateUploadAsync(VideoUploadRequestDto request, Guid organizationId)
         {
+            // TODO: TEMP - Set status to Ready immediately for local development (no webhook)
+            // Change back to VideoAssetStatus.Pending when webhook is configured
             var videoAsset = new VideoAsset
             {
                 Title = request.Title,
                 Description = request.Description,
                 OriginalFileName = request.OriginalFileName,
                 Provider = VideoProvider.Mux,
-                Status = VideoAssetStatus.Pending,
+                Status = VideoAssetStatus.Ready, // TEMP: Should be Pending, webhook will set to Ready
                 OrganizationId = organizationId
             };
 
@@ -66,6 +68,13 @@ namespace TAIF.Application.Services
             if (videoAsset == null)
                 return null;
 
+            // If we don't have playbackId yet, try to fetch from Mux
+            if (string.IsNullOrEmpty(videoAsset.ProviderPlaybackId) && 
+                !string.IsNullOrEmpty(videoAsset.ProviderUploadId))
+            {
+                await TryUpdateAssetFromMuxAsync(videoAsset);
+            }
+
             return new VideoPlaybackDto
             {
                 Id = videoAsset.Id,
@@ -79,6 +88,62 @@ namespace TAIF.Application.Services
                 Title = videoAsset.Title,
                 Status = videoAsset.Status
             };
+        }
+
+        private async Task TryUpdateAssetFromMuxAsync(VideoAsset videoAsset)
+        {
+            try
+            {
+                // First get upload info to find the asset ID
+                var uploadInfo = await _videoProvider.GetUploadInfoAsync(videoAsset.ProviderUploadId!);
+                
+                if (uploadInfo == null || string.IsNullOrEmpty(uploadInfo.AssetId))
+                {
+                    _logger.LogDebug("Upload {UploadId} not ready yet", videoAsset.ProviderUploadId);
+                    return;
+                }
+
+                // Store the asset ID if we don't have it
+                if (string.IsNullOrEmpty(videoAsset.ProviderAssetId))
+                {
+                    videoAsset.ProviderAssetId = uploadInfo.AssetId;
+                }
+
+                // Get full asset info including playback ID
+                var assetInfo = await _videoProvider.GetAssetInfoAsync(uploadInfo.AssetId);
+                
+                if (assetInfo == null)
+                {
+                    _logger.LogDebug("Asset {AssetId} not found", uploadInfo.AssetId);
+                    return;
+                }
+
+                if (assetInfo.IsReady && !string.IsNullOrEmpty(assetInfo.PlaybackId))
+                {
+                    videoAsset.ProviderPlaybackId = assetInfo.PlaybackId;
+                    videoAsset.DurationInSeconds = assetInfo.DurationInSeconds;
+                    videoAsset.ThumbnailUrl = assetInfo.ThumbnailUrl;
+                    videoAsset.Status = VideoAssetStatus.Ready;
+                    videoAsset.ProcessedAt = DateTime.UtcNow;
+
+                    _videoAssetRepository.Update(videoAsset,
+                        v => v.ProviderAssetId,
+                        v => v.ProviderPlaybackId,
+                        v => v.DurationInSeconds,
+                        v => v.ThumbnailUrl,
+                        v => v.Status,
+                        v => v.ProcessedAt);
+
+                    await _videoAssetRepository.SaveChangesAsync();
+
+                    _logger.LogInformation("Updated video asset {Id} from Mux. PlaybackId: {PlaybackId}", 
+                        videoAsset.Id, assetInfo.PlaybackId);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to update asset from Mux for video {VideoId}", videoAsset.Id);
+            }
         }
 
         public async Task<VideoAsset?> GetByProviderUploadIdAsync(string uploadId)

@@ -66,6 +66,31 @@ namespace TAIF.Infrastructure.Services
             };
         }
 
+        public async Task<ProviderUploadInfo?> GetUploadInfoAsync(string uploadId)
+        {
+            var response = await _httpClient.GetAsync($"{MuxApiBaseUrl}/video/v1/uploads/{uploadId}");
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Mux API error getting upload: {StatusCode} - {Response}",
+                    response.StatusCode, responseContent);
+                return null;
+            }
+
+            var muxResponse = JsonSerializer.Deserialize<MuxUploadResponse>(responseContent);
+            var upload = muxResponse?.Data;
+
+            if (upload == null) return null;
+
+            return new ProviderUploadInfo
+            {
+                UploadId = upload.Id,
+                AssetId = upload.AssetId,
+                Status = upload.Status ?? "unknown"
+            };
+        }
+
         public async Task<ProviderAssetInfo?> GetAssetInfoAsync(string assetId)
         {
             var response = await _httpClient.GetAsync($"{MuxApiBaseUrl}/video/v1/assets/{assetId}");

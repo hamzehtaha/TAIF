@@ -6,6 +6,8 @@ namespace TAIF.Application.Interfaces.Services
     {
         Task<ProviderUploadResult> CreateDirectUploadAsync(string? correlationId = null);
 
+        Task<ProviderUploadInfo?> GetUploadInfoAsync(string uploadId);
+
         Task<ProviderAssetInfo?> GetAssetInfoAsync(string assetId);
 
         string GeneratePlaybackUrl(string playbackId);

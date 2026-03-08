@@ -9,12 +9,11 @@ export enum LessonItemType {
 export interface VideoContent {
   title: string;
   description?: string;
-  url?: string;
   thumbnailUrl?: string;
   durationInSeconds: number;
   videoAssetId?: string;
   playbackId?: string;
-  provider?: string;
+  provider: string;
 }
 
 export interface RichTextContent {
@@ -79,7 +78,20 @@ class ContentService {
 
   parseContentData(content: Content): VideoContent | RichTextContent | QuizContent {
     const data = JSON.parse(content.contentJson);
-    return data;
+    // Normalize property names to camelCase (handle PascalCase from backend)
+    return this.normalizeKeys(data);
+  }
+
+  private normalizeKeys<T>(obj: T): T {
+    if (obj === null || typeof obj !== 'object') return obj;
+    if (Array.isArray(obj)) return obj.map(item => this.normalizeKeys(item)) as T;
+    
+    const normalized: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+      const camelKey = key.charAt(0).toLowerCase() + key.slice(1);
+      normalized[camelKey] = this.normalizeKeys(value);
+    }
+    return normalized as T;
   }
 }
 
