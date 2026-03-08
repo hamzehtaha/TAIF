@@ -115,6 +115,11 @@ namespace TAIF.Application.Services
             };
         }
 
+        public async Task<Dictionary<Guid, (double AverageRating, int ReviewCount)>> GetReviewStatsForCoursesAsync(IEnumerable<Guid> courseIds)
+        {
+            return await _reviewRepository.GetReviewStatsForCoursesAsync(courseIds);
+        }
+
         private static Expression<Func<Review, bool>>? BuildFilterPredicate(ReviewFilter filter)
         {
             if (filter.CourseId.HasValue && filter.UserId.HasValue && filter.Rating.HasValue)

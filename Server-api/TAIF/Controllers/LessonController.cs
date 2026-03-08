@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Mapster;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq.Expressions;
 using TAIF.API.Controllers;
@@ -8,7 +9,7 @@ using TAIF.Application.DTOs.Responses;
 using TAIF.Application.Interfaces.Services;
 using TAIF.Domain.Entities;
 
-namespace TAIF.Controllers
+namespace TAIF.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
@@ -17,11 +18,13 @@ namespace TAIF.Controllers
     {
         private readonly ILessonService _lessonService;
         private readonly ICourseService _courseService;
+        private readonly ICourseLessonService _courseLessonService;
 
-        public LessonController(ILessonService lessonService, ICourseService courseService)
+        public LessonController(ILessonService lessonService, ICourseService courseService, ICourseLessonService courseLessonService)
         {
             _lessonService = lessonService;
             _courseService = courseService;
+            _courseLessonService = courseLessonService;
         }
 
         [HttpGet("{id}")]
@@ -29,7 +32,7 @@ namespace TAIF.Controllers
         {
             var lesson = await _lessonService.GetByIdAsync(id);
             if (lesson is null) return NotFound();
-            return Ok(ApiResponse<Lesson>.SuccessResponse(lesson));
+            return Ok(ApiResponse<LessonResponse>.SuccessResponse(lesson.Adapt<LessonResponse>()));
         }
 
         [HttpGet("paged")]
@@ -46,30 +49,42 @@ namespace TAIF.Controllers
                 orderByDescending: true
             );
 
-            return Ok(ApiResponse<PagedResult<Lesson>>.SuccessResponse(result));
+            var response = new PagedResult<LessonResponse>
+            {
+                Items = result.Items.Select(l => l.Adapt<LessonResponse>()).ToList(),
+                Page = result.Page,
+                PageSize = result.PageSize,
+                TotalCount = result.TotalCount
+            };
+
+            return Ok(ApiResponse<PagedResult<LessonResponse>>.SuccessResponse(response));
         }
 
         [HttpGet("course/{courseId}")]
         public async Task<IActionResult> GetByCourseId([FromRoute] Guid courseId)
         {
-            var lessons = await _lessonService.GetByCourseIdAsync(courseId);
-            if (lessons is null) return NotFound();
-            return Ok(ApiResponse<List<Lesson>>.SuccessResponse(lessons));
+            var courseLessons = await _courseLessonService.GetByCourseIdAsync(courseId);
+            if (courseLessons is null) return NotFound();
+
+            var response = courseLessons.Select(cl =>
+            {
+                var r = cl.Lesson.Adapt<LessonResponse>();
+                r.CourseId = courseId;
+                r.Order = cl.Order;
+                return r;
+            }).ToList();
+
+            return Ok(ApiResponse<List<LessonResponse>>.SuccessResponse(response));
         }
 
         [HttpPost("")]
         [Authorize(Policy = "ContentCreatorOrAbove")]
         public async Task<IActionResult> Create([FromBody] CreateLessonRequest request)
         {
-            var lesson = new Lesson
-            {
-                Title = request.Title,
-                Description = request.Description,
-                Photo = request.Photo,
-                InstructorId = request.InstructorId
-            };
+            var lesson = request.Adapt<Lesson>();
+
             var created_lesson = await _lessonService.CreateAsync(lesson);
-            return Ok(ApiResponse<Lesson>.SuccessResponse(created_lesson));
+            return Ok(ApiResponse<LessonResponse>.SuccessResponse(created_lesson.Adapt<LessonResponse>()));
         }
 
         [HttpPut("{id}")]
@@ -77,7 +92,7 @@ namespace TAIF.Controllers
         public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateLessonRequest lesson)
         {
             var updatedLesson = await _lessonService.UpdateAsync(id, lesson);
-            return Ok(ApiResponse<Lesson>.SuccessResponse(updatedLesson));
+            return Ok(ApiResponse<LessonResponse>.SuccessResponse(updatedLesson.Adapt<LessonResponse>()));
         }
 
         [HttpDelete("{id}")]
@@ -94,7 +109,8 @@ namespace TAIF.Controllers
         public async Task<IActionResult> GetAll()
         {
             var lessons = await _lessonService.GetAllAsync();
-            return Ok(ApiResponse<List<Lesson>>.SuccessResponse(lessons));
+            return Ok(ApiResponse<List<LessonResponse>>.SuccessResponse(
+                lessons.Select(l => l.Adapt<LessonResponse>()).ToList()));
         }
     }
 }

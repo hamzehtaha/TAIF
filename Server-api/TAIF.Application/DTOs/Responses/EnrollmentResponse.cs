@@ -1,0 +1,16 @@
+namespace TAIF.Application.DTOs.Responses
+{
+    public class EnrollmentResponse
+    {
+        public Guid Id { get; set; }
+        public Guid UserId { get; set; }
+        public Guid CourseId { get; set; }
+        public DateTime EnrolledAt { get; set; }
+        public bool IsFavourite { get; set; }
+        public Guid? LastLessonItemId { get; set; }
+        public double CompletedDurationInSeconds { get; set; }
+        public bool IsCompleted { get; set; }
+        public DateTime? CompletedAt { get; set; }
+        public Guid? OrganizationId { get; set; }
+    }
+}

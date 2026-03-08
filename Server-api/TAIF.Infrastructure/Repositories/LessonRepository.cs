@@ -23,6 +23,7 @@ namespace TAIF.Infrastructure.Repositories
             var query = _context.CourseLessons
                 .Where(cl => cl.CourseId == courseId && !cl.IsDeleted)
                 .Include(cl => cl.Lesson)
+                    .ThenInclude(l => l.Instructor)
                 .OrderBy(cl => cl.Order)
                 .Select(cl => cl.Lesson);
 

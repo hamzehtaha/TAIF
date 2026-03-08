@@ -1,3 +1,4 @@
+using Mapster;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TAIF.API.Controllers;
@@ -32,7 +33,8 @@ namespace TAIF.Controllers
             var sections = await _sectionService.FindNoTrackingAsync(
                 s => s.LearningPathId == learningPathId,
                 orderBy: s => s.Order);
-            return Ok(ApiResponse<List<LearningPathSection>>.SuccessResponse(sections));
+            return Ok(ApiResponse<List<LearningPathSectionResponse>>.SuccessResponse(
+                sections.Select(s => s.Adapt<LearningPathSectionResponse>()).ToList()));
         }
 
         [HttpGet("sections/{sectionId}")]
@@ -40,7 +42,7 @@ namespace TAIF.Controllers
         {
             var section = await _sectionService.GetByIdAsync(sectionId);
             if (section is null) return NotFound();
-            return Ok(ApiResponse<LearningPathSection>.SuccessResponse(section));
+            return Ok(ApiResponse<LearningPathSectionResponse>.SuccessResponse(section.Adapt<LearningPathSectionResponse>()));
         }
 
         [HttpPost("{learningPathId}/sections")]
@@ -58,7 +60,7 @@ namespace TAIF.Controllers
             };
 
             var created = await _sectionService.CreateAsync(section);
-            return Ok(ApiResponse<LearningPathSection>.SuccessResponse(created));
+            return Ok(ApiResponse<LearningPathSectionResponse>.SuccessResponse(created.Adapt<LearningPathSectionResponse>()));
         }
 
         [HttpPut("sections/{sectionId}")]
@@ -67,7 +69,7 @@ namespace TAIF.Controllers
             [FromBody] UpdateLearningPathSectionRequest request)
         {
             var updated = await _sectionService.UpdateAsync(sectionId, request);
-            return Ok(ApiResponse<LearningPathSection>.SuccessResponse(updated));
+            return Ok(ApiResponse<LearningPathSectionResponse>.SuccessResponse(updated.Adapt<LearningPathSectionResponse>()));
         }
 
         [HttpDelete("sections/{sectionId}")]
@@ -88,7 +90,8 @@ namespace TAIF.Controllers
             var courses = await _courseService.FindNoTrackingAsync(
                 c => c.LearningPathSectionId == sectionId,
                 orderBy: c => c.Order);
-            return Ok(ApiResponse<List<LearningPathCourse>>.SuccessResponse(courses));
+            return Ok(ApiResponse<List<LearningPathCourseResponse>>.SuccessResponse(
+                courses.Select(c => c.Adapt<LearningPathCourseResponse>()).ToList()));
         }
 
         [HttpPost("sections/{sectionId}/courses")]
@@ -106,7 +109,7 @@ namespace TAIF.Controllers
             };
 
             var created = await _courseService.CreateAsync(course);
-            return Ok(ApiResponse<LearningPathCourse>.SuccessResponse(created));
+            return Ok(ApiResponse<LearningPathCourseResponse>.SuccessResponse(created.Adapt<LearningPathCourseResponse>()));
         }
 
         [HttpPut("sections/courses/{courseId}")]
@@ -115,7 +118,7 @@ namespace TAIF.Controllers
             [FromBody] UpdateLearningPathCourseRequest request)
         {
             var updated = await _courseService.UpdateAsync(courseId, request);
-            return Ok(ApiResponse<LearningPathCourse>.SuccessResponse(updated));
+            return Ok(ApiResponse<LearningPathCourseResponse>.SuccessResponse(updated.Adapt<LearningPathCourseResponse>()));
         }
 
         [HttpDelete("sections/courses/{courseId}")]
