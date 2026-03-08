@@ -19,7 +19,7 @@ namespace TAIF.API.Controllers
         [HttpGet]
         public async Task<IActionResult> Get()
         {
-            var plan = await _planService.GeneratePlanAsync(UserId,OrganizationId);
+            var plan = await _planService.GeneratePlanAsync(UserId);
             return Ok(plan);
         }
     }

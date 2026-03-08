@@ -9,6 +9,6 @@ namespace TAIF.Application.Interfaces.Services
 {
     public interface IUserPlanService
     {
-        Task<UserLearningPlanResponse> GeneratePlanAsync(Guid userId, Guid OrganizationId);
+        Task<UserLearningPlanResponse> GeneratePlanAsync(Guid userId);
     }
 }
