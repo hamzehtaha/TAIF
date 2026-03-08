@@ -17,9 +17,6 @@ namespace TAIF.Domain.Entities
 
     public class VideoAsset : OrganizationBase
     {
-        public Guid? LessonItemId { get; set; }
-        public LessonItem? LessonItem { get; set; }
-
         public VideoProvider Provider { get; set; } = VideoProvider.Mux;
 
         public string? ProviderUploadId { get; set; }

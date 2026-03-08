@@ -6,6 +6,5 @@ namespace TAIF.Application.Interfaces.Repositories
     {
         Task<VideoAsset?> GetByProviderUploadIdAsync(string uploadId);
         Task<VideoAsset?> GetByProviderAssetIdAsync(string assetId);
-        Task<VideoAsset?> GetByLessonItemIdAsync(Guid lessonItemId);
     }
 }

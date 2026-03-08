@@ -507,14 +507,9 @@ namespace TAIF.Infrastructure.Data
                        .IsRequired();
             });
 
-            // VideoAsset configuration
+            // VideoAsset configuration - standalone reference table for video processing tracking
             modelBuilder.Entity<VideoAsset>(entity =>
             {
-                entity.HasOne(v => v.LessonItem)
-                      .WithMany()
-                      .HasForeignKey(v => v.LessonItemId)
-                      .OnDelete(DeleteBehavior.SetNull);
-
                 entity.HasOne(v => v.Organization)
                       .WithMany()
                       .HasForeignKey(v => v.OrganizationId)
@@ -522,7 +517,6 @@ namespace TAIF.Infrastructure.Data
 
                 entity.HasIndex(v => v.ProviderUploadId);
                 entity.HasIndex(v => v.ProviderAssetId);
-                entity.HasIndex(v => v.LessonItemId);
                 entity.HasIndex(v => v.OrganizationId);
                 entity.HasIndex(v => v.Status);
             });

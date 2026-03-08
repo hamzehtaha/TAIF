@@ -14,7 +14,6 @@ import {
 
 interface VideoPlayerProps {
   videoId?: string;
-  lessonItemId?: string;
   playbackId?: string;
   autoPlay?: boolean;
   muted?: boolean;
@@ -27,7 +26,6 @@ interface VideoPlayerProps {
 
 export function VideoPlayer({
   videoId,
-  lessonItemId,
   playbackId: initialPlaybackId,
   autoPlay = false,
   muted = false,
@@ -46,14 +44,16 @@ export function VideoPlayer({
 
   useEffect(() => {
     const loadVideoInfo = async () => {
+      // If playbackId is provided directly (from content JSON), use it
       if (initialPlaybackId) {
         setPlaybackId(initialPlaybackId);
         setLoading(false);
         return;
       }
 
-      if (!videoId && !lessonItemId) {
-        setError("No video ID or lesson item ID provided");
+      // If videoId is provided (admin checking upload status), fetch from API
+      if (!videoId) {
+        setError("No playback ID or video ID provided");
         setLoading(false);
         return;
       }
@@ -62,16 +62,7 @@ export function VideoPlayer({
         setLoading(true);
         setError(null);
 
-        let info: VideoPlaybackInfo;
-
-        if (videoId) {
-          info = await videoService.getVideo(videoId);
-        } else if (lessonItemId) {
-          info = await videoService.getVideoByLessonItem(lessonItemId);
-        } else {
-          throw new Error("No video identifier provided");
-        }
-
+        const info = await videoService.getVideo(videoId);
         setVideoInfo(info);
 
         if (info.status !== VideoAssetStatus.Ready) {
@@ -98,7 +89,7 @@ export function VideoPlayer({
     };
 
     loadVideoInfo();
-  }, [videoId, lessonItemId, initialPlaybackId, onError]);
+  }, [videoId, initialPlaybackId, onError]);
 
   useEffect(() => {
     if (!playbackId) return;

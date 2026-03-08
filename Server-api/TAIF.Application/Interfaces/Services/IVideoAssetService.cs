@@ -14,7 +14,5 @@ namespace TAIF.Application.Interfaces.Services
         Task<VideoAsset?> GetByProviderAssetIdAsync(string assetId);
 
         Task HandleWebhookAsync(string payload, string signature);
-
-        Task<VideoAsset?> GetByLessonItemIdAsync(Guid lessonItemId);
     }
 }

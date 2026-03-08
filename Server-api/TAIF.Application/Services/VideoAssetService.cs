@@ -30,7 +30,6 @@ namespace TAIF.Application.Services
         {
             var videoAsset = new VideoAsset
             {
-                LessonItemId = request.LessonItemId,
                 Title = request.Title,
                 Description = request.Description,
                 OriginalFileName = request.OriginalFileName,
@@ -90,11 +89,6 @@ namespace TAIF.Application.Services
         public async Task<VideoAsset?> GetByProviderAssetIdAsync(string assetId)
         {
             return await _videoAssetRepository.GetByProviderAssetIdAsync(assetId);
-        }
-
-        public async Task<VideoAsset?> GetByLessonItemIdAsync(Guid lessonItemId)
-        {
-            return await _videoAssetRepository.GetByLessonItemIdAsync(lessonItemId);
         }
 
         public async Task HandleWebhookAsync(string payload, string signature)

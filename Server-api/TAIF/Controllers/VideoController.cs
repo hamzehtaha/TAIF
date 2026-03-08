@@ -75,21 +75,6 @@ namespace TAIF.API.Controllers
             return Ok(playbackInfo);
         }
 
-        [HttpGet("by-lesson-item/{lessonItemId:guid}")]
-        [Authorize]
-        public async Task<ActionResult<VideoPlaybackDto>> GetVideoByLessonItem(Guid lessonItemId)
-        {
-            var videoAsset = await _videoAssetService.GetByLessonItemIdAsync(lessonItemId);
-
-            if (videoAsset == null)
-            {
-                return NotFound();
-            }
-
-            var playbackInfo = await _videoAssetService.GetPlaybackInfoAsync(videoAsset.Id);
-            return Ok(playbackInfo);
-        }
-
         [HttpGet("{id:guid}/status")]
         [Authorize]
         public async Task<ActionResult<object>> GetVideoStatus(Guid id)

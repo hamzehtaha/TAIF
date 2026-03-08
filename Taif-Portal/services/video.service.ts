@@ -1,7 +1,6 @@
 import { httpService } from "./http.service";
 
 export interface VideoUploadRequest {
-  lessonItemId?: string;
   title?: string;
   description?: string;
   originalFileName?: string;
@@ -53,10 +52,6 @@ class VideoService {
 
   async getVideo(id: string): Promise<VideoPlaybackInfo> {
     return httpService.get<VideoPlaybackInfo>(`${this.basePath}/${id}`);
-  }
-
-  async getVideoByLessonItem(lessonItemId: string): Promise<VideoPlaybackInfo> {
-    return httpService.get<VideoPlaybackInfo>(`${this.basePath}/by-lesson-item/${lessonItemId}`);
   }
 
   async getVideoStatus(id: string): Promise<VideoStatus> {

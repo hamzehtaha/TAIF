@@ -22,11 +22,5 @@ namespace TAIF.Infrastructure.Repositories
             return await _dbSet
                 .FirstOrDefaultAsync(v => v.ProviderAssetId == assetId && !v.IsDeleted);
         }
-
-        public async Task<VideoAsset?> GetByLessonItemIdAsync(Guid lessonItemId)
-        {
-            return await _dbSet
-                .FirstOrDefaultAsync(v => v.LessonItemId == lessonItemId && !v.IsDeleted);
-        }
     }
 }
