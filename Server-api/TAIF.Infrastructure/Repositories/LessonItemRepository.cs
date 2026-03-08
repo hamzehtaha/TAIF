@@ -51,5 +51,11 @@ namespace TAIF.Infrastructure.Repositories
                 .Include(li => li.Content)
                 .FirstOrDefaultAsync(li => li.Id == id && !li.IsDeleted);
         }
+        public async Task<List<LessonItem>> GetBySkillsAsync(List<Guid> skillIds)
+        {
+            return await _context.LessonItems
+                .Where(li => li.SkillIds.Any(s => skillIds.Contains(s)))
+                .ToListAsync();
+        }
     }
 }
