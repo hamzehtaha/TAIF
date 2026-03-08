@@ -14,6 +14,7 @@ public class CourseLessonRepository : RepositoryBase<CourseLesson>, ICourseLesso
         return await _dbSet
             .Where(cl => cl.CourseId == courseId && !cl.IsDeleted)
             .Include(cl => cl.Lesson)
+                .ThenInclude(l => l.Instructor)
             .OrderBy(cl => cl.Order)
             .ToListAsync();
     }

@@ -1,9 +1,10 @@
+using Mapster;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TAIF.API.Controllers;
+using TAIF.Application.DTOs.Requests;
 using TAIF.Application.DTOs.Responses;
 using TAIF.Application.Interfaces.Services;
-using TAIF.Domain.Entities;
 
 namespace TAIF.Controllers
 {
@@ -23,17 +24,8 @@ namespace TAIF.Controllers
         public async Task<IActionResult> GetAll()
         {
             var instructors = await _instructorService.GetAllAsync();
-            var response = instructors.Select(i => new InstructorResponse
-            {
-                Id = i.Id,
-                FirstName = i.FirstName,
-                LastName = i.LastName,
-                Bio = i.Bio,
-                Expertises = i.Expertises,
-                YearsOfExperience = i.YearsOfExperience,
-                OrganizationId = i.OrganizationId
-            }).ToList();
-            return Ok(ApiResponse<List<InstructorResponse>>.SuccessResponse(response));
+            return Ok(ApiResponse<List<InstructorResponse>>.SuccessResponse(
+                instructors.Select(i => i.Adapt<InstructorResponse>()).ToList()));
         }
 
         [HttpGet("{id}")]
@@ -43,44 +35,20 @@ namespace TAIF.Controllers
             if (instructor == null)
                 return NotFound(ApiResponse<InstructorResponse>.FailResponse("Instructor not found"));
 
-            var response = new InstructorResponse
-            {
-                Id = instructor.Id,
-                FirstName = instructor.FirstName,
-                LastName = instructor.LastName,
-                Bio = instructor.Bio,
-                Expertises = instructor.Expertises,
-                YearsOfExperience = instructor.YearsOfExperience
-            };
-            return Ok(ApiResponse<InstructorResponse>.SuccessResponse(response));
+            return Ok(ApiResponse<InstructorResponse>.SuccessResponse(instructor.Adapt<InstructorResponse>()));
         }
 
         [HttpPost]
         [Authorize(Policy = "ContentCreatorOrAbove")]
         public async Task<IActionResult> Create([FromBody] CreateInstructorRequest request)
         {
-            var instructor = new Instructor
-            {
-                FirstName = request.FirstName,
-                LastName = request.LastName,
-                Bio = request.Bio,
-                Expertises = request.Expertises ?? new List<string>(),
-                YearsOfExperience = request.YearsOfExperience,
-                OrganizationId = this.OrganizationId
-            };
+            var instructor = request.Adapt<TAIF.Domain.Entities.Instructor>();
+            instructor.Expertises = request.Expertises ?? new List<string>();
+            instructor.OrganizationId = this.OrganizationId;
 
             await _instructorService.CreateAsync(instructor);
 
-            var response = new InstructorResponse
-            {
-                Id = instructor.Id,
-                FirstName = instructor.FirstName,
-                LastName = instructor.LastName,
-                Bio = instructor.Bio,
-                Expertises = instructor.Expertises,
-                YearsOfExperience = instructor.YearsOfExperience
-            };
-            return Ok(ApiResponse<InstructorResponse>.SuccessResponse(response));
+            return Ok(ApiResponse<InstructorResponse>.SuccessResponse(instructor.Adapt<InstructorResponse>()));
         }
 
         [HttpPut("{id}")]
@@ -99,16 +67,7 @@ namespace TAIF.Controllers
 
             await _instructorService.UpdateAsync(id, instructor);
 
-            var response = new InstructorResponse
-            {
-                Id = instructor.Id,
-                FirstName = instructor.FirstName,
-                LastName = instructor.LastName,
-                Bio = instructor.Bio,
-                Expertises = instructor.Expertises,
-                YearsOfExperience = instructor.YearsOfExperience
-            };
-            return Ok(ApiResponse<InstructorResponse>.SuccessResponse(response));
+            return Ok(ApiResponse<InstructorResponse>.SuccessResponse(instructor.Adapt<InstructorResponse>()));
         }
 
         [HttpDelete("{id}")]
@@ -120,35 +79,5 @@ namespace TAIF.Controllers
                 return NotFound(ApiResponse<bool>.FailResponse("Instructor not found"));
             return Ok(ApiResponse<bool>.SuccessResponse(true));
         }
-    }
-
-    public class InstructorResponse
-    {
-        public Guid Id { get; set; }
-        public string FirstName { get; set; } = null!;
-        public string LastName { get; set; } = null!;
-        public string? Bio { get; set; }
-        public List<string> Expertises { get; set; } = new();
-        public int YearsOfExperience { get; set; }
-        public Guid? OrganizationId { get; set; }
-    }
-
-    public class CreateInstructorRequest
-    {
-        public string FirstName { get; set; } = null!;
-        public string LastName { get; set; } = null!;
-        public string? Bio { get; set; }
-        public List<string>? Expertises { get; set; }
-        public int YearsOfExperience { get; set; }
-        public Guid? OrganizationId { get; set; } // Only SuperAdmin can set this
-    }
-
-    public class UpdateInstructorRequest
-    {
-        public string? FirstName { get; set; }
-        public string? LastName { get; set; }
-        public string? Bio { get; set; }
-        public List<string>? Expertises { get; set; }
-        public int? YearsOfExperience { get; set; }
     }
 }

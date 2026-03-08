@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Mapster;
 using Microsoft.Extensions.Logging;
 using TAIF.Application.DTOs.Payloads;
 using TAIF.Application.DTOs.Requests;
@@ -154,25 +155,21 @@ namespace TAIF.Application.Services
 
         public async Task<List<LessonItemResponse>> GetLessonItemsProgressAsync(Guid userId, Guid lessonId, bool withDeleted = false)
         {
-            var lessonItems = await _lessonItemRepository.GetByLessonIdAsync(lessonId, withDeleted);
-            var lessonItemIds = lessonItems.Select(li => li.Id).ToList();
+            var lessonItemsWithOrder = await _lessonItemRepository.GetByLessonIdAsync(lessonId, withDeleted);
+            var lessonItemIds = lessonItemsWithOrder.Select(entry => entry.Item.Id).ToList();
 
-            // Query by LessonItemId membership — works regardless of how LessonID was stored
             var lessonItemProgress = await _lessonItemProgressRepository.FindAsync(
                 x => x.UserId == userId && lessonItemIds.Contains(x.LessonItemId));
 
             var progressLookup = lessonItemProgress.ToDictionary(x => x.LessonItemId, x => x.IsCompleted);
 
-            return lessonItems.Select(li => new LessonItemResponse
+            return lessonItemsWithOrder.Select(entry =>
             {
-                Id = li.Id,
-                Name = li.Name,
-                Description = li.Description,
-                ContentId = li.ContentId,
-                Content = GetContentData(li.Content),
-                Type = li.Type,
-                DurationInSeconds = li.DurationInSeconds,
-                IsCompleted = progressLookup.TryGetValue(li.Id, out var completed) && completed
+                var response = entry.Item.Adapt<LessonItemResponse>();
+                response.Content = GetContentData(entry.Item.Content);
+                response.Order = entry.Order;
+                response.IsCompleted = progressLookup.TryGetValue(entry.Item.Id, out var completed) && completed;
+                return response;
             }).ToList();
         }
 

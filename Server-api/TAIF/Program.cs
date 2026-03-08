@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Mapster;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -13,6 +14,7 @@ using TAIF.API.Seeder.Scripts;
 using TAIF.Application.DTOs;
 using TAIF.Application.Interfaces.Repositories;
 using TAIF.Application.Interfaces.Services;
+using TAIF.Application.Mappings;
 using TAIF.Application.Services;
 using TAIF.Infrastructure.Data;
 using TAIF.Infrastructure.Repositories;
@@ -260,6 +262,9 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod();
     });
 });
+
+// Register Mapster mappings
+MappingConfig.RegisterMappings();
 
 InjectSeeders();
 

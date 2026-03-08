@@ -49,7 +49,22 @@ namespace TAIF.API.Controllers
                 orderByDescending: true
             );
 
-            return Ok(ApiResponse<PagedResult<UserEvaluation>>.SuccessResponse(result));
+            var response = new PagedResult<UserEvaluationResponseDto>
+            {
+                Items = result.Items.Select(e => new UserEvaluationResponseDto
+                {
+                    Id = e.Id,
+                    UserId = e.UserId,
+                    OrganizationId = e.OrganizationId,
+                    TotalPercentage = e.Result.TotalPercentage,
+                    CompletedAt = e.CreatedAt
+                }).ToList(),
+                Page = result.Page,
+                PageSize = result.PageSize,
+                TotalCount = result.TotalCount
+            };
+
+            return Ok(ApiResponse<PagedResult<UserEvaluationResponseDto>>.SuccessResponse(response));
         }
 
         // ===============================
