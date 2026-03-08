@@ -14,7 +14,7 @@ namespace TAIF.Application.DTOs.Requests
         public Guid CourseId { get; set; }
 
         [Required(ErrorMessage = "Event type is required.")]
-        [StringLength(100, MinimumLength = 1, ErrorMessage = "Event type must be between 1 and 100 characters.")]
+        [EnumDataType(typeof(TAIF.Application.Services.BehaviorEventType), ErrorMessage = "Event type must be a valid behavior event type.")]
         public string EventType { get; set; } = null!;
     }
 }
