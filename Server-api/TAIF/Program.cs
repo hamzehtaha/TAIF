@@ -84,7 +84,7 @@ builder.Services.AddScoped<IInterestRepository, InterestRepository>();
 builder.Services.AddScoped<ITagRepository, TagRepository>();
 builder.Services.AddScoped<IInterestTagMappingRepository, InterestTagMappingRepository>();
 builder.Services.AddScoped<IUserCourseBehaviorRepository, UserCourseBehaviorRepository>();
-
+builder.Services.AddScoped<IUserPlanService, UserPlanService>();
 // Recommendation engine services
 builder.Services.AddScoped<IInterestService, InterestService>();
 builder.Services.AddScoped<ITagService, TagService>();
