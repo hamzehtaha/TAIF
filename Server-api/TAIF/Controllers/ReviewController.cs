@@ -1,3 +1,4 @@
+using Mapster;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TAIF.Application.DTOs.Filters;
@@ -45,7 +46,7 @@ namespace TAIF.API.Controllers
                 }
             );
 
-            return Ok(ApiResponse<Review>.SuccessResponse(review, "Review created successfully"));
+            return Ok(ApiResponse<ReviewResponse>.SuccessResponse(review.Adapt<ReviewResponse>(), "Review created successfully"));
         }
 
         [HttpPut("{reviewId}")]
@@ -68,7 +69,7 @@ namespace TAIF.API.Controllers
             }
 
             var updatedReview = await _reviewService.UpdateAsync(reviewId, dto);
-            return Ok(ApiResponse<Review>.SuccessResponse(updatedReview, "Review updated successfully"));
+            return Ok(ApiResponse<ReviewResponse>.SuccessResponse(updatedReview.Adapt<ReviewResponse>(), "Review updated successfully"));
         }
 
         [HttpDelete("{reviewId}")]
@@ -99,7 +100,7 @@ namespace TAIF.API.Controllers
                 return NotFound(ApiResponse<object>.FailResponse("Review not found"));
             }
 
-            return Ok(ApiResponse<Review>.SuccessResponse(review));
+            return Ok(ApiResponse<ReviewResponse>.SuccessResponse(review.Adapt<ReviewResponse>()));
         }
 
         [HttpGet("course/{courseId}")]
@@ -142,7 +143,7 @@ namespace TAIF.API.Controllers
                 return NotFound(ApiResponse<object>.FailResponse("You have not reviewed this course"));
             }
 
-            return Ok(ApiResponse<Review>.SuccessResponse(review));
+            return Ok(ApiResponse<ReviewResponse>.SuccessResponse(review.Adapt<ReviewResponse>()));
         }
 
         [HttpGet("course/{courseId}/has-reviewed")]

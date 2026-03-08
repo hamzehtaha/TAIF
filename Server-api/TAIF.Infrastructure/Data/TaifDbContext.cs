@@ -7,9 +7,11 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using TAIF.Application.Interfaces;
 using TAIF.Domain.Entities;
+using TAIF.Domain.Models;
 
 namespace TAIF.Infrastructure.Data
 {
@@ -91,14 +93,20 @@ namespace TAIF.Infrastructure.Data
                 builder.Property(x => x.UserId)
                        .IsRequired();
 
+                var converter = new ValueConverter<EvaluationJsonResult, string>(
+                    v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                    v => JsonSerializer.Deserialize<EvaluationJsonResult>(v, (JsonSerializerOptions?)null)
+                         ?? new EvaluationJsonResult()
+                );
+
                 var property = builder.Property(x => x.Result)
+                                      .HasConversion(converter)
                                       .IsRequired();
 
                 if (Database.IsNpgsql())
                     property.HasColumnType("jsonb");
                 else if (Database.IsSqlServer())
                     property.HasColumnType("nvarchar(max)");
-
             });
             modelBuilder.Entity<Skill>(builder =>
             {

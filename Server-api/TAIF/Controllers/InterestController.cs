@@ -1,3 +1,4 @@
+using Mapster;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TAIF.API.Controllers;
@@ -25,14 +26,16 @@ namespace TAIF.Controllers
         public async Task<IActionResult> GetAll()
         {
             var interests = await _interestService.GetAllAsync();
-            return Ok(ApiResponse<List<Interest>>.SuccessResponse(interests));
+            return Ok(ApiResponse<List<InterestResponse>>.SuccessResponse(
+                interests.Select(i => i.Adapt<InterestResponse>()).ToList()));
         }
 
         [HttpGet("user")]
         public async Task<IActionResult> GetUserInterests()
         {
             var interests = await _interestService.GetUserInterestsAsync(this.UserId);
-            return Ok(ApiResponse<List<Interest>>.SuccessResponse(interests));
+            return Ok(ApiResponse<List<InterestResponse>>.SuccessResponse(
+                interests.Select(i => i.Adapt<InterestResponse>()).ToList()));
         }
 
         [HttpGet("{id}")]
@@ -41,25 +44,22 @@ namespace TAIF.Controllers
             var interest = await _interestService.GetByIdAsync(id);
             if (interest == null)
                 return NotFound(ApiResponse<object>.FailResponse("Interest not found"));
-            return Ok(ApiResponse<Interest>.SuccessResponse(interest));
+            return Ok(ApiResponse<InterestResponse>.SuccessResponse(interest.Adapt<InterestResponse>()));
         }
 
         [HttpPost("")]
         public async Task<IActionResult> Create([FromBody] CreateInterestRequest request)
         {
-            var interest = new Interest
-            {
-                Name = request.Name
-            };
+            var interest = new Interest { Name = request.Name };
             var created = await _interestService.CreateAsync(interest);
-            return Ok(ApiResponse<Interest>.SuccessResponse(created));
+            return Ok(ApiResponse<InterestResponse>.SuccessResponse(created.Adapt<InterestResponse>()));
         }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateInterestRequest request)
         {
             var updated = await _interestService.UpdateAsync(id, request);
-            return Ok(ApiResponse<Interest>.SuccessResponse(updated));
+            return Ok(ApiResponse<InterestResponse>.SuccessResponse(updated.Adapt<InterestResponse>()));
         }
 
         [HttpDelete("{id}")]

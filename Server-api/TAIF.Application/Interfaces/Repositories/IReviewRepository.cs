@@ -11,6 +11,7 @@ namespace TAIF.Application.Interfaces.Repositories
         Task<List<Review>> GetByUserIdWithIncludesAsync(Guid userId);
         Task<List<Review>> GetByCourseIdAsync(Guid courseId);
         Task<bool> HasUserReviewedCourseAsync(Guid userId, Guid courseId);
+        Task<Dictionary<Guid, (double AverageRating, int ReviewCount)>> GetReviewStatsForCoursesAsync(IEnumerable<Guid> courseIds);
         Task<PagedResult<Review>> GetPagedReviewsAsync(
             int page,
             int pageSize,

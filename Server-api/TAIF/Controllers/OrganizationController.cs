@@ -1,3 +1,4 @@
+using Mapster;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq.Expressions;
@@ -27,7 +28,8 @@ namespace TAIF.Controllers
             var organizations = await _organizationService.GetAllAsync();
             if (organizations is null || organizations.Count == 0)
                 return NotFound();
-            return Ok(ApiResponse<List<Organization>>.SuccessResponse(organizations));
+            return Ok(ApiResponse<List<OrganizationResponse>>.SuccessResponse(
+                organizations.Select(o => o.Adapt<OrganizationResponse>()).ToList()));
         }
         [HttpGet("paged")]
         [Authorize(Policy = "AdminOnly")]
@@ -42,7 +44,15 @@ namespace TAIF.Controllers
                 orderByDescending: true
             );
 
-            return Ok(ApiResponse<PagedResult<Organization>>.SuccessResponse(result));
+            var response = new PagedResult<OrganizationResponse>
+            {
+                Items = result.Items.Select(o => o.Adapt<OrganizationResponse>()).ToList(),
+                Page = result.Page,
+                PageSize = result.PageSize,
+                TotalCount = result.TotalCount
+            };
+
+            return Ok(ApiResponse<PagedResult<OrganizationResponse>>.SuccessResponse(response));
         }
         [HttpGet("{id}")]
         [Authorize(Policy = "AdminOnly")]
@@ -51,7 +61,7 @@ namespace TAIF.Controllers
             var organization = await _organizationService.GetByIdAsync(id);
             if (organization is null)
                 return NotFound();
-            return Ok(ApiResponse<Organization>.SuccessResponse(organization));
+            return Ok(ApiResponse<OrganizationResponse>.SuccessResponse(organization.Adapt<OrganizationResponse>()));
         }
 
         [HttpPost("")]
@@ -69,14 +79,14 @@ namespace TAIF.Controllers
             };
 
             var created_organization = await _organizationService.CreateAsync(organization);
-            return Ok(ApiResponse<Organization>.SuccessResponse(created_organization));
+            return Ok(ApiResponse<OrganizationResponse>.SuccessResponse(created_organization.Adapt<OrganizationResponse>()));
         }
         [HttpPut("{id}")]
         [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateOrganizationRequest request)
         {
             var organization = await _organizationService.UpdateAsync(id, request);
-            return Ok(ApiResponse<Organization>.SuccessResponse(organization));
+            return Ok(ApiResponse<OrganizationResponse>.SuccessResponse(organization.Adapt<OrganizationResponse>()));
         }
         [HttpDelete("{id}")]
         [Authorize(Policy = "AdminOnly")]

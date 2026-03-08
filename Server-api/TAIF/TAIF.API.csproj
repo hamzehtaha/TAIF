@@ -22,6 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Mapster" Version="7.4.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.23" />
     <PackageReference Include="Microsoft.AspNetCore.Hosting.Abstractions" Version="2.3.9" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.12">
@@ -37,6 +38,10 @@
   <ItemGroup>
     <ProjectReference Include="..\TAIF.Application\TAIF.Application.csproj" />
     <ProjectReference Include="..\TAIF.Infrastructure\TAIF.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Server-api\TAIF.Application\DTOs\Responses\" />
   </ItemGroup>
 
 </Project>

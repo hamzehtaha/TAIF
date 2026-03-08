@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 using TAIF.Application.DTOs.Responses;
 using TAIF.Application.Interfaces.Repositories;
@@ -66,6 +67,16 @@ namespace TAIF.Infrastructure.Repositories
                 orderByDescending: true,
                 includes: [r => r.User, r => r.Course]
             );
+        }
+
+        public async Task<Dictionary<Guid, (double AverageRating, int ReviewCount)>> GetReviewStatsForCoursesAsync(IEnumerable<Guid> courseIds)
+        {
+            var idList = courseIds.ToList();
+            return await _context.Reviews
+                .Where(r => idList.Contains(r.CourseId) && !r.IsDeleted)
+                .GroupBy(r => r.CourseId)
+                .Select(g => new { CourseId = g.Key, Avg = g.Average(r => (double)r.Rating), Count = g.Count() })
+                .ToDictionaryAsync(x => x.CourseId, x => (x.Avg, x.Count));
         }
     }
 }

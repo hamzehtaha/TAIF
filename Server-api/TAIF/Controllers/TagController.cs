@@ -1,13 +1,13 @@
+using Mapster;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TAIF.API.Controllers;
-using TAIF.Application.DTOs;
 using TAIF.Application.DTOs.Requests;
 using TAIF.Application.DTOs.Responses;
 using TAIF.Application.Interfaces.Services;
 using TAIF.Domain.Entities;
 
-namespace TAIF.Controllers
+namespace TAIF.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
@@ -25,7 +25,8 @@ namespace TAIF.Controllers
         public async Task<IActionResult> GetAll()
         {
             var tags = await _tagService.GetAllAsync();
-            return Ok(ApiResponse<List<Tag>>.SuccessResponse(tags));
+            return Ok(ApiResponse<List<TagResponse>>.SuccessResponse(
+                tags.Select(t => t.Adapt<TagResponse>()).ToList()));
         }
 
         [HttpGet("{id}")]
@@ -34,25 +35,23 @@ namespace TAIF.Controllers
             var tag = await _tagService.GetByIdAsync(id);
             if (tag == null)
                 return NotFound(ApiResponse<object>.FailResponse("Tag not found"));
-            return Ok(ApiResponse<Tag>.SuccessResponse(tag));
+            return Ok(ApiResponse<TagResponse>.SuccessResponse(tag.Adapt<TagResponse>()));
         }
 
         [HttpPost("")]
         public async Task<IActionResult> Create([FromBody] CreateTagRequest request)
         {
-            var tag = new Tag
-            {
-                Name = request.Name,
-            };
+            var tag = request.Adapt<Tag>();
+
             var created = await _tagService.CreateAsync(tag);
-            return Ok(ApiResponse<Tag>.SuccessResponse(created));
+            return Ok(ApiResponse<TagResponse>.SuccessResponse(created.Adapt<TagResponse>()));
         }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateTagRequest request)
         {
             var updated = await _tagService.UpdateAsync(id, request);
-            return Ok(ApiResponse<Tag>.SuccessResponse(updated));
+            return Ok(ApiResponse<TagResponse>.SuccessResponse(updated.Adapt<TagResponse>()));
         }
 
         [HttpDelete("{id}")]

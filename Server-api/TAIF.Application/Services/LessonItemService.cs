@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using Mapster;
+using System.Text.Json;
 using TAIF.Application.DTOs.Payloads;
 using TAIF.Application.DTOs.Requests;
 using TAIF.Application.DTOs.Responses;
@@ -12,6 +13,7 @@ namespace TAIF.Application.Services
     public class LessonItemService : ServiceBase<LessonItem>, ILessonItemService
     {
         private readonly ILessonItemRepository _lessonItemRepository;
+
         public LessonItemService(ILessonItemRepository repository) : base(repository)
         {
             _lessonItemRepository = repository;
@@ -19,21 +21,15 @@ namespace TAIF.Application.Services
 
         public async Task<List<LessonItemResponse>> GetByLessonIdAsync(Guid lessonId, bool withDeleted = false)
         {
-            var lessonsItem = await _lessonItemRepository.GetByLessonIdAsync(lessonId, withDeleted);
-            List<LessonItemResponse> lessonItemsResponse = lessonsItem
-                .Select(li => new LessonItemResponse
-                {
-                    Id = li.Id,
-                    Name = li.Name,
-                    Description = li.Description,
-                    ContentId = li.ContentId,
-                    Content = li.Content != null ? GetContentData(li.Content) : null,
-                    Type = li.Type,
-                    DurationInSeconds = li.DurationInSeconds,
-                    CreatedAt = li.CreatedAt,
-                    UpdatedAt = li.UpdatedAt,
-                }).ToList();
-            return lessonItemsResponse;
+            var lessonItemsWithOrder = await _lessonItemRepository.GetByLessonIdAsync(lessonId, withDeleted);
+
+            return lessonItemsWithOrder.Select(entry =>
+            {
+                var response = entry.Item.Adapt<LessonItemResponse>();
+                response.Content = entry.Item.Content != null ? GetContentData(entry.Item.Content) : null;
+                response.Order = entry.Order;
+                return response;
+            }).ToList();
         }
 
         private static object? GetContentData(Content content)
@@ -59,13 +55,11 @@ namespace TAIF.Application.Services
                 var dict = new Dictionary<string, object?>();
                 foreach (var prop in element.EnumerateObject())
                 {
-                    // Strip all correct-answer-related fields
                     if (prop.Name.Equals("correctAnswerIndex", StringComparison.OrdinalIgnoreCase) ||
                         prop.Name.Equals("correctIndex", StringComparison.OrdinalIgnoreCase) ||
                         prop.Name.Equals("correctAnswerId", StringComparison.OrdinalIgnoreCase))
-                    {
                         continue;
-                    }
+
                     dict[prop.Name] = StripCorrectAnswers(prop.Value);
                 }
                 return dict;

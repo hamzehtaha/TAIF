@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Mapster;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -34,14 +35,14 @@ namespace TAIF.API.Controllers
                 }
             );
 
-            return Ok(ApiResponse<Enrollment>.SuccessResponse(enrollment));
+            return Ok(ApiResponse<EnrollmentResponse>.SuccessResponse(enrollment.Adapt<EnrollmentResponse>()));
         }
 
         [HttpGet("details/{courseId}")]
         public async Task<IActionResult> GetEnrollmentDetails([FromRoute] Guid courseId)
         {
             var enrollment = await _service.GetEnrollmentDetails(this.UserId, courseId);
-            return Ok(ApiResponse<Enrollment>.SuccessResponse(enrollment));
+            return Ok(ApiResponse<EnrollmentResponse>.SuccessResponse(enrollment.Adapt<EnrollmentResponse>()));
         }
 
         /// <summary>
@@ -58,21 +59,24 @@ namespace TAIF.API.Controllers
         public async Task<IActionResult> GetUserCourses()
         {
             var courses = await _service.GetUserCoursesAsync(this.UserId);
-            return Ok(ApiResponse<List<Course>>.SuccessResponse(courses));
+            return Ok(ApiResponse<List<CourseResponse>>.SuccessResponse(
+                courses.Select(c => c.Adapt<CourseResponse>()).ToList()));
         }
         
         [HttpGet("course/{courseId}")]
         public async Task<IActionResult> GetCourseUsers([FromRoute] Guid courseId)
         {
             var users = await _service.GetCourseUsersAsync(courseId);
-            return Ok(ApiResponse<List<User>>.SuccessResponse(users));
+            return Ok(ApiResponse<List<UserResponse>>.SuccessResponse(
+                users.Select(u => u.Adapt<UserResponse>()).ToList()));
         }
 
         [HttpGet("favourite/course")]
         public async Task<IActionResult> GetUserFavouriteCourses()
         {
             var courses = await _service.GetUserFavouriteCourses(this.UserId);
-            return Ok(ApiResponse<List<Course>>.SuccessResponse(courses));
+            return Ok(ApiResponse<List<CourseResponse>>.SuccessResponse(
+                courses.Select(c => c.Adapt<CourseResponse>()).ToList()));
         }
 
         [HttpPut("toggleFavourite")]
