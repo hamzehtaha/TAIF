@@ -30,6 +30,14 @@ export interface VideoStatus {
   isReady: boolean;
 }
 
+export interface SignedPlaybackToken {
+  token: string;
+  playbackId: string;
+  expiresAt: string;
+  expiresInSeconds: number;
+  thumbnailToken?: string;
+}
+
 export enum VideoProvider {
   Mux = 0,
   CloudflareStream = 1,
@@ -56,6 +64,22 @@ class VideoService {
 
   async getVideoStatus(id: string): Promise<VideoStatus> {
     return httpService.get<VideoStatus>(`${this.basePath}/${id}/status`);
+  }
+
+  /**
+   * Get a signed playback token for a video asset.
+   * Token is valid for 1 hour and required for signed/private videos.
+   */
+  async getSignedToken(videoAssetId: string): Promise<SignedPlaybackToken> {
+    return httpService.get<SignedPlaybackToken>(`${this.basePath}/${videoAssetId}/token`);
+  }
+
+  /**
+   * Get a signed playback token using a playback ID directly.
+   * Token is valid for 1 hour and required for signed/private videos.
+   */
+  async getSignedTokenByPlaybackId(playbackId: string): Promise<SignedPlaybackToken> {
+    return httpService.get<SignedPlaybackToken>(`${this.basePath}/playback/${playbackId}/token`);
   }
 
   getStatusLabel(status: VideoAssetStatus): string {

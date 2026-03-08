@@ -8,9 +8,13 @@
 
   <ItemGroup>
     <Compile Remove="Logs\**" />
+    <Compile Remove="Server-api\**" />
     <Content Remove="Logs\**" />
+    <Content Remove="Server-api\**" />
     <EmbeddedResource Remove="Logs\**" />
+    <EmbeddedResource Remove="Server-api\**" />
     <None Remove="Logs\**" />
+    <None Remove="Server-api\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -41,7 +45,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Server-api\TAIF.Application\DTOs\Responses\" />
+    <Folder Include="wwwroot\" />
   </ItemGroup>
 
 </Project>

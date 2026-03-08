@@ -12,7 +12,7 @@ using TAIF.Infrastructure.Data;
 namespace TAIF.Infrastructure.Migrations
 {
     [DbContext(typeof(TaifDbContext))]
-    [Migration("20260308023131_Intial")]
+    [Migration("20260308185201_Intial")]
     partial class Intial
     {
         /// <inheritdoc />

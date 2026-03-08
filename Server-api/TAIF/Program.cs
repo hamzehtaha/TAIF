@@ -1,4 +1,4 @@
-﻿﻿using Mapster;
+﻿using Mapster;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -148,6 +148,16 @@ builder.Services.Configure<MuxOptions>(builder.Configuration.GetSection(MuxOptio
 builder.Services.AddHttpClient<IVideoProvider, MuxVideoProvider>();
 builder.Services.AddScoped<IVideoAssetRepository, VideoAssetRepository>();
 builder.Services.AddScoped<IVideoAssetService, VideoAssetService>();
+
+// TODO: Enable Webhook instead of long polling
+// Background polling service to check video asset status every 10 seconds
+// Remove this when webhooks are configured and use HandleWebhookAsync instead
+builder.Services.AddHostedService<VideoAssetPollingService>();
+
+// File storage services - Local storage for now, can be switched to S3/Azure later
+// TODO: Switch to AWS S3 or Azure Blob Storage for production
+builder.Services.Configure<LocalStorageOptions>(builder.Configuration.GetSection(LocalStorageOptions.SectionName));
+builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -371,6 +381,10 @@ _ = Task.Run(async () =>
 });
 
 app.UseCors("AllowAll");
+
+// Enable serving static files from wwwroot (for uploaded images)
+app.UseStaticFiles();
+
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {

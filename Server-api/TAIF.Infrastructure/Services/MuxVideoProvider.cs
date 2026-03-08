@@ -1,10 +1,13 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using TAIF.Application.DTOs.VideoDtos;
 using TAIF.Application.Interfaces.Services;
 
@@ -34,13 +37,20 @@ namespace TAIF.Infrastructure.Services
 
         public async Task<ProviderUploadResult> CreateDirectUploadAsync(string? correlationId = null)
         {
+            // Use signed playback policy for security - requires JWT token for playback
             var requestBody = new
             {
                 cors_origin = "*",
                 new_asset_settings = new
                 {
-                    playback_policy = new[] { "public" },
-                    passthrough = correlationId
+                    playback_policy = new[] { "signed" },
+                    passthrough = correlationId,
+                    // Enable MP4 support for download protection analysis
+                    mp4_support = "none",
+                    // Normalize audio for consistent playback
+                    normalize_audio = true,
+                    // Enable per-title encoding for optimal quality/bitrate
+                    encoding_tier = "smart"
                 }
             };
 
@@ -124,6 +134,124 @@ namespace TAIF.Infrastructure.Services
         public string GeneratePlaybackUrl(string playbackId)
         {
             return $"https://stream.mux.com/{playbackId}.m3u8";
+        }
+
+        /// <summary>
+        /// Generates a signed JWT token for Mux video playback with security features.
+        /// </summary>
+        /// <param name="playbackId">The Mux playback ID</param>
+        /// <param name="userId">User ID for watermarking and audit</param>
+        /// <param name="userEmail">User email for watermark display</param>
+        /// <returns>Signed JWT token for playback</returns>
+        public string GenerateSignedPlaybackToken(string playbackId, string? userId = null, string? userEmail = null)
+        {
+            if (string.IsNullOrEmpty(_options.SigningKeyId) || string.IsNullOrEmpty(_options.SigningKeySecret))
+            {
+                _logger.LogWarning("Mux signing keys not configured. Returning empty token.");
+                return string.Empty;
+            }
+
+            try
+            {
+                // Decode the base64-encoded private key
+                var privateKeyBytes = Convert.FromBase64String(_options.SigningKeySecret);
+                var privateKeyPem = Encoding.UTF8.GetString(privateKeyBytes);
+                
+                // Create RSA key from PEM
+                var rsa = RSA.Create();
+                rsa.ImportFromPem(privateKeyPem);
+                var securityKey = new RsaSecurityKey(rsa);
+
+                var signingCredentials = new SigningCredentials(securityKey, SecurityAlgorithms.RsaSha256);
+
+                var now = DateTime.UtcNow;
+                var expiry = now.AddSeconds(_options.TokenValiditySeconds);
+
+                var claims = new List<Claim>
+                {
+                    new Claim("sub", playbackId),
+                    new Claim("kid", _options.SigningKeyId),
+                    new Claim("aud", "v"),  // "v" for video playback
+                };
+
+                // Add user info for tracking/watermark if provided
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    claims.Add(new Claim("viewer_id", userId));
+                }
+
+                var tokenDescriptor = new SecurityTokenDescriptor
+                {
+                    Subject = new ClaimsIdentity(claims),
+                    Expires = expiry,
+                    IssuedAt = now,
+                    SigningCredentials = signingCredentials
+                };
+
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var token = tokenHandler.CreateToken(tokenDescriptor);
+                var tokenString = tokenHandler.WriteToken(token);
+
+                _logger.LogDebug("Generated signed playback token for {PlaybackId}, expires at {Expiry}", 
+                    playbackId, expiry);
+
+                return tokenString;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to generate signed playback token for {PlaybackId}", playbackId);
+                throw new InvalidOperationException("Failed to generate video playback token", ex);
+            }
+        }
+
+        /// <summary>
+        /// Generates a signed token for thumbnail access
+        /// </summary>
+        public string GenerateSignedThumbnailToken(string playbackId)
+        {
+            if (string.IsNullOrEmpty(_options.SigningKeyId) || string.IsNullOrEmpty(_options.SigningKeySecret))
+            {
+                return string.Empty;
+            }
+
+            try
+            {
+                var privateKeyBytes = Convert.FromBase64String(_options.SigningKeySecret);
+                var privateKeyPem = Encoding.UTF8.GetString(privateKeyBytes);
+                
+                var rsa = RSA.Create();
+                rsa.ImportFromPem(privateKeyPem);
+                var securityKey = new RsaSecurityKey(rsa);
+
+                var signingCredentials = new SigningCredentials(securityKey, SecurityAlgorithms.RsaSha256);
+
+                var now = DateTime.UtcNow;
+                var expiry = now.AddSeconds(_options.TokenValiditySeconds);
+
+                var claims = new List<Claim>
+                {
+                    new Claim("sub", playbackId),
+                    new Claim("kid", _options.SigningKeyId),
+                    new Claim("aud", "t"),  // "t" for thumbnail
+                };
+
+                var tokenDescriptor = new SecurityTokenDescriptor
+                {
+                    Subject = new ClaimsIdentity(claims),
+                    Expires = expiry,
+                    IssuedAt = now,
+                    SigningCredentials = signingCredentials
+                };
+
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var token = tokenHandler.CreateToken(tokenDescriptor);
+                return tokenHandler.WriteToken(token);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to generate signed thumbnail token for {PlaybackId}", playbackId);
+                return string.Empty;
+            }
         }
 
         public string GenerateThumbnailUrl(string playbackId, int? width = null, int? height = null, double? time = null)

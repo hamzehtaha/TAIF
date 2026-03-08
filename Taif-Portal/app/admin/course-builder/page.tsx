@@ -71,6 +71,7 @@ import { lessonItemService } from "@/services/lesson-item.service";
 import { instructorService, Instructor } from "@/services/instructor.service";
 import { contentService, LessonItemType, Content } from "@/services/content.service";
 import { tagService, Tag } from "@/services/tag.service";
+import { fileUploadService } from "@/services/file-upload.service";
 import { Category } from "@/models/category.model";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -428,60 +429,47 @@ export default function CourseBuilderPage() {
     return `${minutes}m`;
   };
 
-  // Submit course
+  // Submit course using bulk API
   const handleSubmit = async () => {
     setIsSaving(true);
     try {
-      // Step 1: Create the course
-      const createdCourse = await courseService.createCourse({
+      // Build the full course request
+      const request = {
         name: course.name,
-        description: course.description,
-        photo: course.photo,
+        description: course.description || undefined,
+        photo: course.photo || undefined,
         categoryId: course.categoryId,
         tags: course.tags,
-      });
-
-      // Step 2: Create lessons and assign to course
-      for (let i = 0; i < course.lessons.length; i++) {
-        const lesson = course.lessons[i];
-        
-        // Create the lesson
-        const createdLesson = await lessonService.createLesson({
+        lessons: course.lessons.map((lesson, lessonIndex) => ({
           title: lesson.title,
           description: lesson.description || undefined,
           photo: lesson.photo || undefined,
           instructorId: lesson.instructorId || undefined,
-        });
+          order: lessonIndex,
+          items: lesson.items.map((item, itemIndex) => {
+            const typeNumber = item.type === "video" ? 0 : item.type === "rich-content" ? 1 : 2;
+            return {
+              name: item.name,
+              description: item.description || undefined,
+              type: typeNumber,
+              order: itemIndex,
+              durationInSeconds: item.durationInSeconds,
+              contentId: item.contentId || undefined,
+              // If no contentId, we would need to create content inline
+              // For now, content should be created beforehand via content dialogs
+            };
+          }),
+        })),
+      };
 
-        // Assign lesson to course
-        await courseService.assignLesson(createdCourse.id, createdLesson.id, i);
-
-        // Step 3: Create lesson items and assign to lesson
-        for (let j = 0; j < lesson.items.length; j++) {
-          const item = lesson.items[j];
-          
-          // Create the lesson item
-          const typeNumber = item.type === "video" ? 0 : item.type === "rich-content" ? 1 : 2;
-          const createdItem = await lessonItemService.createLessonItem({
-            name: item.name,
-            description: item.description || undefined,
-            contentId: item.contentId || "",
-            type: typeNumber,
-            lessonId: createdLesson.id,
-            durationInSeconds: item.durationInSeconds,
-          });
-
-          // Assign to lesson (order is 1-indexed)
-          await lessonService.assignLessonItem(createdLesson.id, createdItem.id, j + 1);
-        }
-      }
+      const result = await courseService.createFullCourse(request);
 
       toast({
         title: "Course Created!",
-        description: `"${course.name}" has been created successfully with ${course.lessons.length} lessons.`,
+        description: `"${result.courseName}" has been created successfully with ${result.lessonsCreated} lessons and ${result.lessonItemsCreated} lesson items.`,
       });
 
-      router.push(`/admin/courses/${createdCourse.id}`);
+      router.push(`/admin/courses/${result.courseId}`);
     } catch (error) {
       console.error("Failed to create course:", error);
       toast({
@@ -653,7 +641,7 @@ export default function CourseBuilderPage() {
                     {course.photo && (
                       <div className="mt-2 relative w-full aspect-video rounded-lg overflow-hidden bg-muted">
                         <img
-                          src={course.photo}
+                          src={fileUploadService.getFullUrl(course.photo)}
                           alt="Course thumbnail"
                           className="object-cover w-full h-full"
                           onError={(e) => (e.currentTarget.style.display = 'none')}
@@ -829,7 +817,7 @@ export default function CourseBuilderPage() {
                                   {lesson.photo && (
                                     <div className="mt-2 relative w-full max-w-xs aspect-video rounded-lg overflow-hidden bg-muted">
                                       <img
-                                        src={lesson.photo}
+                                        src={fileUploadService.getFullUrl(lesson.photo)}
                                         alt="Lesson thumbnail"
                                         className="object-cover w-full h-full"
                                         onError={(e) => (e.currentTarget.style.display = 'none')}
@@ -948,7 +936,7 @@ export default function CourseBuilderPage() {
                     <div className="flex items-start gap-4">
                       {course.photo ? (
                         <img
-                          src={course.photo}
+                          src={fileUploadService.getFullUrl(course.photo)}
                           alt={course.name}
                           className="w-32 h-20 object-cover rounded-lg"
                         />

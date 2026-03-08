@@ -94,5 +94,56 @@ namespace TAIF.API.Controllers
                 IsReady = videoAsset.Status == Domain.Entities.VideoAssetStatus.Ready
             });
         }
+
+        /// <summary>
+        /// Generates a signed playback token for secure video access.
+        /// Token is valid for 1 hour and includes user tracking for watermarking.
+        /// </summary>
+        /// <param name="id">Video asset ID</param>
+        /// <returns>Signed playback token with expiry info</returns>
+        [HttpGet("{id:guid}/token")]
+        [Authorize]
+        public async Task<ActionResult<SignedPlaybackTokenDto>> GetSignedPlaybackToken(Guid id)
+        {
+            var userId = this.UserId.ToString();
+            var userEmail = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
+
+            var tokenDto = await _videoAssetService.GenerateSignedPlaybackTokenByAssetIdAsync(id, userId, userEmail);
+
+            if (tokenDto == null)
+            {
+                return NotFound("Video not found or not ready for playback");
+            }
+
+            return Ok(tokenDto);
+        }
+
+        /// <summary>
+        /// Generates a signed playback token using a playback ID directly.
+        /// Token is valid for 1 hour and includes user tracking for watermarking.
+        /// </summary>
+        /// <param name="playbackId">Mux playback ID</param>
+        /// <returns>Signed playback token with expiry info</returns>
+        [HttpGet("playback/{playbackId}/token")]
+        [Authorize]
+        public ActionResult<SignedPlaybackTokenDto> GetSignedPlaybackTokenByPlaybackId(string playbackId)
+        {
+            if (string.IsNullOrEmpty(playbackId))
+            {
+                return BadRequest("Playback ID is required");
+            }
+
+            var userId = this.UserId.ToString();
+            var userEmail = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
+
+            var tokenDto = _videoAssetService.GenerateSignedPlaybackToken(playbackId, userId, userEmail);
+
+            if (string.IsNullOrEmpty(tokenDto.Token))
+            {
+                return StatusCode(503, "Signing keys not configured");
+            }
+
+            return Ok(tokenDto);
+        }
     }
 }

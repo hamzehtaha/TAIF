@@ -49,6 +49,8 @@ import { PuzzleLoader } from "@/components/PuzzleLoader";
 import { Course } from "@/models/course.model";
 import { CreateCourseRequest, UpdateCourseRequest } from "@/dtos/course.dto";
 import { cn } from "@/lib/utils";
+import { ImageUpload } from "@/components/ui/image-upload";
+import { fileUploadService } from "@/services/file-upload.service";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -322,10 +324,11 @@ export default function CoursesPage() {
                   <div className="relative h-40 bg-muted">
                     {course.thumbnail ? (
                       <Image
-                        src={course.thumbnail}
+                        src={fileUploadService.getFullUrl(course.thumbnail)}
                         alt={course.title}
                         fill
                         className="object-cover"
+                        unoptimized
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
@@ -389,7 +392,7 @@ export default function CoursesPage() {
         if (!open) resetForm();
         setCourseDialogOpen(open);
       }}>
-        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingCourse ? "Edit Course" : "Create New Course"}</DialogTitle>
             <DialogDescription>
@@ -432,12 +435,13 @@ export default function CoursesPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="course-photo">Thumbnail URL</Label>
-              <Input
-                id="course-photo"
-                placeholder="https://example.com/image.jpg"
+              <Label>Thumbnail</Label>
+              <ImageUpload
                 value={formPhoto}
-                onChange={(e) => setFormPhoto(e.target.value)}
+                onChange={(url) => setFormPhoto(url)}
+                folder="courses"
+                placeholder="Upload course thumbnail"
+                aspectRatio="video"
               />
             </div>
             <div className="space-y-2">

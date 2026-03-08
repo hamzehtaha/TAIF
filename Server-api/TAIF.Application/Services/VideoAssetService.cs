@@ -28,15 +28,14 @@ namespace TAIF.Application.Services
 
         public async Task<VideoUploadResponseDto> CreateUploadAsync(VideoUploadRequestDto request, Guid organizationId)
         {
-            // TODO: TEMP - Set status to Ready immediately for local development (no webhook)
-            // Change back to VideoAssetStatus.Pending when webhook is configured
+            // Video starts as Pending - background polling service will update status when ready
             var videoAsset = new VideoAsset
             {
                 Title = request.Title,
                 Description = request.Description,
                 OriginalFileName = request.OriginalFileName,
                 Provider = VideoProvider.Mux,
-                Status = VideoAssetStatus.Ready, // TEMP: Should be Pending, webhook will set to Ready
+                Status = VideoAssetStatus.Pending,
                 OrganizationId = organizationId
             };
 
@@ -156,8 +155,57 @@ namespace TAIF.Application.Services
             return await _videoAssetRepository.GetByProviderAssetIdAsync(assetId);
         }
 
+        public SignedPlaybackTokenDto GenerateSignedPlaybackToken(string playbackId, string? userId = null, string? userEmail = null)
+        {
+            var token = _videoProvider.GenerateSignedPlaybackToken(playbackId, userId, userEmail);
+            var thumbnailToken = _videoProvider.GenerateSignedThumbnailToken(playbackId);
+
+            return new SignedPlaybackTokenDto
+            {
+                Token = token,
+                PlaybackId = playbackId,
+                ExpiresAt = DateTime.UtcNow.AddSeconds(_muxOptions.TokenValiditySeconds),
+                ExpiresInSeconds = _muxOptions.TokenValiditySeconds,
+                ThumbnailToken = thumbnailToken
+            };
+        }
+
+        public async Task<SignedPlaybackTokenDto?> GenerateSignedPlaybackTokenByAssetIdAsync(Guid videoAssetId, string? userId = null, string? userEmail = null)
+        {
+            var videoAsset = await _videoAssetRepository.GetByIdAsync(videoAssetId);
+            
+            if (videoAsset == null || string.IsNullOrEmpty(videoAsset.ProviderPlaybackId))
+            {
+                // Try to fetch from Mux if we don't have playbackId yet
+                if (videoAsset != null && !string.IsNullOrEmpty(videoAsset.ProviderUploadId))
+                {
+                    await TryUpdateAssetFromMuxAsync(videoAsset);
+                    videoAsset = await _videoAssetRepository.GetByIdAsync(videoAssetId);
+                }
+
+                if (videoAsset == null || string.IsNullOrEmpty(videoAsset.ProviderPlaybackId))
+                {
+                    _logger.LogWarning("Cannot generate signed token - no playback ID for asset {AssetId}", videoAssetId);
+                    return null;
+                }
+            }
+
+            return GenerateSignedPlaybackToken(videoAsset.ProviderPlaybackId, userId, userEmail);
+        }
+
+        // TODO: Enable Webhook instead of long polling
+        // Currently using VideoAssetPollingService for status updates.
+        // To enable webhooks:
+        // 1. Configure Mux webhook URL to point to /api/videos/webhook
+        // 2. Set WebhookSecret in appsettings.json
+        // 3. Remove or disable VideoAssetPollingService in Program.cs
+        // 4. Uncomment the webhook processing code below
         public async Task HandleWebhookAsync(string payload, string signature)
         {
+            _logger.LogInformation("Webhook received but currently disabled. Using polling instead.");
+            
+            // TODO: Enable Webhook instead of long polling - Uncomment below when ready
+            /*
             if (!_videoProvider.ValidateWebhookSignature(payload, signature, _muxOptions.WebhookSecret))
             {
                 _logger.LogWarning("Invalid webhook signature received");
@@ -241,6 +289,9 @@ namespace TAIF.Application.Services
             }
 
             await _videoAssetRepository.SaveChangesAsync();
+            */
+            
+            await Task.CompletedTask;
         }
     }
 }

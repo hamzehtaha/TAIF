@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { CreateVideoDialog } from "@/components/admin/content/CreateVideoDialog";
 import { EditVideoDialog } from "@/components/admin/content/EditVideoDialog";
 import { contentService, Content, VideoContent, LessonItemType } from "@/services/content.service";
+import { fileUploadService } from "@/services/file-upload.service";
 import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -180,7 +181,7 @@ export default function VideosPage() {
                 <Card key={video.id} className="hover:shadow-md transition-shadow overflow-hidden">
                   <div className="aspect-video bg-gradient-to-br from-blue-500/20 to-blue-600/20 relative flex items-center justify-center">
                     {videoData.thumbnailUrl ? (
-                      <img src={videoData.thumbnailUrl} alt="Thumbnail" className="w-full h-full object-cover" />
+                      <img src={fileUploadService.getFullUrl(videoData.thumbnailUrl)} alt="Thumbnail" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
                         <Play className="h-6 w-6 text-blue-500 ml-1" />
@@ -253,7 +254,7 @@ export default function VideosPage() {
                     <div className="flex items-center gap-4">
                       <div className="w-24 h-16 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
                         {videoData.thumbnailUrl ? (
-                          <img src={videoData.thumbnailUrl} alt="Thumbnail" className="w-full h-full object-cover rounded-lg" />
+                          <img src={fileUploadService.getFullUrl(videoData.thumbnailUrl)} alt="Thumbnail" className="w-full h-full object-cover rounded-lg" />
                         ) : (
                           <Play className="h-6 w-6 text-blue-500" />
                         )}

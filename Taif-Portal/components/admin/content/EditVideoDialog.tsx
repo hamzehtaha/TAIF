@@ -39,6 +39,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import MuxPlayer from "@mux/mux-player-react";
+import { fileUploadService } from "@/services/file-upload.service";
 
 interface EditVideoDialogProps {
   content: Content | null;
@@ -74,6 +75,8 @@ export function EditVideoDialog({ content, videoData, open, onOpenChange, onSucc
   const [thumbnailPreviewUrl, setThumbnailPreviewUrl] = useState<string | null>(null);
   const [thumbnailUploadResult, setThumbnailUploadResult] = useState<UploadResult | null>(null);
   const [existingThumbnailUrl, setExistingThumbnailUrl] = useState<string>("");
+  const [playbackToken, setPlaybackToken] = useState<string | null>(null);
+  const [thumbnailToken, setThumbnailToken] = useState<string | null>(null);
 
   const [copiedUrl, setCopiedUrl] = useState(false);
 
@@ -92,6 +95,13 @@ export function EditVideoDialog({ content, videoData, open, onOpenChange, onSucc
       if (videoData.videoAssetId) {
         setVideoUploadState("complete");
         setVideoUploadResult({ url: "", filename: "existing-video", size: 0, mimeType: "video/mp4" });
+        // Fetch signed playback token
+        videoService.getSignedToken(videoData.videoAssetId)
+          .then((tokenData) => {
+            setPlaybackToken(tokenData.token);
+            setThumbnailToken(tokenData.thumbnailToken || null);
+          })
+          .catch((err) => console.error("Failed to get playback token:", err));
       }
     }
   }, [videoData, open]);
@@ -115,6 +125,8 @@ export function EditVideoDialog({ content, videoData, open, onOpenChange, onSucc
     setExistingPlaybackId(null);
     setVideoDuration(0);
     setCopiedUrl(false);
+    setPlaybackToken(null);
+    setThumbnailToken(null);
   };
 
   const uploadVideo = async (file: File) => {
@@ -383,7 +395,7 @@ export function EditVideoDialog({ content, videoData, open, onOpenChange, onSucc
                   >
                     <CardContent className="p-4 flex items-center gap-4">
                       {currentThumbnailUrl ? (
-                        <img src={currentThumbnailUrl} alt="Thumbnail" className="w-24 h-14 object-cover rounded" />
+                        <img src={fileUploadService.getFullUrl(currentThumbnailUrl)} alt="Thumbnail" className="w-24 h-14 object-cover rounded" />
                       ) : (
                         <div className="w-24 h-14 bg-muted rounded flex items-center justify-center">
                           <Upload className="h-5 w-5 text-muted-foreground" />
@@ -430,13 +442,21 @@ export function EditVideoDialog({ content, videoData, open, onOpenChange, onSucc
                       <div className="relative aspect-video bg-black">
                         {videoPreviewUrl ? (
                           <video src={videoPreviewUrl} className="w-full h-full object-contain" controls={videoUploadState === "complete"} muted />
-                        ) : existingPlaybackId ? (
+                        ) : existingPlaybackId && playbackToken ? (
                           <MuxPlayer
                             playbackId={existingPlaybackId}
+                            tokens={{ playback: playbackToken, thumbnail: thumbnailToken || undefined }}
                             metadata={{ video_title: formData.title }}
                             accentColor="#3b82f6"
                             style={{ width: '100%', height: '100%' }}
                           />
+                        ) : existingPlaybackId && !playbackToken ? (
+                          <div className="w-full h-full flex items-center justify-center bg-muted">
+                            <div className="text-center">
+                              <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground mb-2" />
+                              <p className="text-sm text-muted-foreground">Loading video...</p>
+                            </div>
+                          </div>
                         ) : existingVideoAssetId ? (
                           <div className="w-full h-full flex items-center justify-center bg-muted">
                             <div className="text-center">

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { Loader2, AlertCircle, Video } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -10,6 +10,7 @@ import {
   VideoPlaybackInfo,
   VideoAssetStatus,
   VideoProvider,
+  SignedPlaybackToken,
 } from "@/services/video.service";
 
 interface VideoPlayerProps {
@@ -41,12 +42,49 @@ export function VideoPlayer({
   const [playbackId, setPlaybackId] = useState<string | null>(
     initialPlaybackId || null
   );
+  const [playbackToken, setPlaybackToken] = useState<string | null>(null);
+  const [thumbnailToken, setThumbnailToken] = useState<string | null>(null);
+  const tokenRefreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Fetch signed playback token
+  const fetchSignedToken = useCallback(async (pbId: string) => {
+    try {
+      const tokenData = await videoService.getSignedTokenByPlaybackId(pbId);
+      setPlaybackToken(tokenData.token);
+      setThumbnailToken(tokenData.thumbnailToken || null);
+
+      // Schedule token refresh 5 minutes before expiry
+      const refreshInMs = (tokenData.expiresInSeconds - 300) * 1000;
+      if (refreshInMs > 0) {
+        tokenRefreshTimeoutRef.current = setTimeout(() => {
+          fetchSignedToken(pbId);
+        }, refreshInMs);
+      }
+
+      return tokenData;
+    } catch (err) {
+      console.error("Failed to fetch signed playback token:", err);
+      // If signed token fails, video might be public - continue without token
+      return null;
+    }
+  }, []);
+
+  // Cleanup token refresh timeout
+  useEffect(() => {
+    return () => {
+      if (tokenRefreshTimeoutRef.current) {
+        clearTimeout(tokenRefreshTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const loadVideoInfo = async () => {
       // If playbackId is provided directly (from content JSON), use it
       if (initialPlaybackId) {
         setPlaybackId(initialPlaybackId);
+        // Fetch signed token for the playback
+        await fetchSignedToken(initialPlaybackId);
         setLoading(false);
         return;
       }
@@ -78,6 +116,8 @@ export function VideoPlayer({
         }
 
         setPlaybackId(info.playbackId);
+        // Fetch signed token for the playback
+        await fetchSignedToken(info.playbackId);
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : "Failed to load video";
@@ -89,7 +129,7 @@ export function VideoPlayer({
     };
 
     loadVideoInfo();
-  }, [videoId, initialPlaybackId, onError]);
+  }, [videoId, initialPlaybackId, onError, fetchSignedToken]);
 
   useEffect(() => {
     if (!playbackId) return;
@@ -177,6 +217,8 @@ export function VideoPlayer({
           {/* @ts-ignore - mux-player is a web component */}
           <mux-player
             playback-id={playbackId}
+            playback-token={playbackToken || undefined}
+            thumbnail-token={thumbnailToken || undefined}
             metadata-video-title={videoInfo?.title || "Video"}
             metadata-viewer-user-id="anonymous"
             accent-color="#3b82f6"
