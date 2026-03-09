@@ -12,6 +12,8 @@ namespace TAIF.Application.DTOs.Responses
         public int TotalPercentage { get; set; }
         public DateTime CompletedAt { get; set; }
         public List<QuestionEvaluationResultDto> Questions { get; set; } = new();
+        public List<Guid> StrengthSkillIds { get; set; } = new();
+        public List<Guid> WeaknessSkillIds { get; set; } = new();
     }
 
     public class QuestionEvaluationResultDto

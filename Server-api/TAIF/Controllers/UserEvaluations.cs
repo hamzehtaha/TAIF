@@ -138,6 +138,8 @@ namespace TAIF.API.Controllers
                 EvaluationId = result.Id,
                 TotalPercentage = result.Result.TotalPercentage,
                 CompletedAt = result.CreatedAt,
+                StrengthSkillIds = result.Result.StrengthSkillIds,
+                WeaknessSkillIds = result.Result.WeaknessSkillIds,
                 Questions = result.Result.Questions.Select(q => new QuestionEvaluationResultDto
                 {
                     QuestionId = q.QuestionId,
