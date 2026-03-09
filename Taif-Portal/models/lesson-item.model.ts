@@ -10,6 +10,7 @@ export interface LessonItem {
   type: LessonItemType;
   durationInSeconds: number;
   order: number;
+  skillIds?: string[];
   isCompleted?: boolean;
   createdAt?: string;
   updatedAt?: string;

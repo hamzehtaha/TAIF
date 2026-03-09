@@ -15,6 +15,7 @@ export class LessonItemMapper {
             type: mapLessonItemType(dto.type),
             durationInSeconds: dto.durationInSeconds || 0,
             order: dto.order || 0,
+            skillIds: dto.skillIds || [],
             isCompleted: false,
             createdAt: dto.createdAt,
             updatedAt: dto.updatedAt,

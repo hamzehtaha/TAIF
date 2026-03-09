@@ -30,6 +30,7 @@ export interface CreateFullCourseLessonItemRequest {
   durationInSeconds: number;
   contentId?: string; // Use existing content
   content?: CreateFullCourseContentRequest; // Create new content inline
+  skillIds?: string[]; // Associated skill IDs
 }
 
 export interface CreateFullCourseContentRequest {

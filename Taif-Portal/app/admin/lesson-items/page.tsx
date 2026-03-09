@@ -44,9 +44,12 @@ import {
 import { LessonItem } from "@/models/lesson-item.model";
 import { lessonItemService } from "@/services/lesson-item.service";
 import { contentService, Content, LessonItemType } from "@/services/content.service";
+import { skillService } from "@/services/skill.service";
+import { Skill } from "@/models/skill.model";
 import { useToast } from "@/hooks/use-toast";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const typeIcons: Record<number, React.ReactNode> = {
   0: <Video className="h-5 w-5" />,
@@ -78,6 +81,7 @@ const formatDate = (dateString?: string) => {
 export default function LessonItemsPage() {
   const [items, setItems] = useState<LessonItem[]>([]);
   const [contents, setContents] = useState<Content[]>([]);
+  const [skills, setSkills] = useState<Skill[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState<string>("all");
@@ -95,6 +99,7 @@ export default function LessonItemsPage() {
     contentId: "",
     type: 0,
     durationInSeconds: 0,
+    skillIds: [] as string[],
   });
   const [contentOpen, setContentOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -104,7 +109,17 @@ export default function LessonItemsPage() {
   useEffect(() => {
     loadAllItems();
     loadContents();
+    loadSkills();
   }, []);
+
+  const loadSkills = async () => {
+    try {
+      const data = await skillService.getAllSkills();
+      setSkills(data);
+    } catch (error) {
+      console.error("Failed to load skills:", error);
+    }
+  };
 
   const loadAllItems = async () => {
     setIsLoading(true);
@@ -164,6 +179,7 @@ export default function LessonItemsPage() {
       contentId: "",
       type: 0,
       durationInSeconds: 0,
+      skillIds: [],
     });
   };
 
@@ -181,6 +197,7 @@ export default function LessonItemsPage() {
         type: formData.type,
         lessonId: "00000000-0000-0000-0000-000000000000", // Placeholder - will be assigned when added to lesson
         durationInSeconds: formData.durationInSeconds,
+        skillIds: formData.skillIds,
       });
       toast({ title: "Success", description: "Lesson item created successfully" });
       setCreateDialogOpen(false);
@@ -206,6 +223,7 @@ export default function LessonItemsPage() {
         contentId: formData.contentId || undefined,
         type: formData.type,
         durationInSeconds: formData.durationInSeconds,
+        skillIds: formData.skillIds,
       });
       toast({ title: "Success", description: "Lesson item updated successfully" });
       setEditDialogOpen(false);
@@ -247,6 +265,7 @@ export default function LessonItemsPage() {
       contentId: item.contentId || "",
       type: itemType,
       durationInSeconds: item.durationInSeconds || 0,
+      skillIds: item.skillIds || [],
     });
     setEditDialogOpen(true);
   };
@@ -476,6 +495,32 @@ export default function LessonItemsPage() {
                 </PopoverContent>
               </Popover>
             </div>
+            <div className="space-y-2">
+              <Label>Skills</Label>
+              <div className="border rounded-md p-3 space-y-2 max-h-48 overflow-y-auto">
+                {skills.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No skills available</p>
+                ) : (
+                  skills.map((skill) => (
+                    <div key={skill.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`skill-${skill.id}`}
+                        checked={formData.skillIds.includes(skill.id)}
+                        onCheckedChange={(checked) => {
+                          const newSkills = checked
+                            ? [...formData.skillIds, skill.id]
+                            : formData.skillIds.filter(id => id !== skill.id);
+                          setFormData({ ...formData, skillIds: newSkills });
+                        }}
+                      />
+                      <label htmlFor={`skill-${skill.id}`} className="text-sm cursor-pointer">
+                        {skill.name}
+                      </label>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
@@ -556,6 +601,32 @@ export default function LessonItemsPage() {
                   </Command>
                 </PopoverContent>
               </Popover>
+            </div>
+            <div className="space-y-2">
+              <Label>Skills</Label>
+              <div className="border rounded-md p-3 space-y-2 max-h-48 overflow-y-auto">
+                {skills.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No skills available</p>
+                ) : (
+                  skills.map((skill) => (
+                    <div key={skill.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`edit-skill-${skill.id}`}
+                        checked={formData.skillIds.includes(skill.id)}
+                        onCheckedChange={(checked) => {
+                          const newSkills = checked
+                            ? [...formData.skillIds, skill.id]
+                            : formData.skillIds.filter(id => id !== skill.id);
+                          setFormData({ ...formData, skillIds: newSkills });
+                        }}
+                      />
+                      <label htmlFor={`edit-skill-${skill.id}`} className="text-sm cursor-pointer">
+                        {skill.name}
+                      </label>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
           <DialogFooter>
