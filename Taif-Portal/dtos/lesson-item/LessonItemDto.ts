@@ -11,6 +11,7 @@ export interface LessonItemDto {
   lessonId: string;
   order: number;
   durationInSeconds: number;
+  skillIds?: string[];
   createdAt?: string;
   updatedAt?: string;
   isDeleted?: boolean;

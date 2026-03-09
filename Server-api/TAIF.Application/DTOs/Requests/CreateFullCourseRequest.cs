@@ -98,6 +98,11 @@ namespace TAIF.Application.DTOs.Requests
         /// </summary>
         public CreateFullCourseContentRequest? Content { get; set; }
 
+        /// <summary>
+        /// List of skill IDs associated with this lesson item.
+        /// </summary>
+        public List<Guid> SkillIds { get; set; } = new();
+
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
             // Only require Name when creating a new lesson item (no LessonItemId)

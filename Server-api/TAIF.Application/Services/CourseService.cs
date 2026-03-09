@@ -173,7 +173,8 @@ namespace TAIF.Application.Services
                             Description = itemRequest.Description,
                             Type = (LessonItemType)itemRequest.Type,
                             ContentId = contentId,
-                            DurationInSeconds = itemRequest.DurationInSeconds
+                            DurationInSeconds = itemRequest.DurationInSeconds,
+                            SkillIds = itemRequest.SkillIds ?? new List<Guid>()
                         };
                         await _lessonItemRepository.AddAsync(lessonItem);
                         lessonItemId = lessonItem.Id;

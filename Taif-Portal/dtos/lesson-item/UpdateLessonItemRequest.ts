@@ -5,4 +5,5 @@ export interface UpdateLessonItemRequest {
   type?: number;
   lessonId?: string;
   durationInSeconds?: number;
+  skillIds?: string[];
 }

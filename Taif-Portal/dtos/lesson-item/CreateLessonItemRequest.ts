@@ -5,4 +5,5 @@ export interface CreateLessonItemRequest {
   type: number;
   lessonId: string;
   durationInSeconds?: number;
+  skillIds?: string[];
 }

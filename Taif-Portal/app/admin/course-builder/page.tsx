@@ -73,6 +73,8 @@ import { LessonItem } from "@/models/lesson-item.model";
 import { instructorService, Instructor } from "@/services/instructor.service";
 import { contentService, LessonItemType, Content } from "@/services/content.service";
 import { tagService, Tag } from "@/services/tag.service";
+import { skillService } from "@/services/skill.service";
+import { Skill } from "@/models/skill.model";
 import { fileUploadService } from "@/services/file-upload.service";
 import { Category } from "@/models/category.model";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -97,6 +99,7 @@ interface BuilderLessonItem {
   contentTitle?: string;
   durationInSeconds: number;
   order: number;
+  skillIds: string[];
   // Local content data (for new content not yet saved to backend)
   videoPlaybackId?: string;
   videoAssetId?: string;
@@ -155,6 +158,7 @@ export default function CourseBuilderPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [instructors, setInstructors] = useState<Instructor[]>([]);
   const [allTags, setAllTags] = useState<Tag[]>([]);
+  const [allSkills, setAllSkills] = useState<Skill[]>([]);
   const [existingContent, setExistingContent] = useState<{
     videos: Content[];
     quizzes: Content[];
@@ -198,10 +202,11 @@ export default function CourseBuilderPage() {
   const loadInitialData = async () => {
     setIsLoading(true);
     try {
-      const [cats, insts, tags, allContent, lessons, lessonItems] = await Promise.all([
+      const [cats, insts, tags, skills, allContent, lessons, lessonItems] = await Promise.all([
         categoryService.getCategories(),
         instructorService.getAll(),
         tagService.getAllTags(),
+        skillService.getAllSkills(),
         contentService.getAllContent(),
         lessonService.getAllLessons(),
         lessonItemService.getAllLessonItems(),
@@ -209,6 +214,7 @@ export default function CourseBuilderPage() {
       setCategories(cats);
       setInstructors(insts);
       setAllTags(tags);
+      setAllSkills(skills);
       setExistingLessons(lessons);
       setExistingLessonItems(lessonItems);
       
@@ -293,6 +299,7 @@ export default function CourseBuilderPage() {
         contentTitle: item.name,
         durationInSeconds: item.durationInSeconds || 0,
         order: idx,
+        skillIds: item.skillIds || [],
       }));
     } catch (error) {
       console.error("Failed to fetch lesson items:", error);
@@ -334,6 +341,7 @@ export default function CourseBuilderPage() {
           contentTitle: item.name,
           durationInSeconds: item.durationInSeconds || 0,
           order: idx,
+          skillIds: item.skillIds || [],
         }));
       } catch (error) {
         console.error("Failed to fetch lesson items:", error);
@@ -418,6 +426,7 @@ export default function CourseBuilderPage() {
       contentTitle: content?.title || content?.name,
       durationInSeconds: content?.durationInSeconds || 0,
       order: lesson.items.length,
+      skillIds: [],
       // Store local content data for new content
       videoPlaybackId: contentType === "video" ? content?.playbackId : undefined,
       videoAssetId: contentType === "video" ? content?.videoAssetId : undefined,
@@ -461,6 +470,7 @@ export default function CourseBuilderPage() {
       contentTitle: existingItem.name,
       durationInSeconds: existingItem.durationInSeconds || 0,
       order: lesson.items.length,
+      skillIds: existingItem.skillIds || [],
     };
 
     updateLesson(lessonTempId, {
@@ -495,6 +505,7 @@ export default function CourseBuilderPage() {
         contentTitle: existingItem.name,
         durationInSeconds: existingItem.durationInSeconds || 0,
         order: lesson.items.length + newItems.length,
+        skillIds: existingItem.skillIds || [],
       });
     }
 
@@ -712,6 +723,8 @@ export default function CourseBuilderPage() {
               contentId: item.id ? undefined : (item.contentId || undefined),
               // Send inline content if no contentId
               content: inlineContent,
+              // Send skillIds for new items
+              skillIds: item.id ? undefined : (item.skillIds || []),
             };
           }),
         })),
@@ -1126,37 +1139,103 @@ export default function CourseBuilderPage() {
                             {lesson.items.map((item, itemIndex) => (
                               <div
                                 key={item.tempId}
-                                className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg"
+                                className="bg-muted/50 rounded-lg"
                               >
-                                <GripVertical className={cn("h-4 w-4 text-muted-foreground", lesson.id ? "opacity-30" : "cursor-grab")} />
-                                <div
-                                  className={cn(
-                                    "flex items-center justify-center w-8 h-8 rounded-md",
-                                    item.type === "video" ? "bg-blue-500/20 text-blue-500" :
-                                    item.type === "quiz" ? "bg-purple-500/20 text-purple-500" :
-                                    "bg-green-500/20 text-green-500"
-                                  )}
-                                >
-                                  {item.type === "video" && <Video className="h-4 w-4" />}
-                                  {item.type === "quiz" && <HelpCircle className="h-4 w-4" />}
-                                  {item.type === "rich-content" && <FileEdit className="h-4 w-4" />}
-                                </div>
-                                <div className="flex-1">
-                                  <p className="font-medium text-sm">{item.name}</p>
-                                  <p className="text-xs text-muted-foreground capitalize">
-                                    {item.type.replace("-", " ")}
-                                    {item.durationInSeconds > 0 && ` • ${formatDuration(item.durationInSeconds)}`}
-                                  </p>
-                                </div>
-                                {/* Only show delete button for new lessons */}
-                                {!lesson.id && (
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => removeLessonItem(lesson.tempId, item.tempId)}
+                                <div className="flex items-center gap-3 p-3">
+                                  <GripVertical className={cn("h-4 w-4 text-muted-foreground", lesson.id ? "opacity-30" : "cursor-grab")} />
+                                  <div
+                                    className={cn(
+                                      "flex items-center justify-center w-8 h-8 rounded-md",
+                                      item.type === "video" ? "bg-blue-500/20 text-blue-500" :
+                                      item.type === "quiz" ? "bg-purple-500/20 text-purple-500" :
+                                      "bg-green-500/20 text-green-500"
+                                    )}
                                   >
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                  </Button>
+                                    {item.type === "video" && <Video className="h-4 w-4" />}
+                                    {item.type === "quiz" && <HelpCircle className="h-4 w-4" />}
+                                    {item.type === "rich-content" && <FileEdit className="h-4 w-4" />}
+                                  </div>
+                                  <div className="flex-1">
+                                    <p className="font-medium text-sm">{item.name}</p>
+                                    <p className="text-xs text-muted-foreground capitalize">
+                                      {item.type.replace("-", " ")}
+                                      {item.durationInSeconds > 0 && ` • ${formatDuration(item.durationInSeconds)}`}
+                                    </p>
+                                  </div>
+                                  {/* Only show delete button for new lessons */}
+                                  {!lesson.id && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => removeLessonItem(lesson.tempId, item.tempId)}
+                                    >
+                                      <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                  )}
+                                </div>
+                                {/* Skills selector for new lessons only */}
+                                {!lesson.id && (
+                                  <div className="px-3 pb-3 pt-0">
+                                    <Label className="text-xs text-muted-foreground mb-1 block">Skills</Label>
+                                    <Select
+                                      value={item.skillIds.length > 0 ? "selected" : "none"}
+                                      onValueChange={(value) => {
+                                        if (value !== "none" && value !== "selected") {
+                                          const currentSkills = item.skillIds || [];
+                                          const newSkills = currentSkills.includes(value)
+                                            ? currentSkills.filter(id => id !== value)
+                                            : [...currentSkills, value];
+                                          updateLessonItem(lesson.tempId, item.tempId, { skillIds: newSkills });
+                                        }
+                                      }}
+                                    >
+                                      <SelectTrigger className="h-8 text-xs">
+                                        <SelectValue>
+                                          {item.skillIds.length > 0 
+                                            ? `${item.skillIds.length} skill(s) selected`
+                                            : "Select skills..."}
+                                        </SelectValue>
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {allSkills.map((skill) => (
+                                          <SelectItem key={skill.id} value={skill.id}>
+                                            <div className="flex items-center gap-2">
+                                              <Checkbox
+                                                checked={item.skillIds.includes(skill.id)}
+                                                onCheckedChange={(checked) => {
+                                                  const currentSkills = item.skillIds || [];
+                                                  const newSkills = checked
+                                                    ? [...currentSkills, skill.id]
+                                                    : currentSkills.filter(id => id !== skill.id);
+                                                  updateLessonItem(lesson.tempId, item.tempId, { skillIds: newSkills });
+                                                }}
+                                              />
+                                              <span>{skill.name}</span>
+                                            </div>
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                    {item.skillIds.length > 0 && (
+                                      <div className="flex flex-wrap gap-1 mt-2">
+                                        {item.skillIds.map(skillId => {
+                                          const skill = allSkills.find(s => s.id === skillId);
+                                          return skill ? (
+                                            <Badge key={skillId} variant="secondary" className="text-xs">
+                                              {skill.name}
+                                              <X
+                                                className="h-3 w-3 ml-1 cursor-pointer"
+                                                onClick={() => {
+                                                  const newSkills = item.skillIds.filter(id => id !== skillId);
+                                                  updateLessonItem(lesson.tempId, item.tempId, { skillIds: newSkills });
+                                                }}
+                                              />
+                                            </Badge>
+                                          ) : null;
+                                        })}
+                                      </div>
+                                    )}
+                                  </div>
                                 )}
                               </div>
                             ))}
