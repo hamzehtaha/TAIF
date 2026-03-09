@@ -69,7 +69,9 @@ class LessonService {
   }
 
   async assignLessonItem(lessonId: string, lessonItemId: string, order?: number): Promise<any> {
-    return httpService.post<any>(`/api/content/lessons/${lessonId}/items/${lessonItemId}`, order ? { newOrder: order } : {});
+    // Only send body if order is specified (must be >= 1)
+    const body = order !== undefined ? { newOrder: order } : undefined;
+    return httpService.post<any>(`/api/content/lessons/${lessonId}/items/${lessonItemId}`, body);
   }
 
   async unassignLessonItem(lessonId: string, lessonItemId: string): Promise<boolean> {

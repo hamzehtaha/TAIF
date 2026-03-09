@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { fileUploadService } from "@/services/file-upload.service";
 import {
   ChevronLeft,
   Clock,
@@ -380,10 +381,11 @@ function CourseRow({ planCourse, courseIndex, isLocked, isSectionLocked }: Cours
       <div className="relative w-20 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
         {course.imageUrl || course.thumbnail ? (
           <Image
-            src={course.imageUrl || course.thumbnail}
+            src={fileUploadService.getFullUrl(course.imageUrl || course.thumbnail || '')}
             alt={course.title}
             fill
             className="object-cover"
+            unoptimized
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">

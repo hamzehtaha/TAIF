@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 using TAIF.Application.DTOs;
 using TAIF.Application.DTOs.Responses;
 using TAIF.Application.Interfaces.Repositories;
@@ -31,7 +27,7 @@ namespace TAIF.Application.Services
             _ai = ai;
         }
 
-        public async Task<UserLearningPlanResponse> GeneratePlanAsync(Guid userId, Guid organizationId)
+        public async Task<UserLearningPlanResponse> GeneratePlanAsync(Guid userId)
         {
             var evaluation = await _evaluationRepository.GetByUserIdAsync(userId);
 

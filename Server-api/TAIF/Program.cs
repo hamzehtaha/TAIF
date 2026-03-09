@@ -1,23 +1,21 @@
 ﻿using Mapster;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi;
 using Microsoft.OpenApi.Models;
 using Serilog;
-using System.Reflection;
 using System.Text;
 using TAIF.API.Middleware;
 using TAIF.API.Seeder;
 using TAIF.API.Seeder.Scripts;
-using TAIF.Application.DTOs;
+using TAIF.Application.DTOs.VideoDtos;
 using TAIF.Application.Interfaces.Repositories;
 using TAIF.Application.Interfaces.Services;
 using TAIF.Application.Mappings;
 using TAIF.Application.Services;
 using TAIF.Infrastructure.Data;
 using TAIF.Infrastructure.Repositories;
+using TAIF.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -144,6 +142,22 @@ builder.Services.AddScoped<IAnswerRepository, AnswerRepository>();
 
 builder.Services.AddScoped<ISkillService, SkillService>();
 builder.Services.AddScoped<ISkillRepository, SkillRepository>();
+
+// Video services - Mux integration with provider abstraction
+builder.Services.Configure<MuxOptions>(builder.Configuration.GetSection(MuxOptions.SectionName));
+builder.Services.AddHttpClient<IVideoProvider, MuxVideoProvider>();
+builder.Services.AddScoped<IVideoAssetRepository, VideoAssetRepository>();
+builder.Services.AddScoped<IVideoAssetService, VideoAssetService>();
+
+// TODO: Enable Webhook instead of long polling
+// Background polling service to check video asset status every 10 seconds
+// Remove this when webhooks are configured and use HandleWebhookAsync instead
+builder.Services.AddHostedService<VideoAssetPollingService>();
+
+// File storage services - Local storage for now, can be switched to S3/Azure later
+// TODO: Switch to AWS S3 or Azure Blob Storage for production
+builder.Services.Configure<LocalStorageOptions>(builder.Configuration.GetSection(LocalStorageOptions.SectionName));
+builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -367,6 +381,10 @@ _ = Task.Run(async () =>
 });
 
 app.UseCors("AllowAll");
+
+// Enable serving static files from wwwroot (for uploaded images)
+app.UseStaticFiles();
+
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {

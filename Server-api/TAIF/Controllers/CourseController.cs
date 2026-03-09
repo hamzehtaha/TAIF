@@ -142,6 +142,21 @@ namespace TAIF.Controllers
             return Ok(ApiResponse<CourseResponse>.SuccessResponse(created_course.Adapt<CourseResponse>()));
         }
 
+        /// <summary>
+        /// Creates a complete course with all lessons, lesson items, and content in a single operation.
+        /// Used by the Course Builder to submit all data at once.
+        /// </summary>
+        [HttpPost("full")]
+        [Authorize(Policy = "ContentCreatorOrAbove")]
+        public async Task<IActionResult> CreateFullCourse([FromBody] CreateFullCourseRequest request)
+        {
+            if (request.Tags != null && request.Tags.Any())
+                await _tagService.TagsValidationGuard(request.Tags);
+
+            var result = await _courseService.CreateFullCourseAsync(request, UserId);
+            return Ok(ApiResponse<CreateFullCourseResponse>.SuccessResponse(result));
+        }
+
         [HttpPut("{id}")]
         [Authorize(Policy = "ContentCreatorOrAbove")]
         public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateCourseRequest request)

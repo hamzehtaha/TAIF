@@ -8,6 +8,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json;
 using System.Threading.Tasks;
 using TAIF.Application.Interfaces;
 using TAIF.Domain.Entities;
@@ -58,6 +59,7 @@ namespace TAIF.Infrastructure.Data
         public DbSet<Answer> Answers { get; set; }
         public DbSet<Skill> Skills { get; set; }
         public DbSet<UserEvaluation> UserEvaluations { get; set; }
+        public DbSet<VideoAsset> VideoAssets { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -511,6 +513,20 @@ namespace TAIF.Infrastructure.Data
 
                 builder.Property(x => x.MinPercentage)
                        .IsRequired();
+            });
+
+            // VideoAsset configuration - standalone reference table for video processing tracking
+            modelBuilder.Entity<VideoAsset>(entity =>
+            {
+                entity.HasOne(v => v.Organization)
+                      .WithMany()
+                      .HasForeignKey(v => v.OrganizationId)
+                      .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasIndex(v => v.ProviderUploadId);
+                entity.HasIndex(v => v.ProviderAssetId);
+                entity.HasIndex(v => v.OrganizationId);
+                entity.HasIndex(v => v.Status);
             });
 
             // Apply global query filters for multi-tenancy

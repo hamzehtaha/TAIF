@@ -405,7 +405,7 @@ export default function LessonItemsPage() {
 
       {/* Create Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Create Lesson Item</DialogTitle>
             <DialogDescription>Add a new lesson item with content reference.</DialogDescription>
@@ -476,15 +476,6 @@ export default function LessonItemsPage() {
                 </PopoverContent>
               </Popover>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="duration">Duration (seconds)</Label>
-              <Input
-                id="duration"
-                type="number"
-                value={formData.durationInSeconds}
-                onChange={(e) => setFormData({ ...formData, durationInSeconds: parseFloat(e.target.value) || 0 })}
-              />
-            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
@@ -497,7 +488,7 @@ export default function LessonItemsPage() {
 
       {/* Edit Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit Lesson Item</DialogTitle>
             <DialogDescription>Update lesson item details.</DialogDescription>
@@ -565,15 +556,6 @@ export default function LessonItemsPage() {
                   </Command>
                 </PopoverContent>
               </Popover>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-duration">Duration (seconds)</Label>
-              <Input
-                id="edit-duration"
-                type="number"
-                value={formData.durationInSeconds}
-                onChange={(e) => setFormData({ ...formData, durationInSeconds: parseFloat(e.target.value) || 0 })}
-              />
             </div>
           </div>
           <DialogFooter>

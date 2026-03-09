@@ -8,9 +8,7 @@ import {
   Check,
   BookOpen,
   FileText,
-  Layers,
   Eye,
-  ImagePlus,
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -29,6 +27,8 @@ import { courseService } from "@/services/course.service";
 import { categoryService } from "@/services/category.service";
 import { Category } from "@/models/category.model";
 import { cn } from "@/lib/utils";
+import { ImageUpload } from "@/components/ui/image-upload";
+import { fileUploadService } from "@/services/file-upload.service";
 
 const steps = [
   { id: 1, title: "Basic Info", description: "Course title and description", icon: BookOpen },
@@ -277,19 +277,13 @@ export default function NewCoursePage() {
 
                 <div className="space-y-2">
                   <Label>Thumbnail (Optional)</Label>
-                  <div className="border-2 border-dashed rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer">
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="p-3 rounded-full bg-muted">
-                        <ImagePlus className="h-6 w-6 text-muted-foreground" />
-                      </div>
-                      <div>
-                        <p className="font-medium">Click to upload thumbnail</p>
-                        <p className="text-sm text-muted-foreground">
-                          PNG, JPG up to 2MB (Placeholder for Phase 1)
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                  <ImageUpload
+                    value={formData.thumbnail}
+                    onChange={(url) => setFormData((prev) => ({ ...prev, thumbnail: url }))}
+                    folder="courses"
+                    placeholder="Click or drag to upload course thumbnail"
+                    aspectRatio="video"
+                  />
                   <p className="text-xs text-muted-foreground">
                     A compelling thumbnail can significantly increase enrollment
                   </p>
@@ -301,6 +295,16 @@ export default function NewCoursePage() {
             {currentStep === 3 && (
               <div className="space-y-6">
                 <div className="rounded-lg border p-4 space-y-4">
+                  {formData.thumbnail && (
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-2">Thumbnail</p>
+                      <img 
+                        src={fileUploadService.getFullUrl(formData.thumbnail)} 
+                        alt="Course thumbnail" 
+                        className="w-full max-w-md rounded-lg aspect-video object-cover"
+                      />
+                    </div>
+                  )}
                   <div>
                     <p className="text-sm text-muted-foreground">Title</p>
                     <p className="font-medium">{formData.title}</p>

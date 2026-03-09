@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using TAIF.Domain.Entities;
@@ -34,46 +34,5 @@ namespace TAIF.Application.DTOs.Requests
                     "Quiz data is required when type is Quiz.",
                     new[] { nameof(Quiz) });
         }
-    }
-
-    public record QuizCreateDto
-    {
-        [Required(ErrorMessage = "Quiz title is required.")]
-        [StringLength(300, MinimumLength = 2, ErrorMessage = "Quiz title must be between 2 and 300 characters.")]
-        public string Title { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "At least one question is required.")]
-        [MinLength(1, ErrorMessage = "A quiz must have at least one question.")]
-        public List<QuizQuestionCreateDto> Questions { get; set; } = new();
-    }
-
-    public record QuizQuestionCreateDto
-    {
-        public string? Id { get; set; } // Optional - sent only when editing
-
-        [Required(ErrorMessage = "Question text is required.")]
-        [StringLength(1000, MinimumLength = 1, ErrorMessage = "Question text must be between 1 and 1000 characters.")]
-        public string QuestionText { get; set; } = string.Empty;
-
-        public bool ShuffleOptions { get; set; } = false;
-
-        [Required(ErrorMessage = "At least two options are required.")]
-        [MinLength(2, ErrorMessage = "A question must have at least two options.")]
-        public List<QuizOptionDto> Options { get; set; } = new();
-
-        public string? CorrectAnswerId { get; set; }    // For editing
-        public int? CorrectAnswerIndex { get; set; }    // For creating
-
-        [StringLength(1000, ErrorMessage = "Explanation must not exceed 1000 characters.")]
-        public string? Explanation { get; set; }
-    }
-
-    public record QuizOptionDto
-    {
-        public string? Id { get; set; } // Optional - sent only when editing
-
-        [Required(ErrorMessage = "Option text is required.")]
-        [StringLength(500, MinimumLength = 1, ErrorMessage = "Option text must be between 1 and 500 characters.")]
-        public string Text { get; set; } = string.Empty;
     }
 }

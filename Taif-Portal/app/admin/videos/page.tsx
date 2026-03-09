@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { CreateVideoDialog } from "@/components/admin/content/CreateVideoDialog";
 import { EditVideoDialog } from "@/components/admin/content/EditVideoDialog";
 import { contentService, Content, VideoContent, LessonItemType } from "@/services/content.service";
+import { fileUploadService } from "@/services/file-upload.service";
 import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -81,7 +82,7 @@ export default function VideosPage() {
       const query = searchQuery.toLowerCase();
       result = result.filter(video => {
         const videoData = contentService.parseContentData(video) as VideoContent;
-        return videoData.title?.toLowerCase().includes(query) || videoData.url.toLowerCase().includes(query);
+        return videoData.title?.toLowerCase().includes(query) || videoData.description?.toLowerCase().includes(query);
       });
     }
     setFilteredVideos(result);
@@ -180,7 +181,7 @@ export default function VideosPage() {
                 <Card key={video.id} className="hover:shadow-md transition-shadow overflow-hidden">
                   <div className="aspect-video bg-gradient-to-br from-blue-500/20 to-blue-600/20 relative flex items-center justify-center">
                     {videoData.thumbnailUrl ? (
-                      <img src={videoData.thumbnailUrl} alt="Thumbnail" className="w-full h-full object-cover" />
+                      <img src={fileUploadService.getFullUrl(videoData.thumbnailUrl)} alt="Thumbnail" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
                         <Play className="h-6 w-6 text-blue-500 ml-1" />
@@ -193,11 +194,11 @@ export default function VideosPage() {
                     )}
                   </div>
                   <CardContent className="p-4">
-                    <h3 className="font-semibold truncate" title={videoData.title || videoData.url}>
+                    <h3 className="font-semibold truncate" title={videoData.title}>
                       {videoData.title || 'Untitled Video'}
                     </h3>
-                    <p className="text-xs text-muted-foreground truncate mt-1" title={videoData.url}>
-                      {videoData.url}
+                    <p className="text-xs text-muted-foreground truncate mt-1">
+                      {videoData.provider || 'Mux'} Video {videoData.playbackId ? `• ${videoData.playbackId}` : ''}
                     </p>
                     <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
                       <Calendar className="h-3 w-3" />
@@ -212,11 +213,13 @@ export default function VideosPage() {
                     <div className="flex items-center justify-between mt-3 gap-2">
                       <Badge variant="outline">Video</Badge>
                       <div className="flex gap-1">
-                        <Button variant="ghost" size="sm" asChild>
-                          <a href={videoData.url} target="_blank" rel="noopener noreferrer">
-                            <Eye className="h-4 w-4" />
-                          </a>
-                        </Button>
+                        {videoData.playbackId && (
+                          <Button variant="ghost" size="sm" asChild>
+                            <a href={`https://stream.mux.com/${videoData.playbackId}.m3u8`} target="_blank" rel="noopener noreferrer">
+                              <Eye className="h-4 w-4" />
+                            </a>
+                          </Button>
+                        )}
                         <Button 
                           variant="ghost" 
                           size="sm"
@@ -251,14 +254,14 @@ export default function VideosPage() {
                     <div className="flex items-center gap-4">
                       <div className="w-24 h-16 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
                         {videoData.thumbnailUrl ? (
-                          <img src={videoData.thumbnailUrl} alt="Thumbnail" className="w-full h-full object-cover rounded-lg" />
+                          <img src={fileUploadService.getFullUrl(videoData.thumbnailUrl)} alt="Thumbnail" className="w-full h-full object-cover rounded-lg" />
                         ) : (
                           <Play className="h-6 w-6 text-blue-500" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold truncate">{videoData.title || 'Untitled Video'}</h3>
-                        <p className="text-xs text-muted-foreground truncate">{videoData.url}</p>
+                        <p className="text-xs text-muted-foreground truncate">{videoData.provider || 'Mux'} Video</p>
                         <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
                           {videoData.durationInSeconds > 0 && (
                             <span>{formatDuration(videoData.durationInSeconds)}</span>
@@ -267,11 +270,13 @@ export default function VideosPage() {
                         </div>
                       </div>
                       <div className="flex gap-1 flex-shrink-0">
-                        <Button variant="ghost" size="sm" asChild>
-                          <a href={videoData.url} target="_blank" rel="noopener noreferrer">
-                            <Eye className="h-4 w-4" />
-                          </a>
-                        </Button>
+                        {videoData.playbackId && (
+                          <Button variant="ghost" size="sm" asChild>
+                            <a href={`https://stream.mux.com/${videoData.playbackId}.m3u8`} target="_blank" rel="noopener noreferrer">
+                              <Eye className="h-4 w-4" />
+                            </a>
+                          </Button>
+                        )}
                         <Button 
                           variant="ghost" 
                           size="sm"

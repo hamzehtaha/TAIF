@@ -1,5 +1,6 @@
 import { httpService } from "@/services/http.service";
 import { CourseDto, CreateCourseRequest, UpdateCourseRequest } from "@/dtos/course.dto";
+import { CreateFullCourseRequest, CreateFullCourseResponse } from "@/dtos/course-builder.dto";
 import { CategoryDto } from "@/dtos/category.dto";
 import { Course } from "@/models/course.model";
 import { CourseMapper } from "@/mappers/course.mapper";
@@ -107,6 +108,14 @@ class CourseService {
   async updateCourseStatus(id: string, status: number): Promise<Course> {
     const dto = await httpService.patch<CourseDto>(`${this.serviceBaseUrl}/${id}/status`, { status });
     return CourseMapper.map(dto);
+  }
+
+  /**
+   * Creates a complete course with all lessons, lesson items, and content in a single operation.
+   * Used by the Course Builder to submit all data at once.
+   */
+  async createFullCourse(request: CreateFullCourseRequest): Promise<CreateFullCourseResponse> {
+    return httpService.post<CreateFullCourseResponse>(`${this.serviceBaseUrl}/full`, request);
   }
 }
 

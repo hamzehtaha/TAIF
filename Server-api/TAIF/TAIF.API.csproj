@@ -44,4 +44,8 @@
     <ProjectReference Include="..\TAIF.Infrastructure\TAIF.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\" />
+  </ItemGroup>
+
 </Project>

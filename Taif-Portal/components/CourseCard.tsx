@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Course } from "@/models/course.model";
 import { useTranslation } from "@/hooks/useTranslation";
 import { BookOpen, Heart, CheckCircle, Star, Clock, Sparkles } from "lucide-react";
+import { fileUploadService } from "@/services/file-upload.service";
 
 interface CourseCardProps {
   course: Course;
@@ -44,12 +45,11 @@ export function CourseCard({ course, onEnroll, onToggleFavourite, showRecommende
       <Card className="h-full hover:shadow-lg transition-shadow overflow-hidden cursor-pointer">
         {/* Course Image */}
         <div className="relative overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20 aspect-video">
-          {course.imageUrl && course.imageUrl !== "/placeholder-course.jpg" ? (
-            <Image
-              src={course.imageUrl}
+          {(course.imageUrl || course.thumbnail) && (course.imageUrl || course.thumbnail) !== "/placeholder-course.jpg" ? (
+            <img
+              src={fileUploadService.getFullUrl(course.imageUrl || course.thumbnail)}
               alt={course.title}
-              fill
-              className="object-cover hover:scale-105 transition-transform"
+              className="w-full h-full object-cover hover:scale-105 transition-transform"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">

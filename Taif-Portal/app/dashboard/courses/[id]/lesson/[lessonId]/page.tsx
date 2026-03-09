@@ -291,12 +291,12 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; l
                 {/* Video Content */}
                 {currentItem.type === "video" && (() => {
                   const videoContent = lessonItemService.parseContent<VideoContent>(currentItem.content);
-                  const videoUrl = videoContent?.url || currentItem.url;
                   return (
                     <VideoPlayer
-                      url={videoUrl}
                       title={currentItem.name}
                       description={videoContent?.description}
+                      playbackId={videoContent?.playbackId}
+                      videoAssetId={videoContent?.videoAssetId}
                     />
                   );
                 })()}
