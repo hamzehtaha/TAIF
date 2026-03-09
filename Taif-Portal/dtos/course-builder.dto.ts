@@ -12,7 +12,8 @@ export interface CreateFullCourseRequest {
 }
 
 export interface CreateFullCourseLessonRequest {
-  title: string;
+  lessonId?: string; // Use existing lesson
+  title?: string;
   description?: string;
   photo?: string;
   instructorId?: string;
@@ -21,7 +22,8 @@ export interface CreateFullCourseLessonRequest {
 }
 
 export interface CreateFullCourseLessonItemRequest {
-  name: string;
+  lessonItemId?: string; // Use existing lesson item
+  name?: string;
   description?: string;
   type: number; // 0=Video, 1=RichContent, 2=Quiz
   order: number;

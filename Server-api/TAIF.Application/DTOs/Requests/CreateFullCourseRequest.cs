@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using TAIF.Application.DTOs.Validation;
+using System.Collections.Generic;
 
 namespace TAIF.Application.DTOs.Requests
 {
@@ -35,9 +36,14 @@ namespace TAIF.Application.DTOs.Requests
     /// </summary>
     public record CreateFullCourseLessonRequest
     {
-        [Required(ErrorMessage = "Lesson title is required.")]
+        /// <summary>
+        /// Existing lesson ID if using a pre-created lesson.
+        /// If provided, Title and other fields are optional (lesson data will be loaded from existing lesson).
+        /// </summary>
+        public Guid? LessonId { get; set; }
+
         [StringLength(200, MinimumLength = 2, ErrorMessage = "Lesson title must be between 2 and 200 characters.")]
-        public string Title { get; set; } = null!;
+        public string? Title { get; set; }
 
         [StringLength(2000, ErrorMessage = "Description must not exceed 2000 characters.")]
         public string? Description { get; set; }
@@ -57,20 +63,23 @@ namespace TAIF.Application.DTOs.Requests
     /// <summary>
     /// Lesson item data within the full course creation request.
     /// </summary>
-    public record CreateFullCourseLessonItemRequest
+    public record CreateFullCourseLessonItemRequest : IValidatableObject
     {
-        [Required(ErrorMessage = "Lesson item name is required.")]
+        /// <summary>
+        /// Existing lesson item ID if using a pre-created lesson item.
+        /// If provided, Name and other fields are optional.
+        /// </summary>
+        public Guid? LessonItemId { get; set; }
+
         [StringLength(200, MinimumLength = 2, ErrorMessage = "Lesson item name must be between 2 and 200 characters.")]
-        public string Name { get; set; } = null!;
+        public string? Name { get; set; }
 
         [StringLength(2000, ErrorMessage = "Description must not exceed 2000 characters.")]
         public string? Description { get; set; }
 
-        [Required(ErrorMessage = "Content type is required.")]
         [Range(0, 2, ErrorMessage = "Type must be 0 (Video), 1 (RichContent), or 2 (Quiz).")]
         public int Type { get; set; }
 
-        [Required(ErrorMessage = "Lesson item order is required.")]
         [Range(0, int.MaxValue, ErrorMessage = "Order must be a non-negative number.")]
         public int Order { get; set; }
 
@@ -88,6 +97,25 @@ namespace TAIF.Application.DTOs.Requests
         /// Required if ContentId is not provided.
         /// </summary>
         public CreateFullCourseContentRequest? Content { get; set; }
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            // Only require Name when creating a new lesson item (no LessonItemId)
+            if (!LessonItemId.HasValue && string.IsNullOrWhiteSpace(Name))
+            {
+                yield return new ValidationResult(
+                    "Lesson item name is required when creating a new lesson item.",
+                    new[] { nameof(Name) });
+            }
+
+            // Only require content info when creating a new lesson item
+            if (!LessonItemId.HasValue && !ContentId.HasValue && Content == null)
+            {
+                yield return new ValidationResult(
+                    "Either ContentId or Content must be provided for new lesson items.",
+                    new[] { nameof(ContentId), nameof(Content) });
+            }
+        }
     }
 
     /// <summary>

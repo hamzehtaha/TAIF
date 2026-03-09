@@ -80,73 +80,119 @@ namespace TAIF.Application.Services
             };
             await _courseRepository.AddAsync(course);
 
-            // Step 2: Create lessons and assign to course
+            // Step 2: Create or reference lessons and assign to course
             foreach (var lessonRequest in request.Lessons.OrderBy(l => l.Order))
             {
-                var lesson = new Lesson
+                Guid lessonId;
+
+                // Use existing lesson or create new one
+                if (lessonRequest.LessonId.HasValue && lessonRequest.LessonId.Value != Guid.Empty)
                 {
-                    Title = lessonRequest.Title,
-                    Description = lessonRequest.Description,
-                    Photo = lessonRequest.Photo,
-                    InstructorId = lessonRequest.InstructorId
-                };
-                await _lessonRepository.AddAsync(lesson);
-                lessonsCreated++;
+                    // Reference existing lesson
+                    lessonId = lessonRequest.LessonId.Value;
+                }
+                else
+                {
+                    // Create new lesson
+                    if (string.IsNullOrWhiteSpace(lessonRequest.Title))
+                    {
+                        throw new ArgumentException("Lesson title is required when creating a new lesson.");
+                    }
+
+                    var lesson = new Lesson
+                    {
+                        Title = lessonRequest.Title!,
+                        Description = lessonRequest.Description,
+                        Photo = lessonRequest.Photo,
+                        InstructorId = lessonRequest.InstructorId
+                    };
+                    await _lessonRepository.AddAsync(lesson);
+                    lessonId = lesson.Id;
+                    lessonsCreated++;
+                }
 
                 // Assign lesson to course
                 var courseLesson = new CourseLesson
                 {
                     CourseId = course.Id,
-                    LessonId = lesson.Id,
+                    LessonId = lessonId,
                     Order = lessonRequest.Order
                 };
                 await _courseLessonRepository.AddAsync(courseLesson);
 
-                // Step 3: Create lesson items for this lesson
+                // Step 3: Create lesson items for this lesson (only for new lessons)
+                // Skip for existing lessons to prevent modifying lessons used by other courses
+                if (lessonRequest.LessonId.HasValue && lessonRequest.LessonId.Value != Guid.Empty)
+                {
+                    // Existing lesson - skip creating new lesson items
+                    continue;
+                }
+
                 foreach (var itemRequest in lessonRequest.Items.OrderBy(i => i.Order))
                 {
-                    Guid contentId;
+                    Guid lessonItemId;
 
-                    // Use existing content or create new content
-                    if (itemRequest.ContentId.HasValue && itemRequest.ContentId.Value != Guid.Empty)
+                    // Use existing lesson item or create new one
+                    if (itemRequest.LessonItemId.HasValue && itemRequest.LessonItemId.Value != Guid.Empty)
                     {
-                        contentId = itemRequest.ContentId.Value;
-                    }
-                    else if (itemRequest.Content != null)
-                    {
-                        // Create new content based on type
-                        var content = CreateContentFromRequest(itemRequest.Type, itemRequest.Content);
-                        await _contentRepository.AddAsync(content);
-                        contentId = content.Id;
-                        contentsCreated++;
+                        // Reference existing lesson item
+                        lessonItemId = itemRequest.LessonItemId.Value;
                     }
                     else
                     {
-                        throw new ArgumentException($"Lesson item '{itemRequest.Name}' must have either ContentId or Content data.");
-                    }
+                        // Create new lesson item
+                        if (string.IsNullOrWhiteSpace(itemRequest.Name))
+                        {
+                            throw new ArgumentException("Lesson item name is required when creating a new lesson item.");
+                        }
 
-                    // Create lesson item
-                    var lessonItem = new LessonItem
-                    {
-                        Name = itemRequest.Name,
-                        Description = itemRequest.Description,
-                        Type = (LessonItemType)itemRequest.Type,
-                        ContentId = contentId,
-                        DurationInSeconds = itemRequest.DurationInSeconds
-                    };
-                    await _lessonItemRepository.AddAsync(lessonItem);
-                    lessonItemsCreated++;
+                        Guid contentId;
+
+                        // Use existing content or create new content
+                        if (itemRequest.ContentId.HasValue && itemRequest.ContentId.Value != Guid.Empty)
+                        {
+                            contentId = itemRequest.ContentId.Value;
+                        }
+                        else if (itemRequest.Content != null)
+                        {
+                            // Create new content based on type
+                            var content = CreateContentFromRequest(itemRequest.Type, itemRequest.Content);
+                            await _contentRepository.AddAsync(content);
+                            contentId = content.Id;
+                            contentsCreated++;
+                        }
+                        else
+                        {
+                            throw new ArgumentException($"Lesson item '{itemRequest.Name}' must have either ContentId or Content data.");
+                        }
+
+                        // Create lesson item
+                        var lessonItem = new LessonItem
+                        {
+                            Name = itemRequest.Name!,
+                            Description = itemRequest.Description,
+                            Type = (LessonItemType)itemRequest.Type,
+                            ContentId = contentId,
+                            DurationInSeconds = itemRequest.DurationInSeconds
+                        };
+                        await _lessonItemRepository.AddAsync(lessonItem);
+                        lessonItemId = lessonItem.Id;
+                        lessonItemsCreated++;
+                    }
 
                     // Assign lesson item to lesson
                     var lessonLessonItem = new LessonLessonItem
                     {
-                        LessonId = lesson.Id,
-                        LessonItemId = lessonItem.Id,
+                        LessonId = lessonId,
+                        LessonItemId = lessonItemId,
                         Order = itemRequest.Order
                     };
                     await _lessonLessonItemRepository.AddAsync(lessonLessonItem);
                 }
             }
+
+            // Save all changes
+            await _courseRepository.SaveChangesAsync();
 
             return new CreateFullCourseResponse
             {
