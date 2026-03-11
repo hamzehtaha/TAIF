@@ -148,6 +148,10 @@ builder.Services.Configure<MuxOptions>(builder.Configuration.GetSection(MuxOptio
 builder.Services.AddHttpClient<IVideoProvider, MuxVideoProvider>();
 builder.Services.AddScoped<IVideoAssetRepository, VideoAssetRepository>();
 builder.Services.AddScoped<IVideoAssetService, VideoAssetService>();
+builder.Services.AddScoped<IEvaluationRepository, EvaluationRepository>();
+builder.Services.AddScoped<IEvaluationService, EvaluationService>();
+
+
 
 // TODO: Enable Webhook instead of long polling
 // Background polling service to check video asset status every 10 seconds

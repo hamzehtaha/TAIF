@@ -60,6 +60,7 @@ namespace TAIF.Infrastructure.Data
         public DbSet<Skill> Skills { get; set; }
         public DbSet<UserEvaluation> UserEvaluations { get; set; }
         public DbSet<VideoAsset> VideoAssets { get; set; }
+        public DbSet<Evaluation> Evaluations { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
