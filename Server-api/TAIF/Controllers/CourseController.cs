@@ -85,6 +85,11 @@ namespace TAIF.Controllers
         {
             var course = await _courseService.GetByIdAsync(id);
             if (course is null) return NotFound();
+
+            // Students only see published courses
+            if (IsStudent && course.Status != CourseStatus.Published)
+                return NotFound();
+
             var response = course.Adapt<CourseResponse>();
             await EnrichWithReviewStatsAsync([response]);
             return Ok(ApiResponse<CourseResponse>.SuccessResponse(response));
@@ -95,6 +100,12 @@ namespace TAIF.Controllers
         {
             var courses = await _courseService.GetByCategoryIdAsync(categoryId);
             if (courses is null || courses.Count == 0) return NotFound();
+
+            // Students only see published courses
+            if (IsStudent)
+                courses = courses.Where(c => c.Status == CourseStatus.Published).ToList();
+
+            if (courses.Count == 0) return NotFound();
             var response = courses.Select(c => c.Adapt<CourseResponse>()).ToList();
             await EnrichWithReviewStatsAsync(response);
             return Ok(ApiResponse<List<CourseResponse>>.SuccessResponse(response));

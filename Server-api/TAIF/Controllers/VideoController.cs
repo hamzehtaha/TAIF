@@ -7,6 +7,7 @@ namespace TAIF.API.Controllers
 {
     [Route("api/videos")]
     [ApiController]
+    [Authorize]
     public class VideoController : TaifControllerBase
     {
         private readonly IVideoAssetService _videoAssetService;

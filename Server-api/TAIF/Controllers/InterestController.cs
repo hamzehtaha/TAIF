@@ -48,6 +48,7 @@ namespace TAIF.Controllers
         }
 
         [HttpPost("")]
+        [Authorize(Policy = "AdminOrAbove")]
         public async Task<IActionResult> Create([FromBody] CreateInterestRequest request)
         {
             var interest = new Interest { Name = request.Name };
@@ -56,6 +57,7 @@ namespace TAIF.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Policy = "AdminOrAbove")]
         public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateInterestRequest request)
         {
             var updated = await _interestService.UpdateAsync(id, request);
@@ -63,6 +65,7 @@ namespace TAIF.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Policy = "AdminOrAbove")]
         public async Task<IActionResult> Delete([FromRoute] Guid id)
         {
             var result = await _interestService.DeleteAsync(id);

@@ -24,6 +24,7 @@ namespace TAIF.API.Controllers
         }
 
         [HttpPost("register")]
+        [AllowAnonymous]
         public async Task<IActionResult> Register(RegisterRequest request)
         {
             var result = await _authService.RegisterAsync(request);
@@ -31,6 +32,7 @@ namespace TAIF.API.Controllers
         }
 
         [HttpPost("login")]
+        [AllowAnonymous]
         public async Task<IActionResult> Login(LoginRequest request)
         {
             var result = await _authService.LoginAsync(request.Email, request.Password);
@@ -41,6 +43,7 @@ namespace TAIF.API.Controllers
         }
 
         [HttpPost("refresh")]
+        [AllowAnonymous]
         public async Task<IActionResult> Refresh(RefreshTokenRequest request)
         {
             var result = await _authService.RefreshTokenAsync(request.RefreshToken);

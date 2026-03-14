@@ -24,6 +24,7 @@ namespace TAIF.API.Controllers
         // GET ALL
         // =========================
         [HttpGet]
+        [Authorize(Policy = "ContentCreatorOrAbove")]
         public async Task<IActionResult> GetAll()
         {
             var answers = await _answerService.GetAllAsync();
@@ -42,6 +43,7 @@ namespace TAIF.API.Controllers
         // GET BY ID
         // =========================
         [HttpGet("{id}")]
+        [Authorize(Policy = "ContentCreatorOrAbove")]
         public async Task<IActionResult> GetById(Guid id)
         {
             var answer = await _answerService.GetByIdAsync(id);

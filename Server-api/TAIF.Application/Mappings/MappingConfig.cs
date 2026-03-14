@@ -109,10 +109,10 @@ namespace TAIF.Application.Mappings
                 .Ignore(dest => dest.Organization);
 
             // RegisterRequest --> User
-            // Role is explicitly mapped from the UserRoleType field on the request.
+            // Role is always Student for public registration — set explicitly in AuthService after Adapt<>().
             // All security and server-managed fields are ignored.
             TypeAdapterConfig<RegisterRequest, User>.NewConfig()
-                .Map(dest => dest.Role, src => src.UserRoleType) // explicit: enum field name differs between request and entity
+                .Ignore(dest => dest.Role)                      // server-managed: always Student for public registration
                 .Ignore(dest => dest.Id)
                 .Ignore(dest => dest.PasswordHash)              // security: hashed separately before persisting
                 .Ignore(dest => dest.IsActive)                  // server-managed: defaults to true on creation
@@ -131,8 +131,9 @@ namespace TAIF.Application.Mappings
                 .Ignore(dest => dest.UpdatedBy);
 
             // CreateUserRequest --> User
-            // Admin-side user creation; same security and server-managed exclusions as RegisterRequest.
+            // Role is intentionally excluded — each dedicated endpoint sets it explicitly (Admin or ContentCreator).
             TypeAdapterConfig<CreateUserRequest, User>.NewConfig()
+                .Ignore(dest => dest.Role)                      // server-managed: set by the endpoint, not the caller
                 .Ignore(dest => dest.Id)
                 .Ignore(dest => dest.PasswordHash)              // security: hashed in UserController before persisting
                 .Ignore(dest => dest.IsActive)                  // server-managed: set explicitly in the controller

@@ -11,6 +11,7 @@ namespace TAIF.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class EvaluationQuestionController : TaifControllerBase
     {
         private readonly IEvaluationQuestionService _service;

@@ -52,6 +52,7 @@ namespace TAIF.API.Controllers
         }
 
         [HttpGet("paged")]
+        [Authorize(Policy = "ContentCreatorOrAbove")]
         public async Task<IActionResult> GetPaged([FromQuery] LessonItemFilter filter)
         {
             var pagedResult = await _lessonItemService.GetPagedAsync(filter);
@@ -97,6 +98,7 @@ namespace TAIF.API.Controllers
         }
 
         [HttpGet("all")]
+        [Authorize(Policy = "ContentCreatorOrAbove")]
         public async Task<IActionResult> GetAll()
         {
             var lessonItems = await _lessonItemService.GetAllAsync();
