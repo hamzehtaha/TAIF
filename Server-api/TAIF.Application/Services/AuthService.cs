@@ -1,7 +1,5 @@
 ﻿using Mapster;
 using Microsoft.Extensions.Configuration;
-using System.Security.Cryptography;
-using System.Text;
 using TAIF.Application.DTOs.Requests;
 using TAIF.Application.DTOs.Responses;
 using TAIF.Application.Interfaces.Repositories;
@@ -42,18 +40,17 @@ namespace TAIF.Application.Services
             if (publicOrg == null)
                 throw new Exception("Public organization not found. Please run seeders first.");
 
-            bool isCompleted = request.UserRoleType == UserRoleType.SuperAdmin
-                            || request.UserRoleType == UserRoleType.Student;
-
             var user = request.Adapt<User>();
             user.Id = Guid.NewGuid();
-            user.PasswordHash = HashPassword(request.Password);
+            user.PasswordHash = PasswordHelper.Hash(request.Password);
             user.IsActive = true;
             user.OrganizationId = publicOrg.Id;
-            user.IsCompleted = isCompleted;
+            // Public registration always creates a Student — role escalation is not allowed via this endpoint
+            user.Role = UserRoleType.Student;
+            user.IsCompleted = true;
 
             var accessToken = _tokenService.GenerateAccessToken(user);
-            var refreshToken = _tokenService.GenerateRefreshToken(user);
+            var refreshToken = _tokenService.GenerateRefreshToken();
             var times = GetTokenExpires();
 
             user.RefreshToken = refreshToken;
@@ -76,11 +73,11 @@ namespace TAIF.Application.Services
             if (user == null || !user.IsActive)
                 return null;
 
-            if (user.PasswordHash != HashPassword(password))
+            if (!PasswordHelper.Verify(user.PasswordHash, password))
                 return null;
 
             var accessToken = _tokenService.GenerateAccessToken(user);
-            var refreshToken = _tokenService.GenerateRefreshToken(user);
+            var refreshToken = _tokenService.GenerateRefreshToken();
             var times = GetTokenExpires();
 
             user.RefreshToken = refreshToken;
@@ -115,13 +112,6 @@ namespace TAIF.Application.Services
                 user.RefreshToken ?? "",
                 user.RefreshTokenExpiresAt.Value
             );
-        }
-
-        private static string HashPassword(string password)
-        {
-            using var sha = SHA256.Create();
-            var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(password));
-            return Convert.ToBase64String(bytes);
         }
 
         private (int, int) GetTokenExpires()

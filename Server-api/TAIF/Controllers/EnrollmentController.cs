@@ -64,6 +64,7 @@ namespace TAIF.API.Controllers
         }
         
         [HttpGet("course/{courseId}")]
+        [Authorize(Policy = "AdminOrAbove")]
         public async Task<IActionResult> GetCourseUsers([FromRoute] Guid courseId)
         {
             var users = await _service.GetCourseUsersAsync(courseId);

@@ -56,6 +56,7 @@ namespace TAIF.Controllers
         }
 
         [HttpPost("")]
+        [Authorize(Policy = "AdminOrAbove")]
         public async Task<IActionResult> Create([FromBody] CreateInterestTagMappingRequest request)
         {
             var mapping = new InterestTagMapping
@@ -69,6 +70,7 @@ namespace TAIF.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Policy = "AdminOrAbove")]
         public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateMappingWeightRequest request)
         {
             var updated = await _mappingService.UpdateAsync(id, request);
@@ -76,6 +78,7 @@ namespace TAIF.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Policy = "AdminOrAbove")]
         public async Task<IActionResult> Delete([FromRoute] Guid id)
         {
             var result = await _mappingService.DeleteAsync(id);

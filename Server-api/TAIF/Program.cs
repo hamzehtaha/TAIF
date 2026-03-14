@@ -212,63 +212,20 @@ builder.Services.AddAuthentication("Bearer")
 
 builder.Services.AddAuthorization(options =>
 {
-    // SuperAdmin Only Policy (Role=0) - Can access all portals
+    // Hierarchy: SuperAdmin > Admin > ContentCreator > Student
+    // [Authorize] alone = any authenticated user (Student+)
+
+    // SuperAdmin only
     options.AddPolicy("SuperAdminOnly", policy =>
-        policy.RequireAssertion(context =>
-            context.User.FindFirst("Role")?.Value == "0"));
+        policy.RequireRole("SuperAdmin"));
 
-    // Admin or SuperAdmin (Role=0 or 1)
+    // Admin and SuperAdmin
     options.AddPolicy("AdminOrAbove", policy =>
-        policy.RequireAssertion(context =>
-        {
-            var roleValue = context.User.FindFirst("Role")?.Value;
-            return roleValue == "0" || roleValue == "1";
-        }));
+        policy.RequireRole("SuperAdmin", "Admin"));
 
-    // ContentCreator or above (Role=0, 1, or 2) - For content management
+    // ContentCreator, Admin, and SuperAdmin
     options.AddPolicy("ContentCreatorOrAbove", policy =>
-        policy.RequireAssertion(context =>
-        {
-            var roleValue = context.User.FindFirst("Role")?.Value;
-            return roleValue == "0" || roleValue == "1" || roleValue == "2";
-        }));
-
-    // Legacy policies for backward compatibility (map to new roles)
-    options.AddPolicy("SystemAdminOnly", policy =>
-        policy.RequireAssertion(context =>
-            context.User.FindFirst("Role")?.Value == "0"));
-
-    options.AddPolicy("OrgAdminOrAbove", policy =>
-        policy.RequireAssertion(context =>
-        {
-            var roleValue = context.User.FindFirst("Role")?.Value;
-            return roleValue == "0" || roleValue == "1";
-        }));
-
-    options.AddPolicy("InstructorOrAbove", policy =>
-        policy.RequireAssertion(context =>
-        {
-            var roleValue = context.User.FindFirst("Role")?.Value;
-            return roleValue == "0" || roleValue == "1" || roleValue == "2";
-        }));
-
-    options.AddPolicy("AdminOnly", policy =>
-        policy.RequireAssertion(context =>
-            context.User.FindFirst("Role")?.Value == "0"));
-
-    options.AddPolicy("InstructorOrCompanyOrAdmin", policy =>
-        policy.RequireAssertion(context =>
-        {
-            var roleValue = context.User.FindFirst("Role")?.Value;
-            return roleValue == "0" || roleValue == "1" || roleValue == "2";
-        }));
-
-    options.AddPolicy("InstructorOrAdmin", policy =>
-        policy.RequireAssertion(context =>
-        {
-            var roleValue = context.User.FindFirst("Role")?.Value;
-            return roleValue == "0" || roleValue == "1" || roleValue == "2";
-        }));
+        policy.RequireRole("SuperAdmin", "Admin", "ContentCreator"));
 });
 
 builder.Services.AddCors(options =>

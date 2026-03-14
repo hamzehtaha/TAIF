@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using TAIF.Domain.Entities;
 
 namespace TAIF.Application.DTOs.Requests
 {
@@ -21,10 +20,6 @@ namespace TAIF.Application.DTOs.Requests
         [Required(ErrorMessage = "Password is required.")]
         [StringLength(100, MinimumLength = 8, ErrorMessage = "Password must be between 8 and 100 characters.")]
         public string Password { get; set; } = null!;
-
-        [Required(ErrorMessage = "Role is required.")]
-        [EnumDataType(typeof(UserRoleType), ErrorMessage = "Role must be a valid user role.")]
-        public UserRoleType Role { get; set; }
 
         public DateOnly? Birthday { get; set; }
     }

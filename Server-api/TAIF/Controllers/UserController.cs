@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using TAIF.Application.DTOs.Requests;
 using TAIF.Application.DTOs.Responses;
 using TAIF.Application.Interfaces.Services;
+using TAIF.Application.Services;
 using TAIF.Domain.Entities;
 
 namespace TAIF.API.Controllers
@@ -46,7 +47,7 @@ namespace TAIF.API.Controllers
         #region Admin User Management
 
         [HttpGet]
-        [Authorize(Policy = "AdminOnly")]
+        [Authorize(Policy = "AdminOrAbove")]
         public async Task<IActionResult> GetAll()
         {
             var users = await _userService.GetAllAsync();
@@ -58,7 +59,7 @@ namespace TAIF.API.Controllers
         }
 
         [HttpGet("students")]
-        [Authorize(Policy = "AdminOnly")]
+        [Authorize(Policy = "AdminOrAbove")]
         public async Task<IActionResult> GetAllStudents()
         {
             var users = await _userService.GetAllAsync();
@@ -70,7 +71,7 @@ namespace TAIF.API.Controllers
         }
 
         [HttpGet("{id}")]
-        [Authorize(Policy = "AdminOnly")]
+        [Authorize(Policy = "AdminOrAbove")]
         public async Task<IActionResult> GetById(Guid id)
         {
             var user = await _userService.GetByIdAsync(id);
@@ -80,34 +81,46 @@ namespace TAIF.API.Controllers
             return Ok(ApiResponse<UserResponse>.SuccessResponse(user.Adapt<UserResponse>()));
         }
 
-        [HttpPost]
-        [Authorize(Policy = "AdminOnly")]
-        public async Task<IActionResult> Create([FromBody] CreateUserRequest request)
+        /// <summary>
+        /// Creates a new Admin user. Only SuperAdmin can do this.
+        /// </summary>
+        [HttpPost("admin")]
+        [Authorize(Policy = "SuperAdminOnly")]
+        public async Task<IActionResult> CreateAdmin([FromBody] CreateUserRequest request)
         {
-            var existingUsers = await _userService.GetAllAsync();
-            if (existingUsers.Any(u => u.Email.ToLower() == request.Email.ToLower()))
+            return await CreateUserWithRole(request, UserRoleType.Admin);
+        }
+
+        /// <summary>
+        /// Creates a new ContentCreator user. Admin and SuperAdmin can do this.
+        /// </summary>
+        [HttpPost("content-creator")]
+        [Authorize(Policy = "AdminOrAbove")]
+        public async Task<IActionResult> CreateContentCreator([FromBody] CreateUserRequest request)
+        {
+            return await CreateUserWithRole(request, UserRoleType.ContentCreator);
+        }
+
+        private async Task<IActionResult> CreateUserWithRole(CreateUserRequest request, UserRoleType role)
+        {
+            var existing = await _userService.GetAllAsync();
+            if (existing.Any(u => u.Email.ToLower() == request.Email.ToLower()))
                 return BadRequest(ApiResponse<UserResponse>.FailResponse("Email already exists"));
 
             var user = request.Adapt<User>();
             user.Id = Guid.NewGuid();
-            user.PasswordHash = HashPassword(request.Password);
+            user.Role = role;
+            user.PasswordHash = PasswordHelper.Hash(request.Password);
             user.IsActive = true;
+            user.IsCompleted = true;
             user.Birthday = request.Birthday ?? DateOnly.FromDateTime(DateTime.Now);
             user.OrganizationId = this.OrganizationId;
-            user.IsCompleted = request.Role == UserRoleType.SuperAdmin || request.Role == UserRoleType.Student;
 
             await _userService.CreateAsync(user);
 
             return Ok(ApiResponse<UserResponse>.SuccessResponse(user.Adapt<UserResponse>()));
         }
 
-        private static string HashPassword(string password)
-        {
-            using var sha = System.Security.Cryptography.SHA256.Create();
-            var bytes = sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
-            return Convert.ToBase64String(bytes);
-        }
-
         #endregion
     }
-    }
+}

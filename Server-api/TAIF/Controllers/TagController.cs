@@ -39,6 +39,7 @@ namespace TAIF.API.Controllers
         }
 
         [HttpPost("")]
+        [Authorize(Policy = "ContentCreatorOrAbove")]
         public async Task<IActionResult> Create([FromBody] CreateTagRequest request)
         {
             var tag = request.Adapt<Tag>();
@@ -48,6 +49,7 @@ namespace TAIF.API.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Policy = "ContentCreatorOrAbove")]
         public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateTagRequest request)
         {
             var updated = await _tagService.UpdateAsync(id, request);
@@ -55,6 +57,7 @@ namespace TAIF.API.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Policy = "ContentCreatorOrAbove")]
         public async Task<IActionResult> Delete([FromRoute] Guid id)
         {
             var result = await _tagService.DeleteAsync(id);

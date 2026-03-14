@@ -78,6 +78,10 @@ namespace TAIF.API.Controllers
             if (evaluation == null)
                 return NotFound(ApiResponse<string>.FailResponse("Evaluation not found"));
 
+            // Students can only read their own evaluations; admin+ can read any
+            if (IsStudent && evaluation.UserId != this.UserId)
+                return Forbid();
+
             var response = new UserEvaluationResponseDto
             {
                 Id = evaluation.Id,

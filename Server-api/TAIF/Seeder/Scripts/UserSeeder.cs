@@ -1,5 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 using System.Text.Json;
+using TAIF.Application.Services;
 using TAIF.Domain.Entities;
 using TAIF.Infrastructure.Data;
 
@@ -54,8 +55,7 @@ namespace TAIF.API.Seeder.Scripts
                         OrganizationId = publicOrg?.Id,
                         Birthday = DateOnly.FromDateTime(DateTime.Now),
                         IsCompleted = user.Role == UserRoleType.SuperAdmin || user.Role == UserRoleType.Student,
-                        // password = 123
-                        PasswordHash = "pmWkWSBCL51Bfkhn79xPuKBKHz//H6B+mY6G9/eieuM=",
+                        PasswordHash = PasswordHelper.Hash("123"), // test password
                     };
                     _context.Users.Add(newUser);
                 }

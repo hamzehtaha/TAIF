@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using TAIF.Domain.Entities;
 
 namespace TAIF.Application.DTOs.Requests
 {
@@ -24,9 +23,5 @@ namespace TAIF.Application.DTOs.Requests
 
         [Required(ErrorMessage = "Birthday is required.")]
         public DateOnly Birthday { get; set; }
-
-        [Required(ErrorMessage = "User role is required.")]
-        [EnumDataType(typeof(UserRoleType), ErrorMessage = "User role must be a valid role value.")]
-        public UserRoleType UserRoleType { get; set; } = UserRoleType.Student;
     }
 }
