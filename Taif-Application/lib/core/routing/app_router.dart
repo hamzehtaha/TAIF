@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../features/courses/presentation/screens/course_details_screen.dart';
 import '../../features/main/presentation/screens/main_shell.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
@@ -17,6 +18,10 @@ class AppRoutes {
   static const String settings = '/settings';
   static const String example = '/example';
   static const String userInterests = '/interests';
+  static const String courseDetails = '/course/:id';
+
+  /// Generate course details route with course ID
+  static String courseDetailsPath(String courseId) => '/course/$courseId';
 }
 
 /// TAIF Router Configuration
@@ -58,6 +63,15 @@ class AppRouter {
           GoRoute(
             path: AppRoutes.settings,
             builder: (context, state) => const SettingsScreen(),
+          ),
+
+          // Course Details
+          GoRoute(
+            path: AppRoutes.courseDetails,
+            builder: (context, state) {
+              final courseId = state.pathParameters['id']!;
+              return CourseDetailsScreen(courseId: courseId);
+            },
           ),
         ],
         errorBuilder: (context, state) => ErrorScreen(error: state.error),

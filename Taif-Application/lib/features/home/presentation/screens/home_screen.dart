@@ -239,6 +239,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildMyLearningSection(BuildContext context, List<CourseModel> courses) {
+    // Hide the entire section if user has no courses
+    if (courses.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
@@ -279,18 +284,15 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          if (courses.isEmpty)
-            _buildEmptyCoursesMessage()
-          else
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: courses.take(3).length,
-              itemBuilder: (context, index) => Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: _buildCourseCard(courses[index]),
-              ),
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: courses.take(3).length,
+            itemBuilder: (context, index) => Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: _buildCourseCard(courses[index]),
             ),
+          ),
         ],
       ),
     );
@@ -327,7 +329,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildCourseCard(CourseModel course) {
     final colorScheme = Theme.of(context).colorScheme;
     return GestureDetector(
-      onTap: () {},
+      onTap: () {
+        context.push(AppRoutes.courseDetailsPath(course.id));
+      },
       child: Container(
         decoration: BoxDecoration(
           color: colorScheme.surfaceContainerHighest,
@@ -350,9 +354,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         )
                       : _buildPlaceholderImage(),
                 ),
-                Positioned(
+                PositionedDirectional(
                   top: 12,
-                  left: 12,
+                  start: 12,
                   child: Row(
                     children: [
                       if (course.categoryName != null)
@@ -397,9 +401,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
-                Positioned(
+                PositionedDirectional(
                   bottom: 12,
-                  left: 12,
+                  start: 12,
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
@@ -423,9 +427,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
-                Positioned(
+                PositionedDirectional(
                   bottom: 12,
-                  right: 12,
+                  end: 12,
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
@@ -554,7 +558,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildRecommendedCourseCard(CourseModel course) {
     final colorScheme = Theme.of(context).colorScheme;
     return GestureDetector(
-      onTap: () {},
+      onTap: () {
+        context.push(AppRoutes.courseDetailsPath(course.id));
+      },
       child: Container(
         decoration: BoxDecoration(
           color: colorScheme.surfaceContainerHighest,
@@ -577,9 +583,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         )
                       : _buildPlaceholderImage(),
                 ),
-                Positioned(
+                PositionedDirectional(
                   top: 12,
-                  left: 12,
+                  start: 12,
                   child: Row(
                     children: [
                       if (course.categoryName != null)

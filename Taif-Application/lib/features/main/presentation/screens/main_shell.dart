@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../courses/presentation/bloc/courses_bloc.dart';
+import '../../../courses/presentation/screens/courses_screen.dart';
 import '../../../home/presentation/bloc/home_bloc.dart';
 import '../../../home/presentation/screens/home_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
+import '../../../progress/presentation/screens/progress_screen.dart';
 
 /// Notification to request tab switching
 class SwitchTabNotification extends Notification {
@@ -29,8 +32,11 @@ class _MainShellState extends State<MainShell> {
       create: (context) => HomeBloc(),
       child: const HomeScreen(),
     ),
-    const _PlaceholderScreen('Courses'),
-    const _PlaceholderScreen('Progress'),
+    BlocProvider(
+      create: (context) => CoursesBloc(),
+      child: const CoursesScreen(),
+    ),
+    const ProgressScreen(),
     const _PlaceholderScreen('Alerts'),
     const ProfileScreen(),
   ];

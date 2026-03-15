@@ -12,6 +12,8 @@ class CourseModel {
   final int? reviewCount;
   final int progress;
   final bool isEnrolled;
+  final bool isFavourite;
+  final bool isRecommended;
 
   CourseModel({
     required this.id,
@@ -25,12 +27,14 @@ class CourseModel {
     this.reviewCount,
     this.progress = 0,
     this.isEnrolled = false,
+    this.isFavourite = false,
+    this.isRecommended = false,
   });
 
   factory CourseModel.fromJson(Map<String, dynamic> json) {
     return CourseModel(
       id: json['id'] as String? ?? '',
-      title: json['title'] as String? ?? '',
+      title: json['title'] as String? ?? json['name'] as String? ?? '',
       description: json['description'] as String?,
       imageUrl: json['imageUrl'] as String? ?? 
                 json['thumbnailUrl'] as String? ?? 
@@ -42,6 +46,8 @@ class CourseModel {
       reviewCount: json['reviewCount'] as int?,
       progress: json['progress'] as int? ?? 0,
       isEnrolled: json['isEnrolled'] as bool? ?? false,
+      isFavourite: json['isFavourite'] as bool? ?? false,
+      isRecommended: json['isRecommended'] as bool? ?? false,
     );
   }
 
@@ -58,6 +64,8 @@ class CourseModel {
       'reviewCount': reviewCount,
       'progress': progress,
       'isEnrolled': isEnrolled,
+      'isFavourite': isFavourite,
+      'isRecommended': isRecommended,
     };
   }
 
@@ -72,5 +80,38 @@ class CourseModel {
     } else {
       return '${minutes}m';
     }
+  }
+
+  /// Create a copy of this course with modified fields
+  CourseModel copyWith({
+    String? id,
+    String? title,
+    String? description,
+    String? imageUrl,
+    String? categoryId,
+    String? categoryName,
+    int? durationInMinutes,
+    double? rating,
+    int? reviewCount,
+    int? progress,
+    bool? isEnrolled,
+    bool? isFavourite,
+    bool? isRecommended,
+  }) {
+    return CourseModel(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      imageUrl: imageUrl ?? this.imageUrl,
+      categoryId: categoryId ?? this.categoryId,
+      categoryName: categoryName ?? this.categoryName,
+      durationInMinutes: durationInMinutes ?? this.durationInMinutes,
+      rating: rating ?? this.rating,
+      reviewCount: reviewCount ?? this.reviewCount,
+      progress: progress ?? this.progress,
+      isEnrolled: isEnrolled ?? this.isEnrolled,
+      isFavourite: isFavourite ?? this.isFavourite,
+      isRecommended: isRecommended ?? this.isRecommended,
+    );
   }
 }
