@@ -65,6 +65,7 @@ import { instructorService } from "@/services/instructor.service";
 import { useToast } from "@/hooks/use-toast";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ImageUpload } from "@/components/ui/image-upload";
 
 const formatDate = (dateString?: string) => {
   if (!dateString) return "";
@@ -451,7 +452,7 @@ export default function LessonsPage() {
 
       {/* Create Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Create Lesson</DialogTitle>
             <DialogDescription>Add a new lesson.</DialogDescription>
@@ -476,12 +477,13 @@ export default function LessonsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="photo">Photo URL</Label>
-              <Input
-                id="photo"
+              <Label>Thumbnail</Label>
+              <ImageUpload
                 value={formData.photo}
-                onChange={(e) => setFormData({ ...formData, photo: e.target.value })}
-                placeholder="https://..."
+                onChange={(url) => setFormData({ ...formData, photo: url })}
+                folder="lessons"
+                placeholder="Upload lesson thumbnail"
+                aspectRatio="video"
               />
             </div>
             <div className="space-y-2">
@@ -530,7 +532,7 @@ export default function LessonsPage() {
 
       {/* Edit Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit Lesson</DialogTitle>
             <DialogDescription>Update lesson details.</DialogDescription>
@@ -553,11 +555,13 @@ export default function LessonsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-photo">Photo URL</Label>
-              <Input
-                id="edit-photo"
+              <Label>Thumbnail</Label>
+              <ImageUpload
                 value={formData.photo}
-                onChange={(e) => setFormData({ ...formData, photo: e.target.value })}
+                onChange={(url) => setFormData({ ...formData, photo: url })}
+                folder="lessons"
+                placeholder="Upload lesson thumbnail"
+                aspectRatio="video"
               />
             </div>
             <div className="space-y-2">

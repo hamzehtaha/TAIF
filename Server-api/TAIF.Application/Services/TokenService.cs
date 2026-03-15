@@ -16,6 +16,7 @@ namespace TAIF.Application.Services
         {
             _configuration = config;
         }
+
         public string GenerateAccessToken(User user)
         {
             var jwt = _configuration.GetSection("Jwt");
@@ -26,53 +27,29 @@ namespace TAIF.Application.Services
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
                 new Claim("firstName", user.FirstName),
                 new Claim("lastName", user.LastName),
-                new Claim("Role", ((int)user.Role).ToString()),
-                new Claim("UserRoleType", ((int)user.Role).ToString()),
+                // Standard ClaimTypes.Role with role name enables RequireRole() policies
+                new Claim(ClaimTypes.Role, user.Role.ToString()),
             };
 
             if (user.OrganizationId.HasValue)
-            {
                 claims.Add(new Claim("OrganizationId", user.OrganizationId.Value.ToString()));
-            }
 
-            var key = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(jwt["Key"]!)
-            );
-
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt["Key"]!));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
                 issuer: jwt["Issuer"],
                 audience: jwt["Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(
-                    int.Parse(jwt["AccessTokenMinutes"]!)
-                ),
+                expires: DateTime.UtcNow.AddMinutes(int.Parse(jwt["AccessTokenMinutes"]!)),
                 signingCredentials: creds
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
-        public string GenerateRefreshToken(User user)
-        {
-            var jwt = _configuration.GetSection("Jwt");
 
-            var key = new SymmetricSecurityKey(
-                 Encoding.UTF8.GetBytes(jwt["Key"]!)
-             );
-
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            var token = new JwtSecurityToken(
-                issuer: jwt["Issuer"],
-                audience: jwt["Audience"],
-                expires: DateTime.UtcNow.AddDays(
-                    int.Parse(jwt["RefreshTokenDays"]!)
-                ),
-                signingCredentials: creds
-            );
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
-        }
+        // Returns a cryptographically random opaque token — not a JWT
+        public string GenerateRefreshToken() =>
+            Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
     }
 }

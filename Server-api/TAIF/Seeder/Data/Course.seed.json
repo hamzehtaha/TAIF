@@ -21,7 +21,9 @@
                   "Order": 1,
                   "Content": {
                     "title": "A-E Finger Spelling",
-                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                    "description": "Learn the first five letters of the ASL alphabet with detailed hand position demonstrations.",
+                    "provider": "Mux",
+                    "durationInSeconds": 300
                   }
                 },
                 {
@@ -30,8 +32,10 @@
                   "DurationInSeconds": 300,
                   "Order": 2,
                   "Content": {
-                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                    "description": "Master letters F through J with practice exercises and visual demonstrations."
+                    "title": "F-J Finger Spelling",
+                    "description": "Master letters F through J with practice exercises and visual demonstrations.",
+                    "provider": "Mux",
+                    "durationInSeconds": 300
                   }
                 },
                 {
@@ -40,8 +44,10 @@
                   "DurationInSeconds": 300,
                   "Order": 3,
                   "Content": {
-                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                    "description": "Continue building your alphabet knowledge with letters K through O."
+                    "title": "K-O Finger Spelling",
+                    "description": "Continue building your alphabet knowledge with letters K through O.",
+                    "provider": "Mux",
+                    "durationInSeconds": 300
                   }
                 },
                 {
@@ -50,8 +56,10 @@
                   "DurationInSeconds": 300,
                   "Order": 4,
                   "Content": {
-                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                    "description": "Complete the alphabet with letters U through Z and practice full words."
+                    "title": "U-Z Finger Spelling",
+                    "description": "Complete the alphabet with letters U through Z and practice full words.",
+                    "provider": "Mux",
+                    "durationInSeconds": 300
                   }
                 },
                 {
@@ -89,8 +97,10 @@
                   "DurationInSeconds": 300,
                   "Order": 1,
                   "Content": {
-                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                    "description": "Learn essential greeting signs for daily interactions."
+                    "title": "Hello and Goodbye",
+                    "description": "Learn essential greeting signs for daily interactions.",
+                    "provider": "Mux",
+                    "durationInSeconds": 300
                   }
                 },
                 {
@@ -99,8 +109,10 @@
                   "DurationInSeconds": 300,
                   "Order": 2,
                   "Content": {
-                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                    "description": "Introduce yourself using proper sign language etiquette."
+                    "title": "My Name Is...",
+                    "description": "Introduce yourself using proper sign language etiquette.",
+                    "provider": "Mux",
+                    "durationInSeconds": 300
                   }
                 },
                 {
@@ -134,8 +146,10 @@
                   "DurationInSeconds": 300,
                   "Order": 1,
                   "Content": {
-                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                    "description": "Learn the six-dot Braille cell structure and numbering system."
+                    "title": "Understanding the Braille Cell",
+                    "description": "Learn the six-dot Braille cell structure and numbering system.",
+                    "provider": "Mux",
+                    "durationInSeconds": 300
                   }
                 },
                 {
@@ -154,8 +168,10 @@
                   "DurationInSeconds": 300,
                   "Order": 3,
                   "Content": {
-                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                    "description": "Master the first ten letters using dots 1-4."
+                    "title": "Letters A-J",
+                    "description": "Master the first ten letters using dots 1-4.",
+                    "provider": "Mux",
+                    "durationInSeconds": 300
                   }
                 },
                 {
@@ -207,8 +223,10 @@
                   "DurationInSeconds": 300,
                   "Order": 1,
                   "Content": {
-                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                    "description": "Learn the fundamentals of JAWS screen reader software."
+                    "title": "Introduction to JAWS",
+                    "description": "Learn the fundamentals of JAWS screen reader software.",
+                    "provider": "Mux",
+                    "durationInSeconds": 300
                   }
                 },
                 {
@@ -227,8 +245,10 @@
                   "DurationInSeconds": 300,
                   "Order": 3,
                   "Content": {
-                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                    "description": "Install and configure the free NVDA screen reader."
+                    "title": "NVDA Setup and Configuration",
+                    "description": "Install and configure the free NVDA screen reader.",
+                    "provider": "Mux",
+                    "durationInSeconds": 300
                   }
                 },
                 {
@@ -267,8 +287,10 @@
                   "DurationInSeconds": 300,
                   "Order": 1,
                   "Content": {
-                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                    "description": "Install and train professional dictation software."
+                    "title": "Dragon NaturallySpeaking Setup",
+                    "description": "Install and train professional dictation software.",
+                    "provider": "Mux",
+                    "durationInSeconds": 300
                   }
                 },
                 {
@@ -302,8 +324,10 @@
                   "DurationInSeconds": 300,
                   "Order": 1,
                   "Content": {
-                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                    "description": "Learn about the five basic senses plus vestibular and proprioceptive systems."
+                    "title": "The Seven Senses",
+                    "description": "Learn about the five basic senses plus vestibular and proprioceptive systems.",
+                    "provider": "Mux",
+                    "durationInSeconds": 300
                   }
                 },
                 {
@@ -322,8 +346,10 @@
                   "DurationInSeconds": 300,
                   "Order": 3,
                   "Content": {
-                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                    "description": "Identify signs of sensory overwhelm in yourself or others."
+                    "title": "Sensory Overload Recognition",
+                    "description": "Identify signs of sensory overwhelm in yourself or others.",
+                    "provider": "Mux",
+                    "durationInSeconds": 300
                   }
                 },
                 {

@@ -29,7 +29,7 @@ namespace TAIF.Application.Services
         {
             return await _repository.GetByUserIdAsync(userId);
         }
-        public async Task<UserEvaluation> SubmitAsync(Guid userId,Guid organizationId, SubmitEvaluation dto)
+        public async Task<UserEvaluation> SubmitAsync(Guid userId, Guid organizationId, SubmitEvaluation dto)
         {
             if (dto.Answers == null || !dto.Answers.Any())
                 throw new Exception("Answers are required.");
@@ -45,6 +45,9 @@ namespace TAIF.Application.Services
 
             var result = new EvaluationJsonResult();
 
+            var strengthSkills = new HashSet<Guid>();
+            var weaknessSkills = new HashSet<Guid>();
+
             foreach (var submitted in dto.Answers)
             {
                 var question = questions.First(q => q.Id == submitted.QuestionId);
@@ -52,7 +55,6 @@ namespace TAIF.Application.Services
                 if (!question.AnswerIds.Contains(submitted.AnswerId))
                     throw new Exception("Invalid answer for question.");
 
-                // Determine correct answer
                 var correctAnswerId = question.AnswerIds[question.CorrectAnswerIndex];
 
                 int percentage = submitted.AnswerId == correctAnswerId ? 100 : 0;
@@ -63,9 +65,23 @@ namespace TAIF.Application.Services
                     SelectedAnswerId = submitted.AnswerId,
                     Percentage = percentage
                 });
+
+                // Detect Strength / Weakness
+                if (percentage >= question.MinPercentage)
+                {
+                    foreach (var skillId in question.SkillIds)
+                        strengthSkills.Add(skillId);
+                }
+                else
+                {
+                    foreach (var skillId in question.SkillIds)
+                        weaknessSkills.Add(skillId);
+                }
             }
 
-            // Calculate total average
+            result.StrengthSkillIds = strengthSkills.ToList();
+            result.WeaknessSkillIds = weaknessSkills.ToList();
+
             result.TotalPercentage = result.Questions.Any()
                 ? (int)result.Questions.Average(q => q.Percentage)
                 : 0;

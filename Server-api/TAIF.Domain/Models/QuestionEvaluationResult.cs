@@ -16,5 +16,8 @@ namespace TAIF.Domain.Models
     {
         public List<QuestionEvaluationResult> Questions { get; set; } = new();
         public int TotalPercentage { get; set; }
+        public List<Guid> StrengthSkillIds { get; set; } = new();
+
+        public List<Guid> WeaknessSkillIds { get; set; } = new();
     }
 }

@@ -1,18 +1,28 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
+using TAIF.Application.DTOs.Validation;
 
 namespace TAIF.Application.DTOs.Requests
 {
     public record CreateCourseRequest
     {
-        [Required]
-        public string? Name { get; set; }
+        [Required(ErrorMessage = "Course name is required.")]
+        [StringLength(200, MinimumLength = 2, ErrorMessage = "Course name must be between 2 and 200 characters.")]
+        public string Name { get; set; } = null!;
+
+        [StringLength(2000, ErrorMessage = "Description must not exceed 2000 characters.")]
         public string? Description { get; set; }
+
+        [Url(ErrorMessage = "Photo must be a valid URL.")]
+        [MinLength(1, ErrorMessage = "Photo URL cannot be an empty string. Send null to remove it.")]
+        [StringLength(2048, ErrorMessage = "Photo URL must not exceed 2048 characters.")]
         public string? Photo { get; set; }
-        [Required]
+
+        [Required(ErrorMessage = "Category is required.")]
+        [NonEmptyGuid(ErrorMessage = "Category ID must not be an empty GUID.")]
         public Guid CategoryId { get; set; }
 
-        [Required]
-        public List<Guid> Tags { get; set; }
+        [Required(ErrorMessage = "At least one tag is required.")]
+        [MinLength(1, ErrorMessage = "At least one tag must be provided.")]
+        public List<Guid> Tags { get; set; } = new();
     }
 }

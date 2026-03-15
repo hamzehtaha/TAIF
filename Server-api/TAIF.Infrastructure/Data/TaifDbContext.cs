@@ -7,9 +7,12 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json;
 using System.Threading.Tasks;
 using TAIF.Application.Interfaces;
 using TAIF.Domain.Entities;
+using TAIF.Domain.Models;
 
 namespace TAIF.Infrastructure.Data
 {
@@ -56,6 +59,8 @@ namespace TAIF.Infrastructure.Data
         public DbSet<Answer> Answers { get; set; }
         public DbSet<Skill> Skills { get; set; }
         public DbSet<UserEvaluation> UserEvaluations { get; set; }
+        public DbSet<VideoAsset> VideoAssets { get; set; }
+        public DbSet<Evaluation> Evaluations { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -91,14 +96,20 @@ namespace TAIF.Infrastructure.Data
                 builder.Property(x => x.UserId)
                        .IsRequired();
 
+                var converter = new ValueConverter<EvaluationJsonResult, string>(
+                    v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                    v => JsonSerializer.Deserialize<EvaluationJsonResult>(v, (JsonSerializerOptions?)null)
+                         ?? new EvaluationJsonResult()
+                );
+
                 var property = builder.Property(x => x.Result)
+                                      .HasConversion(converter)
                                       .IsRequired();
 
                 if (Database.IsNpgsql())
                     property.HasColumnType("jsonb");
                 else if (Database.IsSqlServer())
                     property.HasColumnType("nvarchar(max)");
-
             });
             modelBuilder.Entity<Skill>(builder =>
             {
@@ -503,6 +514,20 @@ namespace TAIF.Infrastructure.Data
 
                 builder.Property(x => x.MinPercentage)
                        .IsRequired();
+            });
+
+            // VideoAsset configuration - standalone reference table for video processing tracking
+            modelBuilder.Entity<VideoAsset>(entity =>
+            {
+                entity.HasOne(v => v.Organization)
+                      .WithMany()
+                      .HasForeignKey(v => v.OrganizationId)
+                      .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasIndex(v => v.ProviderUploadId);
+                entity.HasIndex(v => v.ProviderAssetId);
+                entity.HasIndex(v => v.OrganizationId);
+                entity.HasIndex(v => v.Status);
             });
 
             // Apply global query filters for multi-tenancy

@@ -12,6 +12,7 @@ import { lessonItemService } from "@/services/lesson-item.service";
 import { enrollmentService } from "@/services/enrollment.service";
 import { categoryService } from "@/services/category.service";
 import { reviewService, Review, ReviewStatistics } from "@/services/review.service";
+import { fileUploadService } from "@/services/file-upload.service";
 import { LessonList } from "@/components/learning/LessonList";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -346,12 +347,11 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
           <div className="lg:col-span-2">
             {/* Course Image */}
             <div className="relative bg-gradient-to-br from-primary/20 to-accent/20 rounded-lg overflow-hidden mb-6 aspect-video">
-              {course.imageUrl ? (
-                <Image
-                  src={course.imageUrl}
+              {(course.imageUrl || course.thumbnail) ? (
+                <img
+                  src={fileUploadService.getFullUrl(course.imageUrl || course.thumbnail)}
                   alt={course.title}
-                  fill
-                  className="object-cover"
+                  className="w-full h-full object-cover"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">

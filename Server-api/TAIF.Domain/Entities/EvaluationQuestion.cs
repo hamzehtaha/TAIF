@@ -10,7 +10,6 @@ namespace TAIF.Domain.Entities
     {
         public string Text { get; set; } = null!;
         public int Order { get; set; }
-        public ICollection<EvaluationAnswer> Answers { get; set; }
-            = new List<EvaluationAnswer>();
+        public ICollection<EvaluationAnswer> Answers { get; set; } = new List<EvaluationAnswer>();
     }
 }

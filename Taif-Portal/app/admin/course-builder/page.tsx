@@ -68,11 +68,17 @@ import { categoryService } from "@/services/category.service";
 import { courseService } from "@/services/course.service";
 import { lessonService } from "@/services/lesson.service";
 import { lessonItemService } from "@/services/lesson-item.service";
+import { Lesson } from "@/models/lesson.model";
+import { LessonItem } from "@/models/lesson-item.model";
 import { instructorService, Instructor } from "@/services/instructor.service";
 import { contentService, LessonItemType, Content } from "@/services/content.service";
 import { tagService, Tag } from "@/services/tag.service";
+import { skillService } from "@/services/skill.service";
+import { Skill } from "@/models/skill.model";
+import { fileUploadService } from "@/services/file-upload.service";
 import { Category } from "@/models/category.model";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ImageUpload } from "@/components/ui/image-upload";
 import {
   CreateVideoDialog,
   CreateQuizDialog,
@@ -93,8 +99,11 @@ interface BuilderLessonItem {
   contentTitle?: string;
   durationInSeconds: number;
   order: number;
+  skillIds: string[];
   // Local content data (for new content not yet saved to backend)
-  videoUrl?: string;
+  videoPlaybackId?: string;
+  videoAssetId?: string;
+  videoThumbnailUrl?: string;
   quizQuestions?: Array<{ questionText: string; options: string[]; correctAnswerIndex: number }>;
   richTextHtml?: string;
 }
@@ -149,11 +158,14 @@ export default function CourseBuilderPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [instructors, setInstructors] = useState<Instructor[]>([]);
   const [allTags, setAllTags] = useState<Tag[]>([]);
+  const [allSkills, setAllSkills] = useState<Skill[]>([]);
   const [existingContent, setExistingContent] = useState<{
     videos: Content[];
     quizzes: Content[];
     richContent: Content[];
   }>({ videos: [], quizzes: [], richContent: [] });
+  const [existingLessons, setExistingLessons] = useState<Lesson[]>([]);
+  const [existingLessonItems, setExistingLessonItems] = useState<LessonItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   // Course data
@@ -175,6 +187,12 @@ export default function CourseBuilderPage() {
   const [createVideoDialogOpen, setCreateVideoDialogOpen] = useState(false);
   const [createQuizDialogOpen, setCreateQuizDialogOpen] = useState(false);
   const [createRichTextDialogOpen, setCreateRichTextDialogOpen] = useState(false);
+  
+  // Lesson selection dialog state
+  const [lessonDialogOpen, setLessonDialogOpen] = useState(false);
+  const [lessonSearchQuery, setLessonSearchQuery] = useState("");
+  const [selectedLessonsToAdd, setSelectedLessonsToAdd] = useState<string[]>([]);
+  const [selectedLessonItemsToAdd, setSelectedLessonItemsToAdd] = useState<string[]>([]);
 
   // Load initial data
   useEffect(() => {
@@ -184,15 +202,21 @@ export default function CourseBuilderPage() {
   const loadInitialData = async () => {
     setIsLoading(true);
     try {
-      const [cats, insts, tags, allContent] = await Promise.all([
+      const [cats, insts, tags, skills, allContent, lessons, lessonItems] = await Promise.all([
         categoryService.getCategories(),
         instructorService.getAll(),
         tagService.getAllTags(),
+        skillService.getAllSkills(),
         contentService.getAllContent(),
+        lessonService.getAllLessons(),
+        lessonItemService.getAllLessonItems(),
       ]);
       setCategories(cats);
       setInstructors(insts);
       setAllTags(tags);
+      setAllSkills(skills);
+      setExistingLessons(lessons);
+      setExistingLessonItems(lessonItems);
       
       // Filter content by type
       const videos = allContent.filter(c => c.type === LessonItemType.Video);
@@ -256,7 +280,112 @@ export default function CourseBuilderPage() {
       order: course.lessons.length,
     };
     setCourse({ ...course, lessons: [...course.lessons, newLesson] });
+    setLessonDialogOpen(false);
   };
+
+  // Add existing lesson to course
+  const addExistingLesson = async (lesson: Lesson) => {
+    // Fetch lesson items for this lesson
+    let lessonItems: BuilderLessonItem[] = [];
+    try {
+      const items = await lessonService.getLessonItems(lesson.id);
+      lessonItems = items.map((item: any, idx: number) => ({
+        id: item.id,
+        tempId: generateTempId(),
+        name: item.name,
+        description: item.description || "",
+        type: item.type === 0 ? "video" : item.type === 1 ? "rich-content" : "quiz",
+        contentId: item.contentId,
+        contentTitle: item.name,
+        durationInSeconds: item.durationInSeconds || 0,
+        order: idx,
+        skillIds: item.skillIds || [],
+      }));
+    } catch (error) {
+      console.error("Failed to fetch lesson items:", error);
+    }
+
+    const newLesson: BuilderLesson = {
+      id: lesson.id,
+      tempId: generateTempId(),
+      title: lesson.title,
+      description: lesson.description || "",
+      photo: lesson.photo || "",
+      instructorId: lesson.instructorId,
+      instructorName: lesson.instructor?.firstName,
+      items: lessonItems,
+      isExpanded: true,
+      order: course.lessons.length,
+    };
+    setCourse({ ...course, lessons: [...course.lessons, newLesson] });
+  };
+
+  // Add multiple existing lessons at once
+  const addSelectedLessons = async () => {
+    if (selectedLessonsToAdd.length === 0) return;
+    
+    const lessonsToAdd = existingLessons.filter(l => selectedLessonsToAdd.includes(l.id));
+    const newLessons: BuilderLesson[] = [];
+    
+    for (const lesson of lessonsToAdd) {
+      let lessonItems: BuilderLessonItem[] = [];
+      try {
+        const items = await lessonService.getLessonItems(lesson.id);
+        lessonItems = items.map((item: any, idx: number) => ({
+          id: item.id,
+          tempId: generateTempId(),
+          name: item.name,
+          description: item.description || "",
+          type: item.type === 0 ? "video" : item.type === 1 ? "rich-content" : "quiz",
+          contentId: item.contentId,
+          contentTitle: item.name,
+          durationInSeconds: item.durationInSeconds || 0,
+          order: idx,
+          skillIds: item.skillIds || [],
+        }));
+      } catch (error) {
+        console.error("Failed to fetch lesson items:", error);
+      }
+
+      newLessons.push({
+        id: lesson.id,
+        tempId: generateTempId(),
+        title: lesson.title,
+        description: lesson.description || "",
+        photo: lesson.photo || "",
+        instructorId: lesson.instructorId,
+        instructorName: lesson.instructor?.firstName,
+        items: lessonItems,
+        isExpanded: false,
+        order: course.lessons.length + newLessons.length,
+      });
+    }
+    
+    setCourse({ ...course, lessons: [...course.lessons, ...newLessons] });
+    setSelectedLessonsToAdd([]);
+    setLessonDialogOpen(false);
+    toast({
+      title: "Lessons Added",
+      description: `${newLessons.length} lesson(s) have been added to the course.`,
+    });
+  };
+
+  // Toggle lesson selection
+  const toggleLessonSelection = (lessonId: string) => {
+    setSelectedLessonsToAdd(prev => 
+      prev.includes(lessonId) 
+        ? prev.filter(id => id !== lessonId)
+        : [...prev, lessonId]
+    );
+  };
+
+  // Filter existing lessons based on search and exclude already added
+  const filteredExistingLessons = existingLessons.filter(lesson => {
+    const alreadyAdded = course.lessons.some(l => l.id === lesson.id);
+    const matchesSearch = lessonSearchQuery === "" || 
+      lesson.title.toLowerCase().includes(lessonSearchQuery.toLowerCase());
+    return !alreadyAdded && matchesSearch;
+  });
 
   const updateLesson = (tempId: string, updates: Partial<BuilderLesson>) => {
     setCourse({
@@ -297,8 +426,11 @@ export default function CourseBuilderPage() {
       contentTitle: content?.title || content?.name,
       durationInSeconds: content?.durationInSeconds || 0,
       order: lesson.items.length,
+      skillIds: [],
       // Store local content data for new content
-      videoUrl: contentType === "video" ? content?.url : undefined,
+      videoPlaybackId: contentType === "video" ? content?.playbackId : undefined,
+      videoAssetId: contentType === "video" ? content?.videoAssetId : undefined,
+      videoThumbnailUrl: contentType === "video" ? content?.thumbnailUrl : undefined,
       quizQuestions: contentType === "quiz" ? content?.questions : undefined,
       richTextHtml: contentType === "rich-content" ? content?.html : undefined,
     };
@@ -307,6 +439,97 @@ export default function CourseBuilderPage() {
       items: [...lesson.items, newItem],
     });
     setContentDialogOpen(false);
+  };
+
+  // Add existing lesson item (reuse, don't create new)
+  const addExistingLessonItem = (lessonTempId: string, existingItem: LessonItem) => {
+    const lesson = course.lessons.find(l => l.tempId === lessonTempId);
+    if (!lesson) return;
+
+    // Check if item already added to this lesson
+    if (lesson.items.some(i => i.id === existingItem.id)) {
+      toast({
+        title: "Already Added",
+        description: "This lesson item is already in the lesson.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Map from LessonItemType enum to BuilderLessonItem type
+    const itemType = existingItem.type === "video" ? "video" : 
+                     existingItem.type === "text" ? "rich-content" : "quiz";
+
+    const newItem: BuilderLessonItem = {
+      id: existingItem.id, // Set the existing ID - this will trigger reference, not create
+      tempId: generateTempId(),
+      name: existingItem.name,
+      description: existingItem.description || "",
+      type: itemType as "video" | "quiz" | "rich-content",
+      contentId: existingItem.contentId,
+      contentTitle: existingItem.name,
+      durationInSeconds: existingItem.durationInSeconds || 0,
+      order: lesson.items.length,
+      skillIds: existingItem.skillIds || [],
+    };
+
+    updateLesson(lessonTempId, {
+      items: [...lesson.items, newItem],
+    });
+  };
+
+  // Add multiple existing lesson items at once
+  const addSelectedLessonItems = () => {
+    if (!selectedLessonForContent || selectedLessonItemsToAdd.length === 0) return;
+    
+    const lesson = course.lessons.find(l => l.tempId === selectedLessonForContent);
+    if (!lesson) return;
+
+    const itemsToAdd = existingLessonItems.filter(i => selectedLessonItemsToAdd.includes(i.id));
+    const newItems: BuilderLessonItem[] = [];
+    
+    for (const existingItem of itemsToAdd) {
+      // Skip if already added
+      if (lesson.items.some(i => i.id === existingItem.id)) continue;
+
+      const itemType = existingItem.type === "video" ? "video" : 
+                       existingItem.type === "text" ? "rich-content" : "quiz";
+
+      newItems.push({
+        id: existingItem.id,
+        tempId: generateTempId(),
+        name: existingItem.name,
+        description: existingItem.description || "",
+        type: itemType as "video" | "quiz" | "rich-content",
+        contentId: existingItem.contentId,
+        contentTitle: existingItem.name,
+        durationInSeconds: existingItem.durationInSeconds || 0,
+        order: lesson.items.length + newItems.length,
+        skillIds: existingItem.skillIds || [],
+      });
+    }
+
+    if (newItems.length > 0) {
+      updateLesson(selectedLessonForContent, {
+        items: [...lesson.items, ...newItems],
+      });
+      toast({
+        title: "Items Added",
+        description: `${newItems.length} lesson item(s) have been added.`,
+      });
+    }
+    
+    setSelectedLessonItemsToAdd([]);
+    setContentDialogOpen(false);
+  };
+
+  // Toggle lesson item selection
+  const toggleLessonItemSelection = (itemId: string) => {
+    setSelectedLessonItemsToAdd(prev => 
+      prev.includes(itemId) 
+        ? prev.filter(id => id !== itemId)
+        : [...prev, itemId]
+    );
   };
 
   const updateLessonItem = (lessonTempId: string, itemTempId: string, updates: Partial<BuilderLessonItem>) => {
@@ -337,7 +560,8 @@ export default function CourseBuilderPage() {
       addLessonItem(selectedLessonForContent, "video", {
         title: data.title,
         description: data.description,
-        url: data.url,
+        playbackId: data.playbackId,
+        videoAssetId: data.videoAssetId,
         durationInSeconds: data.durationInSeconds,
       });
     }
@@ -427,60 +651,93 @@ export default function CourseBuilderPage() {
     return `${minutes}m`;
   };
 
-  // Submit course
+  // Submit course using bulk API
   const handleSubmit = async () => {
     setIsSaving(true);
     try {
-      // Step 1: Create the course
-      const createdCourse = await courseService.createCourse({
+      // Build the full course request
+      const request = {
         name: course.name,
-        description: course.description,
-        photo: course.photo,
+        description: course.description || undefined,
+        photo: course.photo || undefined,
         categoryId: course.categoryId,
         tags: course.tags,
-      });
+        lessons: course.lessons.map((lesson, lessonIndex) => ({
+          // If lesson has an ID, it's an existing lesson - send lessonId
+          lessonId: lesson.id || undefined,
+          // For new lessons, send the title and other details
+          title: lesson.id ? undefined : lesson.title,
+          description: lesson.id ? undefined : (lesson.description || undefined),
+          photo: lesson.id ? undefined : (lesson.photo || undefined),
+          instructorId: lesson.id ? undefined : (lesson.instructorId || undefined),
+          order: lessonIndex,
+          // Don't send items for existing lessons - they already have their items
+          items: lesson.id ? [] : lesson.items.map((item, itemIndex) => {
+            const typeNumber = item.type === "video" ? 0 : item.type === "rich-content" ? 1 : 2;
+            
+            // Build inline content if no contentId (new content created locally)
+            let inlineContent = undefined;
+            if (!item.id && !item.contentId) {
+              if (item.type === "video" && item.videoAssetId) {
+                inlineContent = {
+                  video: {
+                    title: item.name,
+                    description: item.description || undefined,
+                    thumbnailUrl: item.videoThumbnailUrl || undefined,
+                    durationInSeconds: item.durationInSeconds,
+                    videoAssetId: item.videoAssetId,
+                    playbackId: item.videoPlaybackId || undefined,
+                    provider: "mux",
+                  },
+                };
+              } else if (item.type === "rich-content" && item.richTextHtml) {
+                inlineContent = {
+                  richText: {
+                    title: item.name,
+                    htmlContent: item.richTextHtml,
+                  },
+                };
+              } else if (item.type === "quiz" && item.quizQuestions) {
+                inlineContent = {
+                  quiz: {
+                    title: item.name,
+                    questions: item.quizQuestions.map(q => ({
+                      questionText: q.questionText,
+                      options: q.options,
+                      correctAnswerIndex: q.correctAnswerIndex,
+                    })),
+                  },
+                };
+              }
+            }
 
-      // Step 2: Create lessons and assign to course
-      for (let i = 0; i < course.lessons.length; i++) {
-        const lesson = course.lessons[i];
-        
-        // Create the lesson
-        const createdLesson = await lessonService.createLesson({
-          title: lesson.title,
-          description: lesson.description || undefined,
-          photo: lesson.photo || undefined,
-          instructorId: lesson.instructorId || undefined,
-        });
+            return {
+              // If item has an ID, it's an existing lesson item - send lessonItemId
+              lessonItemId: item.id || undefined,
+              // For new items, send the name and other details
+              name: item.id ? undefined : item.name,
+              description: item.id ? undefined : (item.description || undefined),
+              type: typeNumber,
+              order: itemIndex,
+              durationInSeconds: item.durationInSeconds,
+              contentId: item.id ? undefined : (item.contentId || undefined),
+              // Send inline content if no contentId
+              content: inlineContent,
+              // Send skillIds for new items
+              skillIds: item.id ? undefined : (item.skillIds || []),
+            };
+          }),
+        })),
+      };
 
-        // Assign lesson to course
-        await courseService.assignLesson(createdCourse.id, createdLesson.id, i);
-
-        // Step 3: Create lesson items and assign to lesson
-        for (let j = 0; j < lesson.items.length; j++) {
-          const item = lesson.items[j];
-          
-          // Create the lesson item
-          const typeNumber = item.type === "video" ? 0 : item.type === "rich-content" ? 1 : 2;
-          const createdItem = await lessonItemService.createLessonItem({
-            name: item.name,
-            description: item.description || undefined,
-            contentId: item.contentId || "",
-            type: typeNumber,
-            lessonId: createdLesson.id,
-            durationInSeconds: item.durationInSeconds,
-          });
-
-          // Assign to lesson
-          await lessonService.assignLessonItem(createdLesson.id, createdItem.id, j);
-        }
-      }
+      const result = await courseService.createFullCourse(request);
 
       toast({
         title: "Course Created!",
-        description: `"${course.name}" has been created successfully with ${course.lessons.length} lessons.`,
+        description: `"${result.courseName}" has been created successfully with ${result.lessonsCreated} lessons and ${result.lessonItemsCreated} lesson items.`,
       });
 
-      router.push(`/admin/courses/${createdCourse.id}`);
+      router.push(`/admin/courses/${result.courseId}`);
     } catch (error) {
       console.error("Failed to create course:", error);
       toast({
@@ -642,23 +899,13 @@ export default function CourseBuilderPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="photo">Thumbnail URL</Label>
-                    <Input
-                      id="photo"
-                      placeholder="https://example.com/image.jpg"
+                    <Label>Course Thumbnail</Label>
+                    <ImageUpload
                       value={course.photo}
-                      onChange={(e) => setCourse({ ...course, photo: e.target.value })}
+                      onChange={(url) => setCourse({ ...course, photo: url })}
+                      folder="courses"
+                      placeholder="Click or drag to upload course thumbnail"
                     />
-                    {course.photo && (
-                      <div className="mt-2 relative w-full aspect-video rounded-lg overflow-hidden bg-muted">
-                        <img
-                          src={course.photo}
-                          alt="Course thumbnail"
-                          className="object-cover w-full h-full"
-                          onError={(e) => (e.currentTarget.style.display = 'none')}
-                        />
-                      </div>
-                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -715,7 +962,7 @@ export default function CourseBuilderPage() {
                         Add and organize lessons for your course
                       </CardDescription>
                     </div>
-                    <Button onClick={addLesson}>
+                    <Button onClick={() => setLessonDialogOpen(true)}>
                       <Plus className="h-4 w-4 mr-2" />
                       Add Lesson
                     </Button>
@@ -729,7 +976,7 @@ export default function CourseBuilderPage() {
                       <p className="text-muted-foreground mb-4">
                         Start building your course by adding your first lesson
                       </p>
-                      <Button onClick={addLesson}>
+                      <Button onClick={() => setLessonDialogOpen(true)}>
                         <Plus className="h-4 w-4 mr-2" />
                         Add First Lesson
                       </Button>
@@ -772,6 +1019,14 @@ export default function CourseBuilderPage() {
                             </div>
                             <CollapsibleContent>
                               <div className="px-4 pb-4 space-y-4 border-t pt-4">
+                                {/* Show read-only notice for existing lessons */}
+                                {lesson.id && (
+                                  <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+                                    <p className="text-sm text-amber-700 dark:text-amber-400">
+                                      <strong>Existing Lesson:</strong> This lesson is used by other courses. Editing is disabled to prevent affecting them.
+                                    </p>
+                                  </div>
+                                )}
                                 <div className="grid gap-4 sm:grid-cols-2">
                                   <div className="space-y-2">
                                     <Label>Lesson Title</Label>
@@ -780,6 +1035,7 @@ export default function CourseBuilderPage() {
                                       onChange={(e) =>
                                         updateLesson(lesson.tempId, { title: e.target.value })
                                       }
+                                      disabled={!!lesson.id}
                                     />
                                   </div>
                                   <div className="space-y-2">
@@ -792,6 +1048,7 @@ export default function CourseBuilderPage() {
                                           instructorName: instructors.find(i => i.id === value)?.firstName,
                                         })
                                       }
+                                      disabled={!!lesson.id}
                                     >
                                       <SelectTrigger>
                                         <SelectValue placeholder="Select instructor" />
@@ -814,27 +1071,20 @@ export default function CourseBuilderPage() {
                                       updateLesson(lesson.tempId, { description: e.target.value })
                                     }
                                     rows={2}
+                                    disabled={!!lesson.id}
                                   />
                                 </div>
                                 <div className="space-y-2">
-                                  <Label>Photo URL</Label>
-                                  <Input
+                                  <Label>Lesson Thumbnail</Label>
+                                  <ImageUpload
                                     value={lesson.photo}
-                                    onChange={(e) =>
-                                      updateLesson(lesson.tempId, { photo: e.target.value })
+                                    onChange={(url) =>
+                                      updateLesson(lesson.tempId, { photo: url })
                                     }
-                                    placeholder="https://example.com/image.jpg"
+                                    folder="lessons"
+                                    placeholder="Click or drag to upload lesson thumbnail"
+                                    disabled={!!lesson.id}
                                   />
-                                  {lesson.photo && (
-                                    <div className="mt-2 relative w-full max-w-xs aspect-video rounded-lg overflow-hidden bg-muted">
-                                      <img
-                                        src={lesson.photo}
-                                        alt="Lesson thumbnail"
-                                        className="object-cover w-full h-full"
-                                        onError={(e) => (e.currentTarget.style.display = 'none')}
-                                      />
-                                    </div>
-                                  )}
                                 </div>
                               </div>
                             </CollapsibleContent>
@@ -878,48 +1128,128 @@ export default function CourseBuilderPage() {
                         </AccordionTrigger>
                         <AccordionContent className="pt-4">
                           <div className="space-y-3">
+                            {/* Show read-only notice for existing lessons */}
+                            {lesson.id && (
+                              <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg mb-3">
+                                <p className="text-sm text-amber-700 dark:text-amber-400">
+                                  <strong>Existing Lesson:</strong> Content cannot be modified to prevent affecting other courses using this lesson.
+                                </p>
+                              </div>
+                            )}
                             {lesson.items.map((item, itemIndex) => (
                               <div
                                 key={item.tempId}
-                                className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg"
+                                className="bg-muted/50 rounded-lg"
                               >
-                                <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
-                                <div
-                                  className={cn(
-                                    "flex items-center justify-center w-8 h-8 rounded-md",
-                                    item.type === "video" ? "bg-blue-500/20 text-blue-500" :
-                                    item.type === "quiz" ? "bg-purple-500/20 text-purple-500" :
-                                    "bg-green-500/20 text-green-500"
+                                <div className="flex items-center gap-3 p-3">
+                                  <GripVertical className={cn("h-4 w-4 text-muted-foreground", lesson.id ? "opacity-30" : "cursor-grab")} />
+                                  <div
+                                    className={cn(
+                                      "flex items-center justify-center w-8 h-8 rounded-md",
+                                      item.type === "video" ? "bg-blue-500/20 text-blue-500" :
+                                      item.type === "quiz" ? "bg-purple-500/20 text-purple-500" :
+                                      "bg-green-500/20 text-green-500"
+                                    )}
+                                  >
+                                    {item.type === "video" && <Video className="h-4 w-4" />}
+                                    {item.type === "quiz" && <HelpCircle className="h-4 w-4" />}
+                                    {item.type === "rich-content" && <FileEdit className="h-4 w-4" />}
+                                  </div>
+                                  <div className="flex-1">
+                                    <p className="font-medium text-sm">{item.name}</p>
+                                    <p className="text-xs text-muted-foreground capitalize">
+                                      {item.type.replace("-", " ")}
+                                      {item.durationInSeconds > 0 && ` • ${formatDuration(item.durationInSeconds)}`}
+                                    </p>
+                                  </div>
+                                  {/* Only show delete button for new lessons */}
+                                  {!lesson.id && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => removeLessonItem(lesson.tempId, item.tempId)}
+                                    >
+                                      <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
                                   )}
-                                >
-                                  {item.type === "video" && <Video className="h-4 w-4" />}
-                                  {item.type === "quiz" && <HelpCircle className="h-4 w-4" />}
-                                  {item.type === "rich-content" && <FileEdit className="h-4 w-4" />}
                                 </div>
-                                <div className="flex-1">
-                                  <p className="font-medium text-sm">{item.name}</p>
-                                  <p className="text-xs text-muted-foreground capitalize">
-                                    {item.type.replace("-", " ")}
-                                    {item.durationInSeconds > 0 && ` • ${formatDuration(item.durationInSeconds)}`}
-                                  </p>
-                                </div>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => removeLessonItem(lesson.tempId, item.tempId)}
-                                >
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
+                                {/* Skills selector for new lessons only */}
+                                {!lesson.id && (
+                                  <div className="px-3 pb-3 pt-0">
+                                    <Label className="text-xs text-muted-foreground mb-1 block">Skills</Label>
+                                    <Select
+                                      value={item.skillIds.length > 0 ? "selected" : "none"}
+                                      onValueChange={(value) => {
+                                        if (value !== "none" && value !== "selected") {
+                                          const currentSkills = item.skillIds || [];
+                                          const newSkills = currentSkills.includes(value)
+                                            ? currentSkills.filter(id => id !== value)
+                                            : [...currentSkills, value];
+                                          updateLessonItem(lesson.tempId, item.tempId, { skillIds: newSkills });
+                                        }
+                                      }}
+                                    >
+                                      <SelectTrigger className="h-8 text-xs">
+                                        <SelectValue>
+                                          {item.skillIds.length > 0 
+                                            ? `${item.skillIds.length} skill(s) selected`
+                                            : "Select skills..."}
+                                        </SelectValue>
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {allSkills.map((skill) => (
+                                          <SelectItem key={skill.id} value={skill.id}>
+                                            <div className="flex items-center gap-2">
+                                              <Checkbox
+                                                checked={item.skillIds.includes(skill.id)}
+                                                onCheckedChange={(checked) => {
+                                                  const currentSkills = item.skillIds || [];
+                                                  const newSkills = checked
+                                                    ? [...currentSkills, skill.id]
+                                                    : currentSkills.filter(id => id !== skill.id);
+                                                  updateLessonItem(lesson.tempId, item.tempId, { skillIds: newSkills });
+                                                }}
+                                              />
+                                              <span>{skill.name}</span>
+                                            </div>
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                    {item.skillIds.length > 0 && (
+                                      <div className="flex flex-wrap gap-1 mt-2">
+                                        {item.skillIds.map(skillId => {
+                                          const skill = allSkills.find(s => s.id === skillId);
+                                          return skill ? (
+                                            <Badge key={skillId} variant="secondary" className="text-xs">
+                                              {skill.name}
+                                              <X
+                                                className="h-3 w-3 ml-1 cursor-pointer"
+                                                onClick={() => {
+                                                  const newSkills = item.skillIds.filter(id => id !== skillId);
+                                                  updateLessonItem(lesson.tempId, item.tempId, { skillIds: newSkills });
+                                                }}
+                                              />
+                                            </Badge>
+                                          ) : null;
+                                        })}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                             ))}
-                            <Button
-                              variant="outline"
-                              className="w-full"
-                              onClick={() => openContentDialog(lesson.tempId)}
-                            >
-                              <Plus className="h-4 w-4 mr-2" />
-                              Add Content
-                            </Button>
+                            {/* Only show Add Content button for new lessons */}
+                            {!lesson.id && (
+                              <Button
+                                variant="outline"
+                                className="w-full"
+                                onClick={() => openContentDialog(lesson.tempId)}
+                              >
+                                <Plus className="h-4 w-4 mr-2" />
+                                Add Content
+                              </Button>
+                            )}
                           </div>
                         </AccordionContent>
                       </AccordionItem>
@@ -947,7 +1277,7 @@ export default function CourseBuilderPage() {
                     <div className="flex items-start gap-4">
                       {course.photo ? (
                         <img
-                          src={course.photo}
+                          src={fileUploadService.getFullUrl(course.photo)}
                           alt={course.name}
                           className="w-32 h-20 object-cover rounded-lg"
                         />
@@ -1141,103 +1471,205 @@ export default function CourseBuilderPage() {
           <DialogHeader>
             <DialogTitle>Add Content</DialogTitle>
             <DialogDescription>
-              Select existing content or create new content for your lesson
+              Select existing lesson items or create new content
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4">
             {/* Content Type Tabs */}
             <div className="flex gap-2">
-              {CONTENT_TYPES.map((type) => (
-                <Button
-                  key={type.value}
-                  variant={selectedContentType === type.value ? "default" : "outline"}
-                  onClick={() => setSelectedContentType(type.value as any)}
-                  className="flex-1"
-                >
-                  <type.icon className="h-4 w-4 mr-2" />
-                  {type.label}
-                </Button>
-              ))}
+              {CONTENT_TYPES.map((type) => {
+                // Count selected items of this type
+                const typeMapping = type.value === "video" ? "video" : type.value === "rich-content" ? "text" : "question";
+                const selectedCount = selectedLessonItemsToAdd.filter(id => 
+                  existingLessonItems.find(item => item.id === id && item.type === typeMapping)
+                ).length;
+                return (
+                  <Button
+                    key={type.value}
+                    variant={selectedContentType === type.value ? "default" : "outline"}
+                    onClick={() => setSelectedContentType(type.value as any)}
+                    className="flex-1 relative"
+                  >
+                    <type.icon className="h-4 w-4 mr-2" />
+                    {type.label}
+                    {selectedCount > 0 && (
+                      <Badge className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                        {selectedCount}
+                      </Badge>
+                    )}
+                  </Button>
+                );
+              })}
             </div>
 
-            {/* Content List */}
+            {/* Filtered Lesson Items List */}
             <ScrollArea className="h-64 border rounded-lg">
               <div className="p-4 space-y-2">
-                {selectedContentType === "video" && existingContent.videos.map((video) => {
-                  const data = getContentData(video);
-                  return (
-                    <div
-                      key={video.id}
-                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted cursor-pointer"
-                      onClick={() => selectedLessonForContent && addLessonItem(selectedLessonForContent, "video", { id: video.id, ...data })}
-                    >
-                      <Video className="h-5 w-5 text-blue-500" />
-                      <div className="flex-1">
-                        <p className="font-medium">{data.title || "Untitled Video"}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {formatDuration(data.durationInSeconds || 0)}
-                        </p>
+                {(() => {
+                  // Filter existing lesson items by selected content type
+                  const typeMapping = selectedContentType === "video" ? "video" : selectedContentType === "rich-content" ? "text" : "question";
+                  const filteredItems = existingLessonItems.filter(item => item.type === typeMapping);
+                  
+                  if (filteredItems.length > 0) {
+                    return filteredItems.map((item) => {
+                      const icon = item.type === "video" ? Video : item.type === "text" ? FileEdit : HelpCircle;
+                      const iconColor = item.type === "video" ? "text-blue-500" : item.type === "text" ? "text-green-500" : "text-purple-500";
+                      const Icon = icon;
+                      const isSelected = selectedLessonItemsToAdd.includes(item.id);
+                      return (
+                        <div
+                          key={item.id}
+                          className={cn(
+                            "flex items-center gap-3 p-3 rounded-lg hover:bg-muted cursor-pointer",
+                            isSelected && "bg-primary/10 border border-primary"
+                          )}
+                          onClick={() => toggleLessonItemSelection(item.id)}
+                        >
+                          <Checkbox 
+                            checked={isSelected}
+                            onCheckedChange={() => toggleLessonItemSelection(item.id)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <Icon className={cn("h-5 w-5", iconColor)} />
+                          <div className="flex-1">
+                            <p className="font-medium">{item.name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {item.type === "video" ? formatDuration(item.durationInSeconds || 0) : 
+                               item.type === "text" ? "Rich Content" : "Quiz"}
+                            </p>
+                          </div>
+                          <Badge variant="secondary" className="text-xs">Existing</Badge>
+                        </div>
+                      );
+                    });
+                  } else {
+                    return (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p>No existing {selectedContentType.replace("-", " ")} items available</p>
+                        <p className="text-sm mt-1">Click &quot;Create New&quot; to add content</p>
                       </div>
-                      <Plus className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                  );
-                })}
-                {selectedContentType === "quiz" && existingContent.quizzes.map((quiz) => {
-                  const data = getContentData(quiz);
-                  return (
-                    <div
-                      key={quiz.id}
-                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted cursor-pointer"
-                      onClick={() => selectedLessonForContent && addLessonItem(selectedLessonForContent, "quiz", { id: quiz.id, ...data })}
-                    >
-                      <HelpCircle className="h-5 w-5 text-purple-500" />
-                      <div className="flex-1">
-                        <p className="font-medium">{data.title || "Untitled Quiz"}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {data.questions?.length || 0} questions
-                        </p>
-                      </div>
-                      <Plus className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                  );
-                })}
-                {selectedContentType === "rich-content" && existingContent.richContent.map((content) => {
-                  const data = getContentData(content);
-                  return (
-                    <div
-                      key={content.id}
-                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted cursor-pointer"
-                      onClick={() => selectedLessonForContent && addLessonItem(selectedLessonForContent, "rich-content", { id: content.id, ...data })}
-                    >
-                      <FileEdit className="h-5 w-5 text-green-500" />
-                      <div className="flex-1">
-                        <p className="font-medium">{data.title || "Untitled Content"}</p>
-                      </div>
-                      <Plus className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                  );
-                })}
-                {((selectedContentType === "video" && existingContent.videos.length === 0) ||
-                  (selectedContentType === "quiz" && existingContent.quizzes.length === 0) ||
-                  (selectedContentType === "rich-content" && existingContent.richContent.length === 0)) && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <p>No {selectedContentType.replace("-", " ")} content available</p>
-                    <p className="text-sm mt-1">Click &quot;Create New&quot; to add content</p>
-                  </div>
-                )}
+                    );
+                  }
+                })()}
               </div>
             </ScrollArea>
+
+            {/* Selected count */}
+            {selectedLessonItemsToAdd.length > 0 && (
+              <div className="text-sm text-muted-foreground">
+                {selectedLessonItemsToAdd.length} item(s) selected across all types
+              </div>
+            )}
           </div>
 
           <DialogFooter className="flex-row justify-between sm:justify-between">
             <Button variant="outline" onClick={openCreateDialog}>
               <Plus className="h-4 w-4 mr-2" />
-              Create New
+              Create New {selectedContentType === "video" ? "Video" : selectedContentType === "quiz" ? "Quiz" : "Rich Content"}
             </Button>
-            <Button variant="outline" onClick={() => setContentDialogOpen(false)}>
-              Cancel
+            <div className="flex gap-2">
+              {selectedLessonItemsToAdd.length > 0 && (
+                <Button onClick={addSelectedLessonItems}>
+                  Add {selectedLessonItemsToAdd.length} Selected
+                </Button>
+              )}
+              <Button variant="outline" onClick={() => { setContentDialogOpen(false); setSelectedLessonItemsToAdd([]); }}>
+                Cancel
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Lesson Selection Dialog */}
+      <Dialog open={lessonDialogOpen} onOpenChange={setLessonDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Add Lesson</DialogTitle>
+            <DialogDescription>
+              Select an existing lesson or create a new one
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Search */}
+            <Input
+              placeholder="Search existing lessons..."
+              value={lessonSearchQuery}
+              onChange={(e) => setLessonSearchQuery(e.target.value)}
+            />
+
+            {/* Existing Lessons List */}
+            <ScrollArea className="h-64 border rounded-lg">
+              <div className="p-4 space-y-2">
+                {filteredExistingLessons.length > 0 ? (
+                  filteredExistingLessons.map((lesson) => (
+                    <div
+                      key={lesson.id}
+                      className={cn(
+                        "flex items-center gap-3 p-3 rounded-lg hover:bg-muted cursor-pointer",
+                        selectedLessonsToAdd.includes(lesson.id) && "bg-primary/10 border border-primary"
+                      )}
+                      onClick={() => toggleLessonSelection(lesson.id)}
+                    >
+                      <Checkbox 
+                        checked={selectedLessonsToAdd.includes(lesson.id)}
+                        onCheckedChange={() => toggleLessonSelection(lesson.id)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      {lesson.photo ? (
+                        <img 
+                          src={fileUploadService.getFullUrl(lesson.photo)} 
+                          alt={lesson.title}
+                          className="w-12 h-8 object-cover rounded"
+                        />
+                      ) : (
+                        <div className="w-12 h-8 bg-muted rounded flex items-center justify-center">
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <p className="font-medium">{lesson.title}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {lesson.instructor ? `${lesson.instructor.firstName} ${lesson.instructor.lastName}` : "No instructor"}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>No existing lessons available</p>
+                    <p className="text-sm mt-1">Click &quot;Create New&quot; to add a lesson</p>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+
+            {/* Selected count */}
+            {selectedLessonsToAdd.length > 0 && (
+              <div className="text-sm text-muted-foreground">
+                {selectedLessonsToAdd.length} lesson(s) selected
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="flex-row justify-between sm:justify-between">
+            <Button variant="outline" onClick={addLesson}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create New Lesson
             </Button>
+            <div className="flex gap-2">
+              {selectedLessonsToAdd.length > 0 && (
+                <Button onClick={addSelectedLessons}>
+                  Add {selectedLessonsToAdd.length} Selected
+                </Button>
+              )}
+              <Button variant="outline" onClick={() => { setLessonDialogOpen(false); setSelectedLessonsToAdd([]); }}>
+                Cancel
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

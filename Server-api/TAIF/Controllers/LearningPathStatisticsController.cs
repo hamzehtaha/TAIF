@@ -8,6 +8,7 @@ namespace TAIF.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class LearningPathStatisticsController : TaifControllerBase
     {
         private readonly ILearningPathStatisticsService _statisticsService;
@@ -33,7 +34,7 @@ namespace TAIF.Controllers
         /// <response code="401">User is not authenticated.</response>
         /// <response code="403">User does not have admin privileges.</response>
         [HttpPost("updateAll")]
-        [Authorize(Policy = "AdminOnly")]
+        [Authorize(Policy = "AdminOrAbove")]
         public async Task<IActionResult> UpdateAllLearningPathStatistics()
         {
             await _statisticsService.UpdateAllLearningPathStatisticsAsync();
@@ -58,7 +59,7 @@ namespace TAIF.Controllers
         /// <response code="403">User does not have instructor, company, or admin privileges.</response>
         /// <response code="404">Learning path with the specified ID was not found.</response>
         [HttpPost("update/{learningPathId}")]
-        [Authorize(Policy = "InstructorOrCompanyOrAdmin")]
+        [Authorize(Policy = "ContentCreatorOrAbove")]
         public async Task<IActionResult> UpdateLearningPathStatistics([FromRoute] Guid learningPathId)
         {
             var result = await _statisticsService.UpdateLearningPathStatisticsAsync(learningPathId);

@@ -27,21 +27,27 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { contentService, LessonItemType } from "@/services/content.service";
+import { contentService, LessonItemType, VideoContent } from "@/services/content.service";
 import {
   mediaStreamingService,
-  UploadProgress,
   UploadResult,
 } from "@/services/media-streaming.service";
+import {
+  videoService,
+  VideoUploadResponse,
+  VideoAssetStatus,
+} from "@/services/video.service";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 export interface VideoContentData {
   title: string;
   description?: string;
-  url: string;
   thumbnailUrl?: string;
   durationInSeconds: number;
+  videoAssetId?: string;
+  playbackId?: string;
+  provider: string;
 }
 
 interface CreateVideoDialogProps {
@@ -80,6 +86,8 @@ export function CreateVideoDialog({
   const [videoUploadState, setVideoUploadState] = useState<UploadState>("idle");
   const [videoUploadProgress, setVideoUploadProgress] = useState(0);
   const [videoUploadResult, setVideoUploadResult] = useState<UploadResult | null>(null);
+  const [muxUploadResponse, setMuxUploadResponse] = useState<VideoUploadResponse | null>(null);
+  const [muxPlaybackId, setMuxPlaybackId] = useState<string | null>(null);
 
   // Thumbnail state
   const [thumbnailMode, setThumbnailMode] = useState<ThumbnailMode>("none");
@@ -104,6 +112,8 @@ export function CreateVideoDialog({
     setVideoUploadState("idle");
     setVideoUploadProgress(0);
     setVideoUploadResult(null);
+    setMuxUploadResponse(null);
+    setMuxPlaybackId(null);
     setThumbnailMode("none");
     setThumbnailFile(null);
     setThumbnailPreviewUrl(null);
@@ -113,23 +123,93 @@ export function CreateVideoDialog({
     setCopiedUrl(false);
   }, [videoPreviewUrl, thumbnailPreviewUrl]);
 
-  const uploadVideo = async (file: File) => {
+  interface VideoUploadResult {
+    videoAssetId: string;
+    playbackId: string | null;
+    duration: number;
+    thumbnailUrl?: string;
+  }
+
+  const uploadVideo = async (file: File): Promise<VideoUploadResult> => {
     setVideoUploadState("uploading");
     setVideoUploadProgress(0);
 
-    try {
-      const result = await mediaStreamingService.uploadVideo(file, (progress: UploadProgress) => {
-        setVideoUploadProgress(progress.percentage);
+    // Step 1: Get Mux direct upload URL from backend
+    const uploadResponse = await videoService.createUpload({
+      title: formData.title || file.name,
+      description: formData.description,
+      originalFileName: file.name,
+    });
+    setMuxUploadResponse(uploadResponse);
+
+    // Step 2: Upload directly to Mux
+    const xhr = new XMLHttpRequest();
+    
+    await new Promise<void>((resolve, reject) => {
+      xhr.upload.addEventListener("progress", (event) => {
+        if (event.lengthComputable) {
+          const progress = Math.round((event.loaded / event.total) * 100);
+          setVideoUploadProgress(progress);
+        }
       });
 
-      setVideoUploadState("processing");
-      setVideoUploadResult(result);
-      setVideoDuration(result.duration || 0);
-      setVideoUploadState("complete");
-    } catch (error) {
-      setVideoUploadState("error");
-      toast({ title: "Upload failed", description: "Failed to upload video.", variant: "destructive" });
-    }
+      xhr.addEventListener("load", () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve();
+        } else {
+          reject(new Error(`Upload failed with status ${xhr.status}`));
+        }
+      });
+
+      xhr.addEventListener("error", () => reject(new Error("Upload failed")));
+
+      xhr.open("PUT", uploadResponse.uploadUrl);
+      xhr.setRequestHeader("Content-Type", file.type);
+      xhr.send(file);
+    });
+
+    setVideoUploadState("processing");
+
+    // Step 3: Poll for video ready status
+    const pollForReady = async (): Promise<VideoUploadResult> => {
+      const status = await videoService.getVideoStatus(uploadResponse.videoAssetId);
+      
+      if (status.isReady) {
+        const videoInfo = await videoService.getVideo(uploadResponse.videoAssetId);
+        setMuxPlaybackId(videoInfo.playbackId || null);
+        // Use Mux duration if available, otherwise keep local duration
+        if (videoInfo.durationInSeconds > 0) {
+          setVideoDuration(videoInfo.durationInSeconds);
+        }
+        // Use Mux thumbnail automatically if no custom thumbnail was uploaded
+        if (videoInfo.thumbnailUrl && thumbnailMode === "none") {
+          setThumbnailPreviewUrl(videoInfo.thumbnailUrl);
+        }
+        setVideoUploadResult({
+          url: videoInfo.playbackUrl || "",
+          filename: file.name,
+          size: file.size,
+          duration: videoInfo.durationInSeconds,
+          mimeType: file.type,
+        });
+        setVideoUploadState("complete");
+        
+        return {
+          videoAssetId: uploadResponse.videoAssetId,
+          playbackId: videoInfo.playbackId || null,
+          duration: videoInfo.durationInSeconds,
+          thumbnailUrl: videoInfo.thumbnailUrl,
+        };
+      } else if (status.status === VideoAssetStatus.Failed) {
+        throw new Error(status.errorMessage || "Video processing failed");
+      }
+      
+      // Continue polling
+      await new Promise(r => setTimeout(r, 3000));
+      return pollForReady();
+    };
+
+    return await pollForReady();
   };
 
   const handleVideoSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -143,13 +223,14 @@ export function CreateVideoDialog({
 
     setVideoFile(file);
     setVideoPreviewUrl(URL.createObjectURL(file));
+    setVideoUploadState("idle"); // Ready for upload on submit
 
     const titleFromFile = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
     if (!formData.title) setFormData((prev) => ({ ...prev, title: titleFromFile }));
 
     const metadata = await mediaStreamingService.getVideoMetadata(file);
     setVideoDuration(metadata.duration);
-    await uploadVideo(file);
+    // NOTE: Upload deferred to submit to prevent orphan assets
   };
 
   const handleThumbnailSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -164,13 +245,7 @@ export function CreateVideoDialog({
     setThumbnailFile(file);
     setThumbnailPreviewUrl(URL.createObjectURL(file));
     setThumbnailMode("upload");
-
-    try {
-      const result = await mediaStreamingService.uploadThumbnail(file);
-      setThumbnailUploadResult(result);
-    } catch (error) {
-      toast({ title: "Upload failed", description: "Failed to upload thumbnail.", variant: "destructive" });
-    }
+    // NOTE: Upload deferred to submit to prevent orphan assets
   };
 
   const handleVideoDrop = async (e: React.DragEvent) => {
@@ -181,13 +256,14 @@ export function CreateVideoDialog({
     if (file && mediaStreamingService.isValidVideoFile(file)) {
       setVideoFile(file);
       setVideoPreviewUrl(URL.createObjectURL(file));
+      setVideoUploadState("idle"); // Ready for upload on submit
 
       const titleFromFile = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
       if (!formData.title) setFormData((prev) => ({ ...prev, title: titleFromFile }));
 
       const metadata = await mediaStreamingService.getVideoMetadata(file);
       setVideoDuration(metadata.duration);
-      await uploadVideo(file);
+      // NOTE: Upload deferred to submit to prevent orphan assets
     }
   };
 
@@ -216,24 +292,39 @@ export function CreateVideoDialog({
       return;
     }
 
-    if (!videoUploadResult?.url) {
-      toast({ title: "Validation Error", description: "Please upload a video first", variant: "destructive" });
+    if (!videoFile) {
+      toast({ title: "Validation Error", description: "Please select a video first", variant: "destructive" });
       return;
     }
 
     setIsSubmitting(true);
     try {
-      let thumbnailUrl: string | undefined;
-      if (thumbnailMode === "upload" && thumbnailUploadResult?.url) {
-        thumbnailUrl = thumbnailUploadResult.url;
+      // Step 1: Upload thumbnail first if provided
+      let uploadedThumbnailUrl: string | undefined;
+      if (thumbnailFile) {
+        try {
+          const thumbnailResult = await mediaStreamingService.uploadThumbnail(thumbnailFile);
+          uploadedThumbnailUrl = thumbnailResult.url;
+        } catch (error) {
+          toast({ title: "Warning", description: "Failed to upload thumbnail, continuing with video upload.", variant: "destructive" });
+        }
       }
+
+      // Step 2: Upload video to Mux and wait for processing
+      const uploadResult = await uploadVideo(videoFile);
+
+      // Use custom thumbnail if uploaded, otherwise use Mux-generated thumbnail
+      const thumbnailUrl = uploadedThumbnailUrl || 
+        (uploadResult.playbackId ? `https://image.mux.com/${uploadResult.playbackId}/thumbnail.jpg` : uploadResult.thumbnailUrl);
 
       const videoData: VideoContentData = {
         title: formData.title,
         description: formData.description || undefined,
-        url: videoUploadResult.url,
         thumbnailUrl: thumbnailUrl,
-        durationInSeconds: videoDuration,
+        durationInSeconds: uploadResult.duration || videoDuration,
+        videoAssetId: uploadResult.videoAssetId,
+        playbackId: uploadResult.playbackId || undefined,
+        provider: "Mux",
       };
 
       if (mode === 'local') {
@@ -253,7 +344,8 @@ export function CreateVideoDialog({
       setOpen(false);
       onSuccess?.();
     } catch (error) {
-      toast({ title: "Error", description: "Failed to create video content", variant: "destructive" });
+      setVideoUploadState("error");
+      toast({ title: "Error", description: error instanceof Error ? error.message : "Failed to create video content", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
@@ -383,8 +475,8 @@ export function CreateVideoDialog({
                   <Card className="overflow-hidden">
                     <CardContent className="p-0">
                       <div className="relative aspect-video bg-black">
-                        <video src={videoPreviewUrl || undefined} className="w-full h-full object-contain" controls={videoUploadState === "complete"} muted />
-                        {videoUploadState !== "complete" && (
+                        <video src={videoPreviewUrl || undefined} className="w-full h-full object-contain" controls={videoUploadState === "idle" || videoUploadState === "complete"} muted />
+                        {(videoUploadState === "uploading" || videoUploadState === "processing") && (
                           <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                             <div className="text-center text-white">
                               {videoUploadState === "uploading" && (
@@ -402,10 +494,10 @@ export function CreateVideoDialog({
                             </div>
                           </div>
                         )}
-                        <Button type="button" variant="secondary" size="icon" className="absolute top-2 right-2" onClick={removeVideo}>
+                        <Button type="button" variant="secondary" size="icon" className="absolute top-2 right-2" onClick={removeVideo} disabled={isSubmitting}>
                           <X className="h-4 w-4" />
                         </Button>
-                        {videoUploadState === "complete" && (
+                        {(videoUploadState === "idle" || videoUploadState === "complete") && videoDuration > 0 && (
                           <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
                             {mediaStreamingService.formatDuration(videoDuration)}
                           </div>
@@ -448,7 +540,7 @@ export function CreateVideoDialog({
             <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting || videoUploadState !== "complete" || !formData.title.trim()}>
+            <Button type="submit" disabled={isSubmitting || !videoFile || !formData.title.trim()}>
               {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Create Video
             </Button>

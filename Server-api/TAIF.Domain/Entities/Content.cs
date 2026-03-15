@@ -8,6 +8,13 @@ namespace TAIF.Domain.Entities
 {
     public class Content : OrganizationBase
     {
+        // JSON options for consistent camelCase serialization and case-insensitive deserialization
+        private static readonly JsonSerializerOptions JsonOptions = new()
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            PropertyNameCaseInsensitive = true
+        };
+
         public LessonItemType Type { get; private set; }
         public string ContentJson { get; private set; }
 
@@ -28,16 +35,16 @@ namespace TAIF.Domain.Entities
 
         private void SetContentData(IContentData data)
         {
-            ContentJson = JsonSerializer.Serialize(data, data.GetType());
+            ContentJson = JsonSerializer.Serialize(data, data.GetType(), JsonOptions);
         }
 
         private IContentData DeserializeContent()
         {
             return Type switch
             {
-                LessonItemType.Video => JsonSerializer.Deserialize<Video>(ContentJson)!,
-                LessonItemType.RichText => JsonSerializer.Deserialize<RichText>(ContentJson)!,
-                LessonItemType.Quiz => JsonSerializer.Deserialize<Quiz>(ContentJson)!,
+                LessonItemType.Video => JsonSerializer.Deserialize<Video>(ContentJson, JsonOptions)!,
+                LessonItemType.RichText => JsonSerializer.Deserialize<RichText>(ContentJson, JsonOptions)!,
+                LessonItemType.Quiz => JsonSerializer.Deserialize<Quiz>(ContentJson, JsonOptions)!,
                 _ => throw new NotSupportedException("Unsupported content type")
             };
         }

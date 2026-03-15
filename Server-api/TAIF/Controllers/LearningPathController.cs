@@ -1,3 +1,4 @@
+using Mapster;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq.Expressions;
@@ -74,7 +75,15 @@ namespace TAIF.Controllers
                 orderByDescending: true
             );
 
-            return Ok(ApiResponse<PagedResult<LearningPath>>.SuccessResponse(result));
+            var response = new PagedResult<LearningPathResponse>
+            {
+                Items = result.Items.Select(lp => lp.Adapt<LearningPathResponse>()).ToList(),
+                Page = result.Page,
+                PageSize = result.PageSize,
+                TotalCount = result.TotalCount
+            };
+
+            return Ok(ApiResponse<PagedResult<LearningPathResponse>>.SuccessResponse(response));
         }
 
         /// <summary>
@@ -190,7 +199,7 @@ namespace TAIF.Controllers
         public async Task<IActionResult> Enroll([FromRoute] Guid id)
         {
             var enrollment = await _progressService.EnrollUserAsync(this.UserId, id);
-            return Ok(ApiResponse<UserLearningPathProgress>.SuccessResponse(enrollment));
+            return Ok(ApiResponse<UserLearningPathProgressResponse>.SuccessResponse(enrollment.Adapt<UserLearningPathProgressResponse>()));
         }
 
         #region Admin CRUD Operations
@@ -201,7 +210,7 @@ namespace TAIF.Controllers
         {
             var learningPath = await _learningPathService.GetByIdAsync(id);
             if (learningPath is null) return NotFound();
-            return Ok(ApiResponse<LearningPath>.SuccessResponse(learningPath));
+            return Ok(ApiResponse<LearningPathResponse>.SuccessResponse(learningPath.Adapt<LearningPathResponse>()));
         }
 
         [HttpPost]
@@ -218,7 +227,7 @@ namespace TAIF.Controllers
             };
 
             var created = await _learningPathService.CreateAsync(learningPath);
-            return Ok(ApiResponse<LearningPath>.SuccessResponse(created));
+            return Ok(ApiResponse<LearningPathResponse>.SuccessResponse(created.Adapt<LearningPathResponse>()));
         }
 
         [HttpPut("{id}")]
@@ -226,7 +235,7 @@ namespace TAIF.Controllers
         public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateLearningPathRequest request)
         {
             var updated = await _learningPathService.UpdateAsync(id, request);
-            return Ok(ApiResponse<LearningPath>.SuccessResponse(updated));
+            return Ok(ApiResponse<LearningPathResponse>.SuccessResponse(updated.Adapt<LearningPathResponse>()));
         }
 
         [HttpDelete("{id}")]

@@ -17,5 +17,6 @@ namespace TAIF.Application.Interfaces.Services
         Task<ReviewStatisticsResponse> GetCourseReviewStatisticsAsync(Guid courseId);
         Task<bool> HasUserReviewedCourseAsync(Guid userId, Guid courseId);
         Task<PagedResult<ReviewResponse>> GetPagedReviewsAsync(ReviewFilter filter);
+        Task<Dictionary<Guid, (double AverageRating, int ReviewCount)>> GetReviewStatsForCoursesAsync(IEnumerable<Guid> courseIds);
     }
 }

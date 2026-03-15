@@ -117,17 +117,32 @@ class LessonItemService {
 
   parseContent<T>(content: string | object | null | undefined): T | null {
     if (!content) return null;
+    let parsed: unknown;
     if (typeof content === "object") {
-      return content as T;
-    }
-    if (typeof content === "string") {
+      parsed = content;
+    } else if (typeof content === "string") {
       try {
-        return JSON.parse(content) as T;
+        parsed = JSON.parse(content);
       } catch {
         return null;
       }
+    } else {
+      return null;
     }
-    return null;
+    // Normalize keys to camelCase (handle PascalCase from backend)
+    return this.normalizeKeys(parsed) as T;
+  }
+
+  private normalizeKeys<T>(obj: T): T {
+    if (obj === null || typeof obj !== 'object') return obj;
+    if (Array.isArray(obj)) return obj.map(item => this.normalizeKeys(item)) as T;
+    
+    const normalized: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+      const camelKey = key.charAt(0).toLowerCase() + key.slice(1);
+      normalized[camelKey] = this.normalizeKeys(value);
+    }
+    return normalized as T;
   }
 
   private mapProgressDtoToModel(dto: LessonItemWithProgressDto, lessonId: string): LessonItem {
@@ -137,7 +152,7 @@ class LessonItemService {
       name: dto.name,
       description: dto.description,
       contentId: dto.contentId,
-      content: dto.content,
+      content: this.parseContent(dto.content) as object | undefined,
       type: mapLessonItemType(dto.type),
       durationInSeconds: dto.durationInSeconds,
       order: dto.order,

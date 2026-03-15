@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Mapster;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 using TAIF.API.Controllers;
@@ -42,28 +43,27 @@ namespace TAIF.API.Controllers
             var lessonItem = await _lessonItemService.GetByIdWithContentAsync(id);
             if (lessonItem is null) return NotFound();
 
-            var response = new LessonItemResponse
-            {
-                Id = lessonItem.Id,
-                Name = lessonItem.Name,
-                Description = lessonItem.Description,
-                Type = lessonItem.Type,
-                ContentId = lessonItem.ContentId,
-                Content = lessonItem.Content != null
-                    ? JsonSerializer.Deserialize<object>(lessonItem.Content.ContentJson)
-                    : null,
-                DurationInSeconds = lessonItem.DurationInSeconds,
-                CreatedAt = lessonItem.CreatedAt,
-                UpdatedAt = lessonItem.UpdatedAt
-            };
+            var response = lessonItem.Adapt<LessonItemResponse>();
+            response.Content = lessonItem.Content != null
+                ? JsonSerializer.Deserialize<object>(lessonItem.Content.ContentJson)
+                : null;
+
             return Ok(ApiResponse<LessonItemResponse>.SuccessResponse(response));
         }
 
         [HttpGet("paged")]
+        [Authorize(Policy = "ContentCreatorOrAbove")]
         public async Task<IActionResult> GetPaged([FromQuery] LessonItemFilter filter)
         {
             var pagedResult = await _lessonItemService.GetPagedAsync(filter);
-            return Ok(ApiResponse<PagedResult<LessonItem>>.SuccessResponse(pagedResult));
+            var response = new PagedResult<LessonItemResponse>
+            {
+                Items = pagedResult.Items.Select(li => li.Adapt<LessonItemResponse>()).ToList(),
+                Page = pagedResult.Page,
+                PageSize = pagedResult.PageSize,
+                TotalCount = pagedResult.TotalCount
+            };
+            return Ok(ApiResponse<PagedResult<LessonItemResponse>>.SuccessResponse(response));
         }
 
         [HttpGet("lessonProgress/{lessonId}")]
@@ -86,31 +86,24 @@ namespace TAIF.API.Controllers
         [Authorize(Policy = "ContentCreatorOrAbove")]
         public async Task<IActionResult> Create([FromBody] CreateLessonItemRequest request)
         {
-            var lessonItem = new LessonItem
-            {
-                Name = request.Name,
-                Description = request.Description,
-                ContentId = request.ContentId == Guid.Empty ? null : request.ContentId,
-                Type = request.Type,
-                DurationInSeconds = request.DurationInSeconds,
-                OrganizationId = this.OrganizationId,
-                SkillIds = request.SkillIds
-            };
+            var lessonItem = request.Adapt<LessonItem>();
+            lessonItem.OrganizationId = this.OrganizationId;
+
             var createdItem = await _lessonItemService.CreateAsync(lessonItem);
 
             if (request.LessonId != Guid.Empty)
-            {
                 await _lessonLessonItemService.AssignLessonItemToLessonAsync(request.LessonId, createdItem.Id);
-            }
 
-            return StatusCode(StatusCodes.Status201Created, ApiResponse<LessonItem>.SuccessResponse(createdItem));
+            return StatusCode(StatusCodes.Status201Created, ApiResponse<LessonItemResponse>.SuccessResponse(createdItem.Adapt<LessonItemResponse>()));
         }
 
         [HttpGet("all")]
+        [Authorize(Policy = "ContentCreatorOrAbove")]
         public async Task<IActionResult> GetAll()
         {
             var lessonItems = await _lessonItemService.GetAllAsync();
-            return Ok(ApiResponse<List<LessonItem>>.SuccessResponse(lessonItems.ToList()));
+            return Ok(ApiResponse<List<LessonItemResponse>>.SuccessResponse(
+                lessonItems.Select(li => li.Adapt<LessonItemResponse>()).ToList()));
         }
 
         [HttpPut("{id}")]
@@ -118,7 +111,7 @@ namespace TAIF.API.Controllers
         public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateLessonItemRequest lessonItem)
         {
             var updatedLessonItem = await _lessonItemService.UpdateAsync(id, lessonItem);
-            return Ok(ApiResponse<LessonItem>.SuccessResponse(updatedLessonItem));
+            return Ok(ApiResponse<LessonItemResponse>.SuccessResponse(updatedLessonItem.Adapt<LessonItemResponse>()));
         }
 
         [HttpDelete("{id}")]
@@ -129,8 +122,6 @@ namespace TAIF.API.Controllers
             if (!result) return NotFound();
             return Ok(ApiResponse<bool>.SuccessResponse(result));
         }
-
-        // ============ QUIZ ENDPOINTS ============
 
         [HttpPost("submit-quiz")]
         public async Task<IActionResult> SubmitQuiz([FromBody] SubmitQuizRequest request)

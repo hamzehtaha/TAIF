@@ -1,3 +1,4 @@
+using Mapster;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TAIF.API.Controllers;
@@ -25,21 +26,24 @@ namespace TAIF.Controllers
         public async Task<IActionResult> GetAll()
         {
             var mappings = await _mappingService.GetAllAsync();
-            return Ok(ApiResponse<List<InterestTagMapping>>.SuccessResponse(mappings));
+            return Ok(ApiResponse<List<InterestTagMappingResponse>>.SuccessResponse(
+                mappings.Select(m => m.Adapt<InterestTagMappingResponse>()).ToList()));
         }
 
         [HttpGet("interest/{interestId}")]
         public async Task<IActionResult> GetByInterestId([FromRoute] Guid interestId)
         {
             var mappings = await _mappingService.GetByInterestIdAsync(interestId);
-            return Ok(ApiResponse<List<InterestTagMapping>>.SuccessResponse(mappings));
+            return Ok(ApiResponse<List<InterestTagMappingResponse>>.SuccessResponse(
+                mappings.Select(m => m.Adapt<InterestTagMappingResponse>()).ToList()));
         }
 
         [HttpGet("tag/{tagId}")]
         public async Task<IActionResult> GetByTagId([FromRoute] Guid tagId)
         {
             var mappings = await _mappingService.GetByTagIdAsync(tagId);
-            return Ok(ApiResponse<List<InterestTagMapping>>.SuccessResponse(mappings));
+            return Ok(ApiResponse<List<InterestTagMappingResponse>>.SuccessResponse(
+                mappings.Select(m => m.Adapt<InterestTagMappingResponse>()).ToList()));
         }
 
         [HttpGet("{id}")]
@@ -48,10 +52,11 @@ namespace TAIF.Controllers
             var mapping = await _mappingService.GetByIdAsync(id);
             if (mapping == null)
                 return NotFound(ApiResponse<object>.FailResponse("InterestTagMapping not found"));
-            return Ok(ApiResponse<InterestTagMapping>.SuccessResponse(mapping));
+            return Ok(ApiResponse<InterestTagMappingResponse>.SuccessResponse(mapping.Adapt<InterestTagMappingResponse>()));
         }
 
         [HttpPost("")]
+        [Authorize(Policy = "AdminOrAbove")]
         public async Task<IActionResult> Create([FromBody] CreateInterestTagMappingRequest request)
         {
             var mapping = new InterestTagMapping
@@ -61,17 +66,19 @@ namespace TAIF.Controllers
                 Weight = Math.Clamp(request.Weight, 0.0, 1.0)
             };
             var created = await _mappingService.CreateAsync(mapping);
-            return Ok(ApiResponse<InterestTagMapping>.SuccessResponse(created));
+            return Ok(ApiResponse<InterestTagMappingResponse>.SuccessResponse(created.Adapt<InterestTagMappingResponse>()));
         }
 
         [HttpPut("{id}")]
+        [Authorize(Policy = "AdminOrAbove")]
         public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateMappingWeightRequest request)
         {
             var updated = await _mappingService.UpdateAsync(id, request);
-            return Ok(ApiResponse<InterestTagMapping>.SuccessResponse(updated));
+            return Ok(ApiResponse<InterestTagMappingResponse>.SuccessResponse(updated.Adapt<InterestTagMappingResponse>()));
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Policy = "AdminOrAbove")]
         public async Task<IActionResult> Delete([FromRoute] Guid id)
         {
             var result = await _mappingService.DeleteAsync(id);

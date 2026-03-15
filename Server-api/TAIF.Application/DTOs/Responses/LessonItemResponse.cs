@@ -18,6 +18,7 @@ namespace TAIF.Application.DTOs.Responses
         public object? Content { get; set; }
         public int Order { get; set; }
         public double DurationInSeconds { get; set; }
+        public List<Guid> SkillIds { get; set; } = new();
         public bool IsCompleted { get; set; } = false;
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }

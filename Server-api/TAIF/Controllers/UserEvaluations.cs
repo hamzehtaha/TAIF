@@ -49,7 +49,22 @@ namespace TAIF.API.Controllers
                 orderByDescending: true
             );
 
-            return Ok(ApiResponse<PagedResult<UserEvaluation>>.SuccessResponse(result));
+            var response = new PagedResult<UserEvaluationResponseDto>
+            {
+                Items = result.Items.Select(e => new UserEvaluationResponseDto
+                {
+                    Id = e.Id,
+                    UserId = e.UserId,
+                    OrganizationId = e.OrganizationId,
+                    TotalPercentage = e.Result.TotalPercentage,
+                    CompletedAt = e.CreatedAt
+                }).ToList(),
+                Page = result.Page,
+                PageSize = result.PageSize,
+                TotalCount = result.TotalCount
+            };
+
+            return Ok(ApiResponse<PagedResult<UserEvaluationResponseDto>>.SuccessResponse(response));
         }
 
         // ===============================
@@ -62,6 +77,10 @@ namespace TAIF.API.Controllers
 
             if (evaluation == null)
                 return NotFound(ApiResponse<string>.FailResponse("Evaluation not found"));
+
+            // Students can only read their own evaluations; admin+ can read any
+            if (IsStudent && evaluation.UserId != this.UserId)
+                return Forbid();
 
             var response = new UserEvaluationResponseDto
             {
@@ -123,6 +142,8 @@ namespace TAIF.API.Controllers
                 EvaluationId = result.Id,
                 TotalPercentage = result.Result.TotalPercentage,
                 CompletedAt = result.CreatedAt,
+                StrengthSkillIds = result.Result.StrengthSkillIds,
+                WeaknessSkillIds = result.Result.WeaknessSkillIds,
                 Questions = result.Result.Questions.Select(q => new QuestionEvaluationResultDto
                 {
                     QuestionId = q.QuestionId,

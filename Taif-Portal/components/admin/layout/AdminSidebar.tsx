@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import {
   LayoutDashboard,
   BookOpen,
@@ -22,6 +23,9 @@ import {
   Tags,
   Route,
   Wand2,
+  Award,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -135,6 +139,11 @@ const recommendationNavItems = [
     href: "/admin/interests-tags",
     icon: Tags,
   },
+  {
+    title: "Skills",
+    href: "/admin/skills",
+    icon: Award,
+  },
 ];
 
 const settingsNavItems = [
@@ -149,6 +158,23 @@ export function AdminSidebar() {
   const pathname = usePathname();
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
+  
+  // Collapsible section states
+  const [expandedSections, setExpandedSections] = useState({
+    main: true,
+    courseManagement: true,
+    contentLibrary: true,
+    administration: true,
+    recommendations: true,
+    system: true,
+  });
+
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
 
   const isActive = (href: string) => {
     if (href === "/admin") {
@@ -176,140 +202,200 @@ export function AdminSidebar() {
       <SidebarContent>
         {/* Main Navigation */}
         <SidebarGroup>
-          <SidebarGroupLabel>Main</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {mainNavItems.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive(item.href)}
-                    tooltip={item.title}
-                  >
-                    <Link href={item.href}>
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
+          <SidebarGroupLabel 
+            className="cursor-pointer flex items-center justify-between hover:bg-sidebar-accent/50 rounded-md px-2 py-1 transition-colors"
+            onClick={() => toggleSection('main')}
+          >
+            <span>Main</span>
+            {!isCollapsed && (
+              expandedSections.main ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />
+            )}
+          </SidebarGroupLabel>
+          {expandedSections.main && (
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {mainNavItems.map((item) => (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive(item.href)}
+                      tooltip={item.title}
+                    >
+                      <Link href={item.href}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          )}
         </SidebarGroup>
 
         {/* Course Management */}
         <SidebarGroup>
-          <SidebarGroupLabel>Course Management</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {courseNavItems.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive(item.href)}
-                    tooltip={item.title}
-                  >
-                    <Link href={item.href}>
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
+          <SidebarGroupLabel 
+            className="cursor-pointer flex items-center justify-between hover:bg-sidebar-accent/50 rounded-md px-2 py-1 transition-colors"
+            onClick={() => toggleSection('courseManagement')}
+          >
+            <span>Course Management</span>
+            {!isCollapsed && (
+              expandedSections.courseManagement ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />
+            )}
+          </SidebarGroupLabel>
+          {expandedSections.courseManagement && (
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {courseNavItems.map((item) => (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive(item.href)}
+                      tooltip={item.title}
+                    >
+                      <Link href={item.href}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          )}
         </SidebarGroup>
 
         {/* Content Library */}
         <SidebarGroup>
-          <SidebarGroupLabel>Content Library</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {contentNavItems.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive(item.href)}
-                    tooltip={item.title}
-                  >
-                    <Link href={item.href}>
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
+          <SidebarGroupLabel 
+            className="cursor-pointer flex items-center justify-between hover:bg-sidebar-accent/50 rounded-md px-2 py-1 transition-colors"
+            onClick={() => toggleSection('contentLibrary')}
+          >
+            <span>Content Library</span>
+            {!isCollapsed && (
+              expandedSections.contentLibrary ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />
+            )}
+          </SidebarGroupLabel>
+          {expandedSections.contentLibrary && (
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {contentNavItems.map((item) => (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive(item.href)}
+                      tooltip={item.title}
+                    >
+                      <Link href={item.href}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          )}
         </SidebarGroup>
 
         {/* Administration */}
         <SidebarGroup>
-          <SidebarGroupLabel>Administration</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {adminNavItems.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive(item.href)}
-                    tooltip={item.title}
-                  >
-                    <Link href={item.href}>
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
+          <SidebarGroupLabel 
+            className="cursor-pointer flex items-center justify-between hover:bg-sidebar-accent/50 rounded-md px-2 py-1 transition-colors"
+            onClick={() => toggleSection('administration')}
+          >
+            <span>Administration</span>
+            {!isCollapsed && (
+              expandedSections.administration ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />
+            )}
+          </SidebarGroupLabel>
+          {expandedSections.administration && (
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {adminNavItems.map((item) => (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive(item.href)}
+                      tooltip={item.title}
+                    >
+                      <Link href={item.href}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          )}
         </SidebarGroup>
 
         {/* Recommendations */}
         <SidebarGroup>
-          <SidebarGroupLabel>Recommendations</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {recommendationNavItems.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive(item.href)}
-                    tooltip={item.title}
-                  >
-                    <Link href={item.href}>
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
+          <SidebarGroupLabel 
+            className="cursor-pointer flex items-center justify-between hover:bg-sidebar-accent/50 rounded-md px-2 py-1 transition-colors"
+            onClick={() => toggleSection('recommendations')}
+          >
+            <span>Recommendations</span>
+            {!isCollapsed && (
+              expandedSections.recommendations ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />
+            )}
+          </SidebarGroupLabel>
+          {expandedSections.recommendations && (
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {recommendationNavItems.map((item) => (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive(item.href)}
+                      tooltip={item.title}
+                    >
+                      <Link href={item.href}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          )}
         </SidebarGroup>
 
         {/* Settings */}
         <SidebarGroup>
-          <SidebarGroupLabel>System</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {settingsNavItems.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive(item.href)}
-                    tooltip={item.title}
-                  >
-                    <Link href={item.href}>
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
+          <SidebarGroupLabel 
+            className="cursor-pointer flex items-center justify-between hover:bg-sidebar-accent/50 rounded-md px-2 py-1 transition-colors"
+            onClick={() => toggleSection('system')}
+          >
+            <span>System</span>
+            {!isCollapsed && (
+              expandedSections.system ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />
+            )}
+          </SidebarGroupLabel>
+          {expandedSections.system && (
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {settingsNavItems.map((item) => (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive(item.href)}
+                      tooltip={item.title}
+                    >
+                      <Link href={item.href}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          )}
         </SidebarGroup>
       </SidebarContent>
 

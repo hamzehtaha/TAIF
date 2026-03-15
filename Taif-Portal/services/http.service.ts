@@ -318,6 +318,53 @@ class HttpService {
     return response.data;
   }
 
+  async postFormData<T>(
+    endpoint: string,
+    formData: FormData,
+    options?: RequestOptions
+  ): Promise<T> {
+    const baseURL = options?.baseURL || this.baseURL;
+    const url = `${baseURL}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
+    const isPublic = this.isPublicEndpoint(endpoint) || options?.skipAuth;
+
+    const headers: HeadersInit = {};
+
+    if (!isPublic) {
+      const token = this.getAccessToken();
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+    }
+
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers,
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
+      }
+
+      const jsonResponse = await response.json();
+      
+      // Check if response is wrapped in BackendApiResponse
+      if (jsonResponse && typeof jsonResponse === 'object' && 'isSuccess' in jsonResponse && 'data' in jsonResponse) {
+        if (!jsonResponse.isSuccess) {
+          throw new Error(jsonResponse.message || 'Request failed');
+        }
+        return jsonResponse.data as T;
+      }
+      
+      return jsonResponse as T;
+    } catch (error) {
+      console.error(`API Error (FormData): ${endpoint}`, error);
+      throw error;
+    }
+  }
+
   setAuthTokens(authResponse: AuthResponse): void {
     this.setTokens(authResponse);
   }

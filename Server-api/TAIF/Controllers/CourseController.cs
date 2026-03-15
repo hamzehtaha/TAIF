@@ -1,13 +1,13 @@
-using Azure.Core;
+using Mapster;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq.Expressions;
+using System.Text.Json;
 using TAIF.API.Controllers;
 using TAIF.Application.DTOs.Filters;
 using TAIF.Application.DTOs.Requests;
 using TAIF.Application.DTOs.Responses;
 using TAIF.Application.Interfaces.Services;
-using TAIF.Application.Services;
 using TAIF.Domain.Entities;
 using static TAIF.Domain.Entities.Enums;
 
@@ -20,35 +20,36 @@ namespace TAIF.Controllers
     {
         private readonly ICourseService _courseService;
         private readonly ITagService _tagService;
+        private readonly IReviewService _reviewService;
 
-        public CourseController(ICourseService courseService, ITagService tagService)
+        public CourseController(ICourseService courseService, ITagService tagService, IReviewService reviewService)
         {
             _courseService = courseService;
             _tagService = tagService;
+            _reviewService = reviewService;
         }
+
         [AllowAnonymous]
         [HttpGet("")]
         public async Task<IActionResult> GetAll()
         {
             var courses = await _courseService.GetAllAsync();
             if (courses is null) return NotFound();
-            
-            // Filter by status: students and anonymous users only see published courses
+
             var isNonStudent = User.Identity?.IsAuthenticated == true && !IsStudent;
             if (!isNonStudent)
-            {
                 courses = courses.Where(c => c.Status == CourseStatus.Published).ToList();
-            }
-            
-            return Ok(ApiResponse<List<Course>>.SuccessResponse(courses));
+
+            var response = courses.Select(c => c.Adapt<CourseResponse>()).ToList();
+            await EnrichWithReviewStatsAsync(response);
+            return Ok(ApiResponse<List<CourseResponse>>.SuccessResponse(response));
         }
 
         [HttpGet("paged")]
         public async Task<IActionResult> GetPaged([FromQuery] CourseFilter filter)
         {
-            // Filter by status: students only see published courses, admins see all
             var isNonStudent = User.Identity?.IsAuthenticated == true && !IsStudent;
-            
+
             Expression<Func<Course, bool>> predicate = c =>
                 (string.IsNullOrWhiteSpace(filter.Search)
                     || c.Name!.Contains(filter.Search)
@@ -65,7 +66,18 @@ namespace TAIF.Controllers
                 includes: c => c.Category
             );
 
-            return Ok(ApiResponse<PagedResult<Course>>.SuccessResponse(result));
+            var items = result.Items.Select(c => c.Adapt<CourseResponse>()).ToList();
+            await EnrichWithReviewStatsAsync(items);
+
+            var response = new PagedResult<CourseResponse>
+            {
+                Items = items,
+                Page = result.Page,
+                PageSize = result.PageSize,
+                TotalCount = result.TotalCount
+            };
+
+            return Ok(ApiResponse<PagedResult<CourseResponse>>.SuccessResponse(response));
         }
 
         [HttpGet("{id}")]
@@ -73,7 +85,14 @@ namespace TAIF.Controllers
         {
             var course = await _courseService.GetByIdAsync(id);
             if (course is null) return NotFound();
-            return Ok(ApiResponse<Course>.SuccessResponse(course));
+
+            // Students only see published courses
+            if (IsStudent && course.Status != CourseStatus.Published)
+                return NotFound();
+
+            var response = course.Adapt<CourseResponse>();
+            await EnrichWithReviewStatsAsync([response]);
+            return Ok(ApiResponse<CourseResponse>.SuccessResponse(response));
         }
 
         [HttpGet("category/{categoryId}")]
@@ -81,7 +100,15 @@ namespace TAIF.Controllers
         {
             var courses = await _courseService.GetByCategoryIdAsync(categoryId);
             if (courses is null || courses.Count == 0) return NotFound();
-            return Ok(ApiResponse<List<Course>>.SuccessResponse(courses));
+
+            // Students only see published courses
+            if (IsStudent)
+                courses = courses.Where(c => c.Status == CourseStatus.Published).ToList();
+
+            if (courses.Count == 0) return NotFound();
+            var response = courses.Select(c => c.Adapt<CourseResponse>()).ToList();
+            await EnrichWithReviewStatsAsync(response);
+            return Ok(ApiResponse<List<CourseResponse>>.SuccessResponse(response));
         }
 
         [HttpGet("recommended")]
@@ -89,7 +116,9 @@ namespace TAIF.Controllers
         {
             var courses = await _courseService.GetRecommendedCoursesAsync(this.UserId, limit);
             if (courses is null || courses.Count == 0) return NotFound();
-            return Ok(ApiResponse<List<Course>>.SuccessResponse(courses));
+            var response = courses.Select(c => c.Adapt<CourseResponse>()).ToList();
+            await EnrichWithReviewStatsAsync(response);
+            return Ok(ApiResponse<List<CourseResponse>>.SuccessResponse(response));
         }
 
         [HttpGet("my-courses")]
@@ -98,7 +127,9 @@ namespace TAIF.Controllers
         {
             var courses = await _courseService.GetByUserIdAsync(this.UserId);
             if (courses is null) return NotFound();
-            return Ok(ApiResponse<List<Course>>.SuccessResponse(courses));
+            var response = courses.Select(c => c.Adapt<CourseResponse>()).ToList();
+            await EnrichWithReviewStatsAsync(response);
+            return Ok(ApiResponse<List<CourseResponse>>.SuccessResponse(response));
         }
 
         [HttpGet("my-courses/count")]
@@ -115,16 +146,26 @@ namespace TAIF.Controllers
         public async Task<IActionResult> Create([FromBody] CreateCourseRequest request)
         {
             await _tagService.TagsValidationGuard(request.Tags);
-            var course = new Course
-            {
-                Name = request.Name,
-                Description = request.Description,
-                Photo = request.Photo,
-                CategoryId = request.CategoryId,
-                Tags = request.Tags
-            };
+
+            var course = request.Adapt<Course>();
+
             var created_course = await _courseService.CreateAsync(course);
-            return Ok(ApiResponse<Course>.SuccessResponse(created_course));
+            return Ok(ApiResponse<CourseResponse>.SuccessResponse(created_course.Adapt<CourseResponse>()));
+        }
+
+        /// <summary>
+        /// Creates a complete course with all lessons, lesson items, and content in a single operation.
+        /// Used by the Course Builder to submit all data at once.
+        /// </summary>
+        [HttpPost("full")]
+        [Authorize(Policy = "ContentCreatorOrAbove")]
+        public async Task<IActionResult> CreateFullCourse([FromBody] CreateFullCourseRequest request)
+        {
+            if (request.Tags != null && request.Tags.Any())
+                await _tagService.TagsValidationGuard(request.Tags);
+
+            var result = await _courseService.CreateFullCourseAsync(request, UserId);
+            return Ok(ApiResponse<CreateFullCourseResponse>.SuccessResponse(result));
         }
 
         [HttpPut("{id}")]
@@ -135,7 +176,7 @@ namespace TAIF.Controllers
                 await _tagService.TagsValidationGuard(request.Tags);
 
             var course = await _courseService.UpdateAsync(id, request);
-            return Ok(ApiResponse<Course>.SuccessResponse(course));
+            return Ok(ApiResponse<CourseResponse>.SuccessResponse(course.Adapt<CourseResponse>()));
         }
 
         [HttpDelete("{id}")]
@@ -152,7 +193,7 @@ namespace TAIF.Controllers
         public async Task<IActionResult> UpdateStatus([FromRoute] Guid id, [FromBody] UpdateCourseStatusRequest request)
         {
             var course = await _courseService.UpdateAsync(id, new { Status = request.Status });
-            return Ok(ApiResponse<Course>.SuccessResponse(course));
+            return Ok(ApiResponse<CourseResponse>.SuccessResponse(course.Adapt<CourseResponse>()));
         }
 
         [HttpPost("{id}/publish")]
@@ -160,7 +201,7 @@ namespace TAIF.Controllers
         public async Task<IActionResult> Publish([FromRoute] Guid id)
         {
             var course = await _courseService.UpdateAsync(id, new { Status = Enums.CourseStatus.Published });
-            return Ok(ApiResponse<Course>.SuccessResponse(course));
+            return Ok(ApiResponse<CourseResponse>.SuccessResponse(course.Adapt<CourseResponse>()));
         }
 
         [HttpPost("{id}/archive")]
@@ -168,7 +209,7 @@ namespace TAIF.Controllers
         public async Task<IActionResult> Archive([FromRoute] Guid id)
         {
             var course = await _courseService.UpdateAsync(id, new { Status = Enums.CourseStatus.Archived });
-            return Ok(ApiResponse<Course>.SuccessResponse(course));
+            return Ok(ApiResponse<CourseResponse>.SuccessResponse(course.Adapt<CourseResponse>()));
         }
 
         [HttpPost("{id}/unpublish")]
@@ -176,7 +217,23 @@ namespace TAIF.Controllers
         public async Task<IActionResult> Unpublish([FromRoute] Guid id)
         {
             var course = await _courseService.UpdateAsync(id, new { Status = Enums.CourseStatus.Draft });
-            return Ok(ApiResponse<Course>.SuccessResponse(course));
+            return Ok(ApiResponse<CourseResponse>.SuccessResponse(course.Adapt<CourseResponse>()));
+        }
+
+        private async Task EnrichWithReviewStatsAsync(IEnumerable<CourseResponse> courses)
+        {
+            var ids = courses.Select(c => c.Id).ToList();
+            if (ids.Count == 0) return;
+
+            var stats = await _reviewService.GetReviewStatsForCoursesAsync(ids);
+            foreach (var course in courses)
+            {
+                if (stats.TryGetValue(course.Id, out var s))
+                {
+                    course.Rating = s.AverageRating;
+                    course.ReviewCount = s.ReviewCount;
+                }
+            }
         }
     }
 }

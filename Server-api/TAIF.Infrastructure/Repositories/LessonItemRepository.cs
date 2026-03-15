@@ -17,19 +17,20 @@ namespace TAIF.Infrastructure.Repositories
         /// <summary>
         /// Gets lesson items assigned to a lesson via the LessonLessonItem junction table
         /// </summary>
-        public async Task<List<LessonItem>> GetByLessonIdAsync(Guid lessonId, bool withDeleted = false)
+        public async Task<List<(LessonItem Item, int Order)>> GetByLessonIdAsync(Guid lessonId, bool withDeleted = false)
         {
             var query = _context.LessonLessonItems
                 .Where(lli => lli.LessonId == lessonId && !lli.IsDeleted)
                 .Include(lli => lli.LessonItem)
                     .ThenInclude(li => li.Content)
                 .OrderBy(lli => lli.Order)
-                .Select(lli => lli.LessonItem);
+                .Select(lli => new { lli.LessonItem, lli.Order });
 
             if (!withDeleted)
-                query = query.Where(li => !li.IsDeleted);
+                query = query.Where(x => !x.LessonItem.IsDeleted);
 
-            return await query.ToListAsync();
+            var results = await query.ToListAsync();
+            return results.Select(x => (x.LessonItem, x.Order)).ToList();
         }
 
         public async Task<List<LessonItem>> GetAllWithContentAsync(bool withDeleted = false)
@@ -49,6 +50,12 @@ namespace TAIF.Infrastructure.Repositories
             return await _context.Set<LessonItem>()
                 .Include(li => li.Content)
                 .FirstOrDefaultAsync(li => li.Id == id && !li.IsDeleted);
+        }
+        public async Task<List<LessonItem>> GetBySkillsAsync(List<Guid> skillIds)
+        {
+            return await _context.LessonItems
+                .Where(li => li.SkillIds.Any(s => skillIds.Contains(s)))
+                .ToListAsync();
         }
     }
 }

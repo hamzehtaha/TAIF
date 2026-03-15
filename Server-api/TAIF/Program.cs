@@ -1,21 +1,21 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Cors.Infrastructure;
+﻿using Mapster;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi;
 using Microsoft.OpenApi.Models;
 using Serilog;
-using System.Reflection;
 using System.Text;
 using TAIF.API.Middleware;
 using TAIF.API.Seeder;
 using TAIF.API.Seeder.Scripts;
-using TAIF.Application.DTOs;
+using TAIF.Application.DTOs.VideoDtos;
 using TAIF.Application.Interfaces.Repositories;
 using TAIF.Application.Interfaces.Services;
+using TAIF.Application.Mappings;
 using TAIF.Application.Services;
 using TAIF.Infrastructure.Data;
 using TAIF.Infrastructure.Repositories;
+using TAIF.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -57,6 +57,18 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 
+// Verification system — multi-channel, extensible
+// To add SMS: implement IVerificationChannel with ChannelName="SMS" and register below
+builder.Services.Configure<TAIF.Application.Options.VerificationOptions>(
+    builder.Configuration.GetSection(TAIF.Application.Options.VerificationOptions.SectionName));
+builder.Services.Configure<TAIF.Infrastructure.Options.EmailOptions>(
+    builder.Configuration.GetSection(TAIF.Infrastructure.Options.EmailOptions.SectionName));
+builder.Services.AddScoped<TAIF.Application.Interfaces.Services.IVerificationService, TAIF.Application.Services.VerificationService>();
+builder.Services.AddScoped<TAIF.Application.Interfaces.Services.IVerificationTemplateProvider, TAIF.Infrastructure.Templates.DefaultVerificationTemplateProvider>();
+builder.Services.AddScoped<TAIF.Application.Interfaces.Services.IVerificationChannel, TAIF.Infrastructure.Channels.EmailVerificationChannel>();
+// builder.Services.AddScoped<IVerificationChannel, SmsVerificationChannel>();   // future SMS
+// builder.Services.AddScoped<IVerificationChannel, WhatsAppVerificationChannel>(); // future WhatsApp
+
 // Organization context - request scoped
 builder.Services.AddScoped<TAIF.Application.Interfaces.IOrganizationContext, TAIF.Application.Services.OrganizationContext>();
 
@@ -84,7 +96,7 @@ builder.Services.AddScoped<IInterestRepository, InterestRepository>();
 builder.Services.AddScoped<ITagRepository, TagRepository>();
 builder.Services.AddScoped<IInterestTagMappingRepository, InterestTagMappingRepository>();
 builder.Services.AddScoped<IUserCourseBehaviorRepository, UserCourseBehaviorRepository>();
-
+builder.Services.AddScoped<IUserPlanService, UserPlanService>();
 // Recommendation engine services
 builder.Services.AddScoped<IInterestService, InterestService>();
 builder.Services.AddScoped<ITagService, TagService>();
@@ -143,6 +155,26 @@ builder.Services.AddScoped<IAnswerRepository, AnswerRepository>();
 builder.Services.AddScoped<ISkillService, SkillService>();
 builder.Services.AddScoped<ISkillRepository, SkillRepository>();
 
+// Video services - Mux integration with provider abstraction
+builder.Services.Configure<MuxOptions>(builder.Configuration.GetSection(MuxOptions.SectionName));
+builder.Services.AddHttpClient<IVideoProvider, MuxVideoProvider>();
+builder.Services.AddScoped<IVideoAssetRepository, VideoAssetRepository>();
+builder.Services.AddScoped<IVideoAssetService, VideoAssetService>();
+builder.Services.AddScoped<IEvaluationRepository, EvaluationRepository>();
+builder.Services.AddScoped<IEvaluationService, EvaluationService>();
+
+
+
+// TODO: Enable Webhook instead of long polling
+// Background polling service to check video asset status every 10 seconds
+// Remove this when webhooks are configured and use HandleWebhookAsync instead
+builder.Services.AddHostedService<VideoAssetPollingService>();
+
+// File storage services - Local storage for now, can be switched to S3/Azure later
+// TODO: Switch to AWS S3 or Azure Blob Storage for production
+builder.Services.Configure<LocalStorageOptions>(builder.Configuration.GetSection(LocalStorageOptions.SectionName));
+builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -192,63 +224,20 @@ builder.Services.AddAuthentication("Bearer")
 
 builder.Services.AddAuthorization(options =>
 {
-    // SuperAdmin Only Policy (Role=0) - Can access all portals
+    // Hierarchy: SuperAdmin > Admin > ContentCreator > Student
+    // [Authorize] alone = any authenticated user (Student+)
+
+    // SuperAdmin only
     options.AddPolicy("SuperAdminOnly", policy =>
-        policy.RequireAssertion(context =>
-            context.User.FindFirst("Role")?.Value == "0"));
+        policy.RequireRole("SuperAdmin"));
 
-    // Admin or SuperAdmin (Role=0 or 1)
+    // Admin and SuperAdmin
     options.AddPolicy("AdminOrAbove", policy =>
-        policy.RequireAssertion(context =>
-        {
-            var roleValue = context.User.FindFirst("Role")?.Value;
-            return roleValue == "0" || roleValue == "1";
-        }));
+        policy.RequireRole("SuperAdmin", "Admin"));
 
-    // ContentCreator or above (Role=0, 1, or 2) - For content management
+    // ContentCreator, Admin, and SuperAdmin
     options.AddPolicy("ContentCreatorOrAbove", policy =>
-        policy.RequireAssertion(context =>
-        {
-            var roleValue = context.User.FindFirst("Role")?.Value;
-            return roleValue == "0" || roleValue == "1" || roleValue == "2";
-        }));
-
-    // Legacy policies for backward compatibility (map to new roles)
-    options.AddPolicy("SystemAdminOnly", policy =>
-        policy.RequireAssertion(context =>
-            context.User.FindFirst("Role")?.Value == "0"));
-
-    options.AddPolicy("OrgAdminOrAbove", policy =>
-        policy.RequireAssertion(context =>
-        {
-            var roleValue = context.User.FindFirst("Role")?.Value;
-            return roleValue == "0" || roleValue == "1";
-        }));
-
-    options.AddPolicy("InstructorOrAbove", policy =>
-        policy.RequireAssertion(context =>
-        {
-            var roleValue = context.User.FindFirst("Role")?.Value;
-            return roleValue == "0" || roleValue == "1" || roleValue == "2";
-        }));
-
-    options.AddPolicy("AdminOnly", policy =>
-        policy.RequireAssertion(context =>
-            context.User.FindFirst("Role")?.Value == "0"));
-
-    options.AddPolicy("InstructorOrCompanyOrAdmin", policy =>
-        policy.RequireAssertion(context =>
-        {
-            var roleValue = context.User.FindFirst("Role")?.Value;
-            return roleValue == "0" || roleValue == "1" || roleValue == "2";
-        }));
-
-    options.AddPolicy("InstructorOrAdmin", policy =>
-        policy.RequireAssertion(context =>
-        {
-            var roleValue = context.User.FindFirst("Role")?.Value;
-            return roleValue == "0" || roleValue == "1" || roleValue == "2";
-        }));
+        policy.RequireRole("SuperAdmin", "Admin", "ContentCreator"));
 });
 
 builder.Services.AddCors(options =>
@@ -260,6 +249,9 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod();
     });
 });
+
+// Register Mapster mappings
+MappingConfig.RegisterMappings();
 
 InjectSeeders();
 
@@ -362,6 +354,10 @@ _ = Task.Run(async () =>
 });
 
 app.UseCors("AllowAll");
+
+// Enable serving static files from wwwroot (for uploaded images)
+app.UseStaticFiles();
+
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {

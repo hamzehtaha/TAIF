@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Mapster;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TAIF.API.Controllers;
 using TAIF.Application.DTOs.Requests;
@@ -27,8 +28,8 @@ namespace TAIF.Controllers
         [HttpPost]
         public async Task<IActionResult> SetLessonItemAsCompleted([FromBody] SetLessonItemAsCompletedRequest request)
         {
-            LessonItemProgress lessonItemProgress = await _lessonItemProgressService.SetLessonItemAsCompleted(this.UserId, request);
-            return Ok(ApiResponse<LessonItemProgress>.SuccessResponse(lessonItemProgress));
+            var lessonItemProgress = await _lessonItemProgressService.SetLessonItemAsCompleted(this.UserId, request);
+            return Ok(ApiResponse<LessonItemProgressResponse>.SuccessResponse(lessonItemProgress.Adapt<LessonItemProgressResponse>()));
         }
 
         [HttpPut("UpdateLastLessonItem")]

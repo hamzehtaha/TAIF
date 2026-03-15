@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TAIF.Domain.Entities;
 
 namespace TAIF.Application.DTOs.Responses
@@ -16,8 +12,11 @@ namespace TAIF.Application.DTOs.Responses
         public DateOnly Birthday { get; set; }
         public bool IsActive { get; set; } = true;
         public bool IsCompleted { get; set; } = false;
+        public bool EmailVerified { get; set; } = false;
         public UserRoleType Role { get; set; }
+        public string RoleName { get; set; } = null!;
         public UserRoleType UserRoleType { get; set; }
+        public List<Guid> Interests { get; set; } = new();
         public Guid? OrganizationId { get; set; }
         public string? OrganizationName { get; set; }
         public DateTime CreatedAt { get; set; }
