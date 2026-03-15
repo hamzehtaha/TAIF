@@ -8,6 +8,7 @@ namespace TAIF.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class CourseStatisticsController : TaifControllerBase
     {
         private readonly ICourseStatisticsService _courseStatisticsService;
@@ -21,7 +22,7 @@ namespace TAIF.Controllers
         /// Updates statistics (TotalEnrolled, TotalDurationInSeconds) for all courses
         /// </summary>
         [HttpPost("updateAll")]
-        [Authorize(Policy = "AdminOnly")]
+        [Authorize(Policy = "AdminOrAbove")]
         public async Task<IActionResult> UpdateAllCourseStatistics()
         {
             await _courseStatisticsService.UpdateAllCourseStatisticsAsync();
@@ -32,7 +33,7 @@ namespace TAIF.Controllers
         /// Updates statistics for a specific course
         /// </summary>
         [HttpPost("update/{courseId}")]
-        [Authorize(Policy = "InstructorOrCompanyOrAdmin")]
+        [Authorize(Policy = "ContentCreatorOrAbove")]
         public async Task<IActionResult> UpdateCourseStatistics([FromRoute] Guid courseId)
         {
             var result = await _courseStatisticsService.UpdateCourseStatisticsAsync(courseId);

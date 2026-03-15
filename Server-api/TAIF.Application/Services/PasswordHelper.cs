@@ -5,7 +5,6 @@ namespace TAIF.Application.Services
 {
     /// <summary>
     /// Centralized password hashing utility using PBKDF2 via ASP.NET Core PasswordHasher.
-    /// Replaces the insecure unsalted SHA-256 approach.
     /// </summary>
     public static class PasswordHelper
     {

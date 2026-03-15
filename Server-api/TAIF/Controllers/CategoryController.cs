@@ -40,6 +40,7 @@ namespace TAIF.API.Controllers
         }
 
         [HttpPost("")]
+        [Authorize(Policy = "ContentCreatorOrAbove")]
         public async Task<IActionResult> Create([FromBody] CreateCategoryRequest request)
         {
             var category = request.Adapt<Category>();
@@ -49,6 +50,7 @@ namespace TAIF.API.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Policy = "ContentCreatorOrAbove")]
         public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateCategoryRequest category)
         {
             var updated = await _categoryService.UpdateAsync(id, category);
@@ -56,6 +58,7 @@ namespace TAIF.API.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Policy = "ContentCreatorOrAbove")]
         public async Task<IActionResult> Delete([FromRoute] Guid id)
         {
             var result = await _categoryService.DeleteAsync(id);

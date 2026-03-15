@@ -29,13 +29,11 @@ namespace TAIF.API.Controllers
         {
             get
             {
-                var value = User.FindFirstValue("Role");
+                // ClaimTypes.Role is now the standard claim emitted by TokenService
+                var value = User.FindFirstValue(ClaimTypes.Role);
 
                 if (string.IsNullOrEmpty(value))
                     throw new UnauthorizedAccessException("Role claim missing");
-
-                if (int.TryParse(value, out var roleInt))
-                    return (UserRoleType)roleInt;
 
                 if (Enum.TryParse<UserRoleType>(value, out var role))
                     return role;
