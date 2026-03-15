@@ -8,8 +8,8 @@ namespace TAIF.Application.Services;
 
 public class VerificationService : IVerificationService
 {
-    // Unambiguous characters — no 0/O, 1/I/l confusion
-    private const string OtpAlphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+    // 6-digit numeric OTP — easy to type, works across all channels (Email, SMS, WhatsApp)
+    private const string OtpAlphabet = "0123456789";
 
     private readonly IUserRepository _userRepository;
     private readonly IEnumerable<IVerificationChannel> _channels;
