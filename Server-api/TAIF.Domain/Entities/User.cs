@@ -23,6 +23,12 @@ namespace TAIF.Domain.Entities
         
         public string? RefreshToken { get; set; }
         public DateTime? RefreshTokenExpiresAt { get; set; }
+
+        // Verification — shared by all channels (Email, SMS, WhatsApp)
+        public string? VerificationToken { get; set; }        // PBKDF2 hash of the OTP
+        public DateTime? VerificationTokenExpiresAt { get; set; }
+        public string? VerificationChannel { get; set; }       // "Email" | "SMS" | "WhatsApp"
+
         public ICollection<Guid> Interests { get; set; } = new List<Guid>();
         
         public Organization? Organization { get; set; }

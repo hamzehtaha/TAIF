@@ -57,6 +57,18 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 
+// Verification system — multi-channel, extensible
+// To add SMS: implement IVerificationChannel with ChannelName="SMS" and register below
+builder.Services.Configure<TAIF.Application.Options.VerificationOptions>(
+    builder.Configuration.GetSection(TAIF.Application.Options.VerificationOptions.SectionName));
+builder.Services.Configure<TAIF.Infrastructure.Options.EmailOptions>(
+    builder.Configuration.GetSection(TAIF.Infrastructure.Options.EmailOptions.SectionName));
+builder.Services.AddScoped<TAIF.Application.Interfaces.Services.IVerificationService, TAIF.Application.Services.VerificationService>();
+builder.Services.AddScoped<TAIF.Application.Interfaces.Services.IVerificationTemplateProvider, TAIF.Infrastructure.Templates.DefaultVerificationTemplateProvider>();
+builder.Services.AddScoped<TAIF.Application.Interfaces.Services.IVerificationChannel, TAIF.Infrastructure.Channels.EmailVerificationChannel>();
+// builder.Services.AddScoped<IVerificationChannel, SmsVerificationChannel>();   // future SMS
+// builder.Services.AddScoped<IVerificationChannel, WhatsAppVerificationChannel>(); // future WhatsApp
+
 // Organization context - request scoped
 builder.Services.AddScoped<TAIF.Application.Interfaces.IOrganizationContext, TAIF.Application.Services.OrganizationContext>();
 
