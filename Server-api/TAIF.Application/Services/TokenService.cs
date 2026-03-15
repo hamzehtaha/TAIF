@@ -27,28 +27,21 @@ namespace TAIF.Application.Services
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
                 new Claim("firstName", user.FirstName),
                 new Claim("lastName", user.LastName),
-                // Standard ClaimTypes.Role with role name enables RequireRole() policies and User.IsInRole()
+                // Standard ClaimTypes.Role with role name enables RequireRole() policies
                 new Claim(ClaimTypes.Role, user.Role.ToString()),
             };
 
             if (user.OrganizationId.HasValue)
-            {
                 claims.Add(new Claim("OrganizationId", user.OrganizationId.Value.ToString()));
-            }
 
-            var key = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(jwt["Key"]!)
-            );
-
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt["Key"]!));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
                 issuer: jwt["Issuer"],
                 audience: jwt["Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(
-                    int.Parse(jwt["AccessTokenMinutes"]!)
-                ),
+                expires: DateTime.UtcNow.AddMinutes(int.Parse(jwt["AccessTokenMinutes"]!)),
                 signingCredentials: creds
             );
 
@@ -56,9 +49,7 @@ namespace TAIF.Application.Services
         }
 
         // Returns a cryptographically random opaque token — not a JWT
-        public string GenerateRefreshToken()
-        {
-            return Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
-        }
+        public string GenerateRefreshToken() =>
+            Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
     }
 }

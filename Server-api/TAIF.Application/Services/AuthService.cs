@@ -45,7 +45,7 @@ namespace TAIF.Application.Services
             user.PasswordHash = PasswordHelper.Hash(request.Password);
             user.IsActive = true;
             user.OrganizationId = publicOrg.Id;
-            // Public registration always creates a Student — role escalation is not allowed via this endpoint
+            // Public registration always creates a Student — role escalation not allowed here
             user.Role = UserRoleType.Student;
             user.IsCompleted = true;
 
@@ -60,6 +60,7 @@ namespace TAIF.Application.Services
             await _userRepository.SaveChangesAsync();
 
             return new AuthResponse(
+                user.Id,
                 accessToken,
                 DateTime.UtcNow.AddMinutes(times.Item2),
                 refreshToken,
@@ -87,6 +88,7 @@ namespace TAIF.Application.Services
             await _userRepository.SaveChangesAsync();
 
             return new AuthResponse(
+                user.Id,
                 accessToken,
                 DateTime.UtcNow.AddMinutes(times.Item2),
                 refreshToken,
@@ -107,6 +109,7 @@ namespace TAIF.Application.Services
             var times = GetTokenExpires();
 
             return new AuthResponse(
+                user.Id,
                 newAccessToken,
                 DateTime.UtcNow.AddMinutes(times.Item2),
                 user.RefreshToken ?? "",
@@ -116,24 +119,18 @@ namespace TAIF.Application.Services
 
         private (int, int) GetTokenExpires()
         {
-            try
-            {
-                int numberOfDaysForRefresh = 30;
-                int numberOfMinForAccessToken = 15;
-                var jwt = _configuration.GetSection("Jwt");
+            int numberOfDaysForRefresh = 30;
+            int numberOfMinForAccessToken = 15;
+            var jwt = _configuration.GetSection("Jwt");
 
-                if (jwt is not null && !string.IsNullOrEmpty(jwt["RefreshTokenDays"]))
-                    int.TryParse(jwt["RefreshTokenDays"], out numberOfDaysForRefresh);
+            if (jwt is not null && !string.IsNullOrEmpty(jwt["RefreshTokenDays"]))
+                int.TryParse(jwt["RefreshTokenDays"], out numberOfDaysForRefresh);
 
-                if (jwt is not null && !string.IsNullOrEmpty(jwt["AccessTokenMinutes"]))
-                    int.TryParse(jwt["AccessTokenMinutes"], out numberOfMinForAccessToken);
+            if (jwt is not null && !string.IsNullOrEmpty(jwt["AccessTokenMinutes"]))
+                int.TryParse(jwt["AccessTokenMinutes"], out numberOfMinForAccessToken);
 
-                return (numberOfDaysForRefresh, numberOfMinForAccessToken);
-            }
-            catch
-            {
-                throw new Exception("Error while GetTokenExpires");
-            }
+            return (numberOfDaysForRefresh, numberOfMinForAccessToken);
         }
     }
 }
+

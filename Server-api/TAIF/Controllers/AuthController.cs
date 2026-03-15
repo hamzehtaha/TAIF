@@ -15,12 +15,18 @@ namespace TAIF.API.Controllers
         private readonly IAuthService _authService;
         private readonly ILogger<AuthController> _logger;
         private readonly IUserService _userService;
+        private readonly IVerificationService _verificationService;
 
-        public AuthController(IAuthService authService, ILogger<AuthController> logger, IUserService userService)
+        public AuthController(
+            IAuthService authService,
+            ILogger<AuthController> logger,
+            IUserService userService,
+            IVerificationService verificationService)
         {
             _authService = authService;
             _logger = logger;
             _userService = userService;
+            _verificationService = verificationService;
         }
 
         [HttpPost("register")]
@@ -28,6 +34,18 @@ namespace TAIF.API.Controllers
         public async Task<IActionResult> Register(RegisterRequest request)
         {
             var result = await _authService.RegisterAsync(request);
+
+            // Auto-send verification email after successful registration.
+            // Failure is logged but does NOT block the registration response.
+            try
+            {
+                await _verificationService.SendAsync(result.UserId, "Email");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to send verification email for user {UserId}", result.UserId);
+            }
+
             return Ok(ApiResponse<AuthResponse>.SuccessResponse(result));
         }
 
