@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TAIF.Domain.Models;
 
 namespace TAIF.Domain.Entities
 {
@@ -12,6 +13,8 @@ namespace TAIF.Domain.Entities
 
         public string? Description { get; set; }
 
-        public ICollection<Guid> QuestionIds { get; set; } = new List<Guid>();
+        public Guid? InterestId { get; set; }
+
+        public ICollection<EvaluationQuestionMapping> QuestionMappings { get; set; } = new List<EvaluationQuestionMapping>();
     }
 }

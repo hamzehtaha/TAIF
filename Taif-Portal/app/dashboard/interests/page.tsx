@@ -77,7 +77,8 @@ export default function InterestsPage() {
     setSaving(true);
     try {
       await interestService.updateUserInterests(Array.from(selectedInterests));
-      router.push("/dashboard");
+      // Redirect to evaluation page after setting interests
+      router.push("/dashboard/evaluation");
     } catch (err) {
       console.error("Failed to save interests:", err);
       setError("Failed to save interests");

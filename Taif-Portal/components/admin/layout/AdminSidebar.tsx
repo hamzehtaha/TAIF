@@ -26,6 +26,8 @@ import {
   Award,
   ChevronDown,
   ChevronRight,
+  ClipboardCheck,
+  MessageCircleQuestion,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -146,6 +148,19 @@ const recommendationNavItems = [
   },
 ];
 
+const evaluationNavItems = [
+  {
+    title: "Evaluations",
+    href: "/admin/evaluations",
+    icon: ClipboardCheck,
+  },
+  {
+    title: "Evaluation Questions",
+    href: "/admin/evaluation-questions",
+    icon: MessageCircleQuestion,
+  },
+];
+
 const settingsNavItems = [
   {
     title: "Settings",
@@ -166,6 +181,7 @@ export function AdminSidebar() {
     contentLibrary: true,
     administration: true,
     recommendations: true,
+    evaluations: true,
     system: true,
   });
 
@@ -347,6 +363,39 @@ export function AdminSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 {recommendationNavItems.map((item) => (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive(item.href)}
+                      tooltip={item.title}
+                    >
+                      <Link href={item.href}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          )}
+        </SidebarGroup>
+
+        {/* Evaluations */}
+        <SidebarGroup>
+          <SidebarGroupLabel 
+            className="cursor-pointer flex items-center justify-between hover:bg-sidebar-accent/50 rounded-md px-2 py-1 transition-colors"
+            onClick={() => toggleSection('evaluations')}
+          >
+            <span>Evaluations</span>
+            {!isCollapsed && (
+              expandedSections.evaluations ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />
+            )}
+          </SidebarGroupLabel>
+          {expandedSections.evaluations && (
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {evaluationNavItems.map((item) => (
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
                       asChild

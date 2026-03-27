@@ -61,6 +61,7 @@ namespace TAIF.Infrastructure.Data
         public DbSet<UserEvaluation> UserEvaluations { get; set; }
         public DbSet<VideoAsset> VideoAssets { get; set; }
         public DbSet<Evaluation> Evaluations { get; set; }
+        public DbSet<EvaluationQuestionMapping> EvaluationQuestionMappings { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -528,6 +529,34 @@ namespace TAIF.Infrastructure.Data
                 entity.HasIndex(v => v.ProviderAssetId);
                 entity.HasIndex(v => v.OrganizationId);
                 entity.HasIndex(v => v.Status);
+            });
+
+            // Evaluation configuration
+            modelBuilder.Entity<Evaluation>(entity =>
+            {
+                entity.HasOne(e => e.Organization)
+                      .WithMany()
+                      .HasForeignKey(e => e.OrganizationId)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // EvaluationQuestionMapping configuration (Evaluation <-> Question ordering)
+            modelBuilder.Entity<EvaluationQuestionMapping>(entity =>
+            {
+                entity.HasIndex(eqm => new { eqm.EvaluationId, eqm.QuestionId }).IsUnique();
+                entity.HasIndex(eqm => new { eqm.EvaluationId, eqm.Order });
+
+                entity.HasOne(eqm => eqm.Evaluation)
+                      .WithMany(e => e.QuestionMappings)
+                      .HasForeignKey(eqm => eqm.EvaluationId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(eqm => eqm.Organization)
+                      .WithMany()
+                      .HasForeignKey(eqm => eqm.OrganizationId)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.SetNull);
             });
 
             // Apply global query filters for multi-tenancy

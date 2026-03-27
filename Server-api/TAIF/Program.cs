@@ -161,8 +161,8 @@ builder.Services.AddHttpClient<IVideoProvider, MuxVideoProvider>();
 builder.Services.AddScoped<IVideoAssetRepository, VideoAssetRepository>();
 builder.Services.AddScoped<IVideoAssetService, VideoAssetService>();
 builder.Services.AddScoped<IEvaluationRepository, EvaluationRepository>();
+builder.Services.AddScoped<IEvaluationQuestionMappingRepository, EvaluationQuestionMappingRepository>();
 builder.Services.AddScoped<IEvaluationService, EvaluationService>();
-
 
 
 // TODO: Enable Webhook instead of long polling

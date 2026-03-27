@@ -27,12 +27,10 @@ namespace TAIF.Application.Services
             var questions = await _repository.GetAllWithAnswersAsync();
 
             return questions
-                .OrderBy(q => q.Order)
                 .Select(q => new EvaluationQuestionResponseDto
                 {
                     Id = q.Id,
                     Text = q.Text,
-                    Order = q.Order,
                     Answers = q.Answers
                         .Where(a => !a.IsDeleted)
                         .Select(a => new EvaluationAnswerResponseDto

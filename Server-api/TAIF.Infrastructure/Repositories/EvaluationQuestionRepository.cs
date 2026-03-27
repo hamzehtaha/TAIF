@@ -30,7 +30,7 @@ namespace TAIF.Infrastructure.Repositories
 
             return await query
                 .Include(q => q.Answers)
-                .OrderBy(q => q.Order)
+                .OrderBy(q => q.CreatedAt)
                 .ToListAsync();
         }
     }
