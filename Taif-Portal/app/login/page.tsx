@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { authService } from "@/services/auth.service";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { interestService } from "@/services/interest.service";
+import { evaluationService } from "@/services/evaluation.service";
 import { UserRole } from "@/enums/user-role.enum";
 
 export default function Login() {
@@ -55,7 +56,13 @@ export default function Login() {
       if (!(await interestService.hasInterests())) {
         router.push("/dashboard/interests");
       } else {
-        router.push("/dashboard");
+        // Check if user needs to take an evaluation
+        const hasTakenEvaluation = await evaluationService.hasUserTakenEvaluation(user.id);
+        if (!hasTakenEvaluation) {
+          router.push("/dashboard/evaluation");
+        } else {
+          router.push("/dashboard");
+        }
       }
     } catch (err) {
       setError("Invalid email or password. Please try again.");

@@ -11,13 +11,17 @@ namespace TAIF.Application.Services
     {
         private readonly IUserEvaluationRepository _repository;
         private readonly IEvaluationAnswerRepository _answerRepository;
-        private readonly IQuestionRepository _questionRepository;
-        public UserEvaluationService(IUserEvaluationRepository repository, IEvaluationAnswerRepository answerRepository, IQuestionRepository questionRepository)
+        private readonly IEvaluationQuestionRepository _evaluationQuestionRepository;
+        
+        public UserEvaluationService(
+            IUserEvaluationRepository repository, 
+            IEvaluationAnswerRepository answerRepository, 
+            IEvaluationQuestionRepository evaluationQuestionRepository)
             : base(repository)
         {
             _repository = repository;
             _answerRepository = answerRepository;
-            _questionRepository = questionRepository;
+            _evaluationQuestionRepository = evaluationQuestionRepository;
         }
 
         public async Task<bool> ExistsForUserAsync(Guid userId)
@@ -36,28 +40,26 @@ namespace TAIF.Application.Services
 
             var questionIds = dto.Answers.Select(a => a.QuestionId).ToList();
 
-            var questions = await _questionRepository.FindNoTrackingAsync(
-                q => questionIds.Contains(q.Id)
-            );
+            // Get all evaluation questions with their answers
+            var allQuestions = await _evaluationQuestionRepository.GetAllWithAnswersAsync();
+            var questions = allQuestions.Where(q => questionIds.Contains(q.Id)).ToList();
 
             if (questions.Count != questionIds.Count)
                 throw new Exception("Invalid questions submitted.");
 
             var result = new EvaluationJsonResult();
 
-            var strengthSkills = new HashSet<Guid>();
-            var weaknessSkills = new HashSet<Guid>();
-
             foreach (var submitted in dto.Answers)
             {
                 var question = questions.First(q => q.Id == submitted.QuestionId);
+                var questionAnswerIds = question.Answers.Select(a => a.Id).ToList();
 
-                if (!question.AnswerIds.Contains(submitted.AnswerId))
+                if (!questionAnswerIds.Contains(submitted.AnswerId))
                     throw new Exception("Invalid answer for question.");
 
-                var correctAnswerId = question.AnswerIds[question.CorrectAnswerIndex];
-
-                int percentage = submitted.AnswerId == correctAnswerId ? 100 : 0;
+                // Get the selected answer's score
+                var selectedAnswer = question.Answers.First(a => a.Id == submitted.AnswerId);
+                int percentage = selectedAnswer.Score;
 
                 result.Questions.Add(new QuestionEvaluationResult
                 {
@@ -65,22 +67,11 @@ namespace TAIF.Application.Services
                     SelectedAnswerId = submitted.AnswerId,
                     Percentage = percentage
                 });
-
-                // Detect Strength / Weakness
-                if (percentage >= question.MinPercentage)
-                {
-                    foreach (var skillId in question.SkillIds)
-                        strengthSkills.Add(skillId);
-                }
-                else
-                {
-                    foreach (var skillId in question.SkillIds)
-                        weaknessSkills.Add(skillId);
-                }
             }
 
-            result.StrengthSkillIds = strengthSkills.ToList();
-            result.WeaknessSkillIds = weaknessSkills.ToList();
+            // For evaluation questions, we don't have skill tracking like regular questions
+            result.StrengthSkillIds = new List<Guid>();
+            result.WeaknessSkillIds = new List<Guid>();
 
             result.TotalPercentage = result.Questions.Any()
                 ? (int)result.Questions.Average(q => q.Percentage)

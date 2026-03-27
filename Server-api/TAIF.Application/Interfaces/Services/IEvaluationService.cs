@@ -9,5 +9,6 @@ namespace TAIF.Application.Interfaces.Services
 {
     public interface IEvaluationService : IService<Evaluation>
     {
+        Task<Evaluation> UpdateWithMappingsAsync(Guid id, Evaluation updatedEvaluation);
     }
 }

@@ -38,7 +38,6 @@ namespace TAIF.API.Seeder.Scripts
                     {
                         Id = Guid.NewGuid(),
                         Text = q.Text,
-                        Order = q.Order
                     };
 
                     foreach (var a in q.Answers)

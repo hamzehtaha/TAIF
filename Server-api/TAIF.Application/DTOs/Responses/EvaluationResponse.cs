@@ -6,6 +6,12 @@ using System.Threading.Tasks;
 
 namespace TAIF.Application.DTOs.Responses
 {
+    public class QuestionMappingResponseDto
+    {
+        public Guid QuestionId { get; set; }
+        public int Order { get; set; }
+    }
+
     public class EvaluationResponse
     {
         public Guid Id { get; set; }
@@ -14,6 +20,8 @@ namespace TAIF.Application.DTOs.Responses
 
         public string? Description { get; set; }
 
-        public List<Guid> QuestionIds { get; set; } = new();
+        public Guid? InterestId { get; set; }
+
+        public List<QuestionMappingResponseDto> QuestionMappings { get; set; } = new();
     }
 }
