@@ -89,6 +89,9 @@ export function Header() {
             >
               {t.nav.contact}
             </Link>
+            <Link href="/dashboard/results" className="text-sm font-medium hover:text-primary transition">
+              {t.nav.results || "Evaluations"}
+            </Link>
           </nav>
 
           {/* Right Side Controls */}

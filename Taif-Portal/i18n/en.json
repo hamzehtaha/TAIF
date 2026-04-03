@@ -11,7 +11,8 @@
     "settings": "Settings",
     "logout": "Logout",
     "signin": "Sign In",
-    "signup": "Sign Up"
+    "signup": "Sign Up",
+    "results": "Evaluations"
   },
   "common": {
     "loading": "Loading...",
