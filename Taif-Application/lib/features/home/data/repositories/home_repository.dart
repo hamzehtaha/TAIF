@@ -22,35 +22,44 @@ class HomeRepository {
     }
   }
 
-  /// Get user's enrolled courses with progress
-  Future<List<CourseModel>> getUserCoursesWithProgress() async {
+  /// Get user's enrolled courses with progress and completed hours
+  Future<({List<CourseModel> courses, double totalHours})> getUserCoursesWithProgressAndHours() async {
     final courses = await _apiClient.getUserCourses();
+    
+    double totalHours = 0.0;
     
     // Fetch progress for each course
     final coursesWithProgress = await Future.wait(
       courses.map((course) async {
         final enrollment = await _apiClient.getEnrollmentProgress(course.id);
-        if (enrollment != null && enrollment.totalDurationInSeconds != null && enrollment.totalDurationInSeconds! > 0) {
-          final progress = enrollment.calculatedProgress;
-          return CourseModel(
-            id: course.id,
-            title: course.title,
-            description: course.description,
-            imageUrl: course.imageUrl,
-            categoryId: course.categoryId,
-            categoryName: course.categoryName,
-            durationInMinutes: course.durationInMinutes,
-            rating: course.rating,
-            reviewCount: course.reviewCount,
-            progress: progress,
-            isEnrolled: true,
-          );
+        if (enrollment != null) {
+          // Calculate hours from completed duration
+          if (enrollment.completedDurationInSeconds != null && enrollment.completedDurationInSeconds! > 0) {
+            totalHours += enrollment.completedDurationInSeconds! / 3600;
+          }
+          
+          if (enrollment.totalDurationInSeconds != null && enrollment.totalDurationInSeconds! > 0) {
+            final progress = enrollment.calculatedProgress;
+            return CourseModel(
+              id: course.id,
+              title: course.title,
+              description: course.description,
+              imageUrl: course.imageUrl,
+              categoryId: course.categoryId,
+              categoryName: course.categoryName,
+              durationInMinutes: course.durationInMinutes,
+              rating: course.rating,
+              reviewCount: course.reviewCount,
+              progress: progress,
+              isEnrolled: true,
+            );
+          }
         }
         return course;
       }),
     );
     
-    return coursesWithProgress;
+    return (courses: coursesWithProgress, totalHours: totalHours);
   }
 
   /// Get recommended courses

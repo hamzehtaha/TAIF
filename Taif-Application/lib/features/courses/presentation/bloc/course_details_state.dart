@@ -152,6 +152,19 @@ class CourseDetailsEnrolling extends CourseDetailsLoaded {
   });
 }
 
+/// Toggling favourite state
+class CourseDetailsTogglingFavourite extends CourseDetailsLoaded {
+  const CourseDetailsTogglingFavourite({
+    required super.course,
+    required super.lessons,
+    super.enrollment,
+    required super.reviews,
+    super.reviewStatistics,
+    required super.hasReviewed,
+    super.expandedLessonId,
+  });
+}
+
 /// Submitting review state
 class CourseDetailsSubmittingReview extends CourseDetailsLoaded {
   const CourseDetailsSubmittingReview({
@@ -165,9 +178,11 @@ class CourseDetailsSubmittingReview extends CourseDetailsLoaded {
   });
 }
 
-/// Toggling favourite state
-class CourseDetailsTogglingFavourite extends CourseDetailsLoaded {
-  const CourseDetailsTogglingFavourite({
+/// Navigate to lesson state - triggers navigation to lesson screen
+class CourseDetailsNavigateToLesson extends CourseDetailsLoaded {
+  final String lessonId;
+
+  const CourseDetailsNavigateToLesson({
     required super.course,
     required super.lessons,
     super.enrollment,
@@ -175,5 +190,9 @@ class CourseDetailsTogglingFavourite extends CourseDetailsLoaded {
     super.reviewStatistics,
     required super.hasReviewed,
     super.expandedLessonId,
+    required this.lessonId,
   });
+
+  @override
+  List<Object?> get props => [...super.props, lessonId];
 }

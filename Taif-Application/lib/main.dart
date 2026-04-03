@@ -11,6 +11,7 @@ import 'core/utils/app_localizations.dart';
 import 'core/utils/logger.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/interests/presentation/bloc/interest_bloc.dart';
+import 'features/courses/presentation/screens/course_details_screen.dart' show routeObserver;
 
 /// TAIF Main App Entry Point
 /// Configures environment, initializes dependencies, and starts the app
