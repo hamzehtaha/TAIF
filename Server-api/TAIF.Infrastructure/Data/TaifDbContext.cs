@@ -62,6 +62,16 @@ namespace TAIF.Infrastructure.Data
         public DbSet<VideoAsset> VideoAssets { get; set; }
         public DbSet<Evaluation> Evaluations { get; set; }
         public DbSet<EvaluationQuestionMapping> EvaluationQuestionMappings { get; set; }
+
+        // Subscription system
+        public DbSet<SubscriptionPlan> SubscriptionPlans { get; set; }
+        public DbSet<SubscriptionPlanFeature> SubscriptionPlanFeatures { get; set; }
+        public DbSet<UserSubscription> UserSubscriptions { get; set; }
+        public DbSet<PromoCode> PromoCodes { get; set; }
+        public DbSet<PromoCodeUsage> PromoCodeUsages { get; set; }
+        public DbSet<SubscriptionPayment> SubscriptionPayments { get; set; }
+        public DbSet<CurrencyRate> CurrencyRates { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -557,6 +567,136 @@ namespace TAIF.Infrastructure.Data
                       .HasForeignKey(eqm => eqm.OrganizationId)
                       .IsRequired(false)
                       .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // ── Subscription plan ────────────────────────────────────────────────
+            modelBuilder.Entity<SubscriptionPlan>(entity =>
+            {
+                entity.HasIndex(p => p.Name).IsUnique();
+                entity.HasIndex(p => p.IsPublic);
+                entity.HasIndex(p => p.DisplayOrder);
+
+                entity.Property(p => p.MonthlyPrice).HasPrecision(18, 4);
+                entity.Property(p => p.YearlyPrice).HasPrecision(18, 4);
+                entity.Property(p => p.YearlyDiscountPercent).HasPrecision(5, 2);
+                entity.Property(p => p.Currency).HasMaxLength(3);
+
+                entity.HasMany(p => p.Features)
+                      .WithOne(f => f.Plan)
+                      .HasForeignKey(f => f.PlanId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(p => p.UserSubscriptions)
+                      .WithOne(s => s.Plan)
+                      .HasForeignKey(s => s.PlanId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasQueryFilter(p => !p.IsDeleted);
+            });
+
+            // ── Subscription plan feature (no Base, managed as owned rows) ──────
+            modelBuilder.Entity<SubscriptionPlanFeature>(entity =>
+            {
+                entity.HasKey(f => f.Id);
+                entity.HasIndex(f => new { f.PlanId, f.FeatureKey }).IsUnique();
+                entity.Property(f => f.Value).HasMaxLength(500).IsRequired();
+            });
+
+            // ── User subscription ────────────────────────────────────────────────
+            modelBuilder.Entity<UserSubscription>(entity =>
+            {
+                entity.HasIndex(s => s.UserId);
+                entity.HasIndex(s => new { s.UserId, s.Status });
+                entity.HasIndex(s => s.EndDate);
+
+                entity.Property(s => s.PaidAmount).HasPrecision(18, 4);
+                entity.Property(s => s.Currency).HasMaxLength(3);
+                entity.Property(s => s.CancellationReason).HasMaxLength(1000);
+
+                entity.HasOne(s => s.User)
+                      .WithMany()
+                      .HasForeignKey(s => s.UserId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(s => s.PromoCode)
+                      .WithMany()
+                      .HasForeignKey(s => s.PromoCodeId)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasMany(s => s.Payments)
+                      .WithOne(p => p.UserSubscription)
+                      .HasForeignKey(p => p.UserSubscriptionId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasQueryFilter(s => !s.IsDeleted);
+            });
+
+            // ── Promo code ────────────────────────────────────────────────────────
+            modelBuilder.Entity<PromoCode>(entity =>
+            {
+                entity.HasIndex(p => p.Code).IsUnique();
+                entity.HasIndex(p => p.IsActive);
+                entity.HasIndex(p => p.ExpiresAt);
+
+                entity.Property(p => p.Code).HasMaxLength(100).IsRequired();
+                entity.Property(p => p.DiscountPercent).HasPrecision(5, 2);
+                entity.Property(p => p.ApplicablePlanIds).HasMaxLength(2000);
+
+                entity.HasQueryFilter(p => !p.IsDeleted);
+            });
+
+            // ── Promo code usage (no Base, lightweight audit table) ───────────────
+            modelBuilder.Entity<PromoCodeUsage>(entity =>
+            {
+                entity.HasKey(u => u.Id);
+                entity.HasIndex(u => new { u.PromoCodeId, u.UserId });
+                entity.HasIndex(u => u.UserId);
+
+                entity.HasOne<PromoCode>()
+                      .WithMany()
+                      .HasForeignKey(u => u.PromoCodeId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne<User>()
+                      .WithMany()
+                      .HasForeignKey(u => u.UserId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne<UserSubscription>()
+                      .WithMany()
+                      .HasForeignKey(u => u.UserSubscriptionId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // ── Subscription payment ──────────────────────────────────────────────
+            modelBuilder.Entity<SubscriptionPayment>(entity =>
+            {
+                entity.HasIndex(p => p.UserSubscriptionId);
+                entity.HasIndex(p => p.Status);
+                entity.HasIndex(p => p.GatewayTransactionId);
+
+                entity.Property(p => p.Amount).HasPrecision(18, 4);
+                entity.Property(p => p.Currency).HasMaxLength(3);
+                entity.Property(p => p.GatewayName).HasMaxLength(100);
+                entity.Property(p => p.GatewayTransactionId).HasMaxLength(500);
+                entity.Property(p => p.FailureReason).HasMaxLength(1000);
+
+                if (Database.IsNpgsql())
+                    entity.Property(p => p.GatewayResponse).HasColumnType("text");
+                else
+                    entity.Property(p => p.GatewayResponse).HasColumnType("nvarchar(max)");
+
+                entity.HasQueryFilter(p => !p.IsDeleted);
+            });
+
+            // ── Currency rate ─────────────────────────────────────────────────────
+            modelBuilder.Entity<CurrencyRate>(entity =>
+            {
+                entity.HasIndex(r => r.CurrencyCode).IsUnique();
+                entity.Property(r => r.CurrencyCode).HasMaxLength(3).IsRequired();
+                entity.Property(r => r.RateToUsd).HasPrecision(18, 6);
+                entity.HasQueryFilter(r => !r.IsDeleted);
             });
 
             // Apply global query filters for multi-tenancy

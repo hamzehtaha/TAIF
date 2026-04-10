@@ -1,4 +1,4 @@
-﻿using Mapster;
+using Mapster;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -57,7 +57,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 
-// Verification system — multi-channel, extensible
+// Verification system � multi-channel, extensible
 // To add SMS: implement IVerificationChannel with ChannelName="SMS" and register below
 builder.Services.Configure<TAIF.Application.Options.VerificationOptions>(
     builder.Configuration.GetSection(TAIF.Application.Options.VerificationOptions.SectionName));
@@ -154,6 +154,20 @@ builder.Services.AddScoped<IAnswerRepository, AnswerRepository>();
 
 builder.Services.AddScoped<ISkillService, SkillService>();
 builder.Services.AddScoped<ISkillRepository, SkillRepository>();
+
+// Subscription system
+builder.Services.Configure<TAIF.Application.Options.MockPaymentOptions>(
+    builder.Configuration.GetSection(TAIF.Application.Options.MockPaymentOptions.SectionName));
+builder.Services.AddScoped<TAIF.Application.Interfaces.Repositories.ISubscriptionPlanRepository, TAIF.Infrastructure.Repositories.SubscriptionPlanRepository>();
+builder.Services.AddScoped<TAIF.Application.Interfaces.Repositories.IUserSubscriptionRepository, TAIF.Infrastructure.Repositories.UserSubscriptionRepository>();
+builder.Services.AddScoped<TAIF.Application.Interfaces.Repositories.IPromoCodeRepository, TAIF.Infrastructure.Repositories.PromoCodeRepository>();
+builder.Services.AddScoped<TAIF.Application.Interfaces.Repositories.ISubscriptionPaymentRepository, TAIF.Infrastructure.Repositories.SubscriptionPaymentRepository>();
+builder.Services.AddScoped<TAIF.Application.Interfaces.Services.ISubscriptionService, TAIF.Application.Services.SubscriptionService>();
+builder.Services.AddScoped<TAIF.Application.Interfaces.Services.ISubscriptionEmailService, TAIF.Infrastructure.Services.SubscriptionEmailService>();
+builder.Services.AddScoped<TAIF.Application.Interfaces.Payments.IPaymentGateway, TAIF.Infrastructure.Payments.MockPaymentGateway>();
+builder.Services.AddScoped<TAIF.Application.Interfaces.Repositories.ICurrencyRateRepository, TAIF.Infrastructure.Repositories.CurrencyRateRepository>();
+builder.Services.AddScoped<TAIF.Application.Interfaces.Services.ICurrencyConversionService, TAIF.Infrastructure.Services.DbCurrencyConversionService>();
+builder.Services.AddHostedService<TAIF.Infrastructure.BackgroundServices.SubscriptionExpiryBackgroundService>();
 
 // Video services - Mux integration with provider abstraction
 builder.Services.Configure<MuxOptions>(builder.Configuration.GetSection(MuxOptions.SectionName));
@@ -281,6 +295,8 @@ if (args.Length >= 2 && args[0].Equals("seed", StringComparison.OrdinalIgnoreCas
                 "CourseSeeder" => 6,
                 "LearningPathSeeder" => 7,
                 "AnswerSeeder" => 8,
+                "SubscriptionPlanSeeder" => 9,
+                "CurrencyRateSeeder" => 10,
                 _ => 99
             })
             .ToList();
@@ -293,7 +309,7 @@ if (args.Length >= 2 && args[0].Equals("seed", StringComparison.OrdinalIgnoreCas
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ Error in {s.GetType().Name}: {ex.Message}");
+                Console.WriteLine($"? Error in {s.GetType().Name}: {ex.Message}");
                 throw;
             }
         }
@@ -395,4 +411,6 @@ void InjectSeeders()
     builder.Services.AddScoped<IEntitySeeder, LearningPathSeeder>();
     builder.Services.AddScoped<IEntitySeeder, AnswerSeeder>();
     builder.Services.AddScoped<IEntitySeeder, QuestionSeeder>();
+    builder.Services.AddScoped<IEntitySeeder, SubscriptionPlanSeeder>();
+    builder.Services.AddScoped<IEntitySeeder, CurrencyRateSeeder>();
 }
