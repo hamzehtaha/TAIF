@@ -63,6 +63,7 @@ class HomeApiClient {
       AppLogger.info('GET /api/enrollments/details/$courseId/progress - Requesting...');
       final response = await _dio.get<Map<String, dynamic>>(
         '/enrollments/details/$courseId/progress',
+        queryParameters: {'_t': DateTime.now().millisecondsSinceEpoch},
       );
       AppLogger.info('GET /api/enrollments/details/$courseId/progress - Response status: ${response.statusCode}');
       

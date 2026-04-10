@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/logger.dart';
+import '../../../courses/presentation/screens/course_details_screen.dart' show routeObserver;
 import '../../data/repositories/progress_repository.dart';
 import '../bloc/progress_bloc.dart';
 import '../bloc/progress_event.dart';
@@ -9,23 +11,74 @@ import '../bloc/progress_state.dart';
 /// Progress Screen
 /// Displays user's learning progress with summary cards and course progress list
 /// Matches the design from the reference image
-class ProgressScreen extends StatelessWidget {
+class ProgressScreen extends StatefulWidget {
   const ProgressScreen({super.key});
 
   @override
+  State<ProgressScreen> createState() => _ProgressScreenState();
+}
+
+class _ProgressScreenState extends State<ProgressScreen>
+    with RouteAware {
+  late final ProgressBloc _bloc;
+  DateTime? _lastRefreshed;
+
+  @override
+  void initState() {
+    super.initState();
+    _bloc = ProgressBloc()..add(const LoadProgressData());
+  }
+
+  @override
+  void dispose() {
+    _bloc.close();
+    super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      routeObserver.subscribe(this, route);
+    }
+    // Refresh if it's been more than 1 second since last refresh
+    final now = DateTime.now();
+    if (_lastRefreshed == null || now.difference(_lastRefreshed!).inSeconds > 1) {
+      _lastRefreshed = now;
+      _bloc.add(const RefreshProgressData());
+    }
+  }
+
+  @override
+  void didPopNext() {
+    _bloc.add(const RefreshProgressData());
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => ProgressBloc()..add(const LoadProgressData()),
+    return BlocProvider.value(
+      value: _bloc,
       child: const _ProgressView(),
     );
   }
 }
 
-class _ProgressView extends StatelessWidget {
+class _ProgressView extends StatefulWidget {
   const _ProgressView();
 
   @override
+  State<_ProgressView> createState() => _ProgressViewState();
+}
+
+class _ProgressViewState extends State<_ProgressView>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => false;
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context);
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 

@@ -9,6 +9,9 @@ import '../bloc/course_details_bloc.dart';
 import '../bloc/course_details_event.dart';
 import '../bloc/course_details_state.dart';
 
+// Route observer for refreshing when returning from LessonScreen
+final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
+
 /// Course Details Screen
 /// Displays comprehensive information about a course including:
 /// - Course image and header
@@ -30,36 +33,72 @@ class CourseDetailsScreen extends StatelessWidget {
     return BlocProvider(
       create: (context) => CourseDetailsBloc()
         ..add(LoadCourseDetails(courseId)),
-      child: const _CourseDetailsView(),
+      child: _CourseDetailsView(courseId: courseId),
     );
   }
 }
 
-class _CourseDetailsView extends StatelessWidget {
-  const _CourseDetailsView();
+class _CourseDetailsView extends StatefulWidget {
+  final String courseId;
+
+  const _CourseDetailsView({required this.courseId});
+
+  @override
+  State<_CourseDetailsView> createState() => _CourseDetailsViewState();
+}
+
+class _CourseDetailsViewState extends State<_CourseDetailsView>
+    with RouteAware {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      routeObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    // Refresh when coming back from LessonScreen
+    AppLogger.info('CourseDetails: didPopNext triggered - refreshing data');
+    context.read<CourseDetailsBloc>().add(const RefreshCourseDetails());
+  }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      body: BlocBuilder<CourseDetailsBloc, CourseDetailsState>(
-        builder: (context, state) {
-          if (state is CourseDetailsLoading) {
-            return const Center(child: CircularProgressIndicator());
+      body: BlocListener<CourseDetailsBloc, CourseDetailsState>(
+        listener: (context, state) {
+          if (state is CourseDetailsNavigateToLesson) {
+            context.push(AppRoutes.lessonPath(widget.courseId, state.lessonId));
           }
-
-          if (state is CourseDetailsError) {
-            return _buildErrorState(context, state);
-          }
-
-          if (state is CourseDetailsLoaded) {
-            return _buildCourseDetails(context, state);
-          }
-
-          return const SizedBox.shrink();
         },
+        child: BlocBuilder<CourseDetailsBloc, CourseDetailsState>(
+          builder: (context, state) {
+            if (state is CourseDetailsLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (state is CourseDetailsError) {
+              return _buildErrorState(context, state);
+            }
+
+            if (state is CourseDetailsLoaded) {
+              return _buildCourseDetails(context, state);
+            }
+
+            return const SizedBox.shrink();
+          },
+        ),
       ),
     );
   }
@@ -323,8 +362,7 @@ class _CourseDetailsView extends StatelessWidget {
     CourseDetailsLoaded state,
     ColorScheme colorScheme,
   ) {
-    final isLoading = state is CourseDetailsEnrolling ||
-        state is CourseDetailsTogglingFavourite;
+    final isLoading = state is CourseDetailsEnrolling;
 
     // Debug logging
     AppLogger.info('UI: isEnrolled=${state.isEnrolled}, hasStartedLearning=${state.hasStartedLearning}, ctaText=${state.ctaButtonText}');
@@ -433,6 +471,7 @@ class _CourseDetailsView extends StatelessWidget {
               state.isLessonExpanded(lesson.id),
               state.isEnrolled,
               colorScheme,
+              widget.courseId,
             );
           }),
       ],
@@ -446,6 +485,7 @@ class _CourseDetailsView extends StatelessWidget {
     bool isExpanded,
     bool isEnrolled,
     ColorScheme colorScheme,
+    String courseId,
   ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -568,6 +608,8 @@ class _CourseDetailsView extends StatelessWidget {
                   final item = entry.value;
                   return _buildLessonItem(
                     context,
+                    lesson.id,
+                    courseId,
                     item,
                     isEnrolled,
                     colorScheme,
@@ -582,14 +624,19 @@ class _CourseDetailsView extends StatelessWidget {
 
   Widget _buildLessonItem(
     BuildContext context,
+    String lessonId,
+    String courseId,
     LessonItemModel item,
     bool isEnrolled,
     ColorScheme colorScheme,
   ) {
     return InkWell(
       onTap: () {
-        // For now, do nothing but item looks clickable
-        // TODO: Navigate to lesson content
+        if (isEnrolled) {
+          // Navigate to lesson with specific item ID
+          final path = '${AppRoutes.lessonPath(courseId, lessonId)}?itemId=${item.id}';
+          context.push(path);
+        }
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -615,9 +662,6 @@ class _CourseDetailsView extends StatelessWidget {
                       color: item.isCompleted
                           ? colorScheme.onSurfaceVariant
                           : colorScheme.onSurface,
-                      decoration: item.isCompleted
-                          ? TextDecoration.lineThrough
-                          : null,
                     ),
                   ),
                   if (item.formattedDuration.isNotEmpty)

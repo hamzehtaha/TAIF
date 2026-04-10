@@ -1,7 +1,6 @@
 import '../datasources/progress_api_client.dart';
 import '../../../../features/home/data/models/course_model.dart';
 import '../../../../features/courses/data/models/enrollment_model.dart';
-import '../../../../features/courses/data/models/lesson_model.dart';
 
 /// Course Progress Data
 /// Contains course information with enrollment progress details
@@ -115,6 +114,43 @@ class ProgressRepository {
     );
   }
 
+  /// Get detailed progress for all user courses with actual completed item counts
+  Future<List<CourseProgressData>> getUserCoursesProgressWithDetails() async {
+    final courses = await _apiClient.getUserCourses();
+    
+    final progressList = await Future.wait(
+      courses.map((course) async {
+        // Get enrollment for hours and progress percentage
+        final enrollment = await _apiClient.getEnrollmentProgress(course.id);
+        
+        // Get lessons for this course
+        final lessons = await _apiClient.getLessonsByCourse(course.id);
+        
+        // Get all lesson items with completion status
+        int totalItems = 0;
+        int completedItems = 0;
+        
+        for (final lesson in lessons) {
+          final lessonId = lesson['id'] as String?;
+          if (lessonId == null) continue;
+          
+          final items = await _apiClient.getLessonItemsWithProgress(lessonId, course.id);
+          totalItems += items.length;
+          completedItems += items.where((item) => item['isCompleted'] == true).length;
+        }
+        
+        return CourseProgressData(
+          course: course,
+          enrollment: enrollment,
+          completedItems: completedItems,
+          totalItems: totalItems,
+        );
+      }),
+    );
+    
+    return progressList;
+  }
+
   /// Get progress data for a specific course
   Future<CourseProgressData> _getCourseProgressData(CourseModel course) async {
     // Get enrollment progress with duration data
@@ -128,20 +164,13 @@ class ProgressRepository {
     int completedItems = 0;
 
     for (final lessonJson in lessonsData) {
-      final lesson = LessonModel.fromJson(lessonJson);
+      final lessonId = lessonJson['id'] as String?;
+      if (lessonId == null) continue;
 
-      // Get items for this lesson
-      final itemsData = await _apiClient.getLessonItems(lesson.id);
+      // Get items for this lesson with completion status
+      final itemsData = await _apiClient.getLessonItemsWithProgress(lessonId, course.id);
       totalItems += itemsData.length;
-
-      // Count completed items based on progress
-      // This is a simplified calculation - in reality, you'd check each item's completion status
-      // For now, we estimate based on overall progress percentage
-    }
-
-    // If we have enrollment with duration-based progress, use that to estimate completed items
-    if (enrollment != null && enrollment.calculatedProgress > 0 && totalItems > 0) {
-      completedItems = ((enrollment.calculatedProgress / 100) * totalItems).round();
+      completedItems += itemsData.where((item) => item['isCompleted'] == true).length;
     }
 
     return CourseProgressData(

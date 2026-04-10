@@ -19,15 +19,15 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     
     try {
       final user = await _repository.getCurrentUser();
-      final myCourses = await _repository.getUserCoursesWithProgress();
+      final result = await _repository.getUserCoursesWithProgressAndHours();
       final recommendedCourses = await _repository.getRecommendedCourses();
       
-      // Calculate stats
-      final stats = _calculateStats(myCourses);
+      // Calculate stats using actual completed hours from enrollment
+      final stats = _calculateStats(result.courses, result.totalHours);
       
       emit(HomeLoaded(
         userName: user?.firstName ?? '',
-        myCourses: myCourses,
+        myCourses: result.courses,
         recommendedCourses: recommendedCourses,
         stats: stats,
       ));
@@ -42,14 +42,14 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       
       try {
         final user = await _repository.getCurrentUser();
-        final myCourses = await _repository.getUserCoursesWithProgress();
+        final result = await _repository.getUserCoursesWithProgressAndHours();
         final recommendedCourses = await _repository.getRecommendedCourses();
         
-        final stats = _calculateStats(myCourses);
+        final stats = _calculateStats(result.courses, result.totalHours);
         
         emit(HomeLoaded(
           userName: user?.firstName ?? '',
-          myCourses: myCourses,
+          myCourses: result.courses,
           recommendedCourses: recommendedCourses,
           stats: stats,
         ));
@@ -59,9 +59,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     }
   }
 
-  HomeStats _calculateStats(List<CourseModel> courses) {
+  HomeStats _calculateStats(List<CourseModel> courses, double totalHours) {
     final totalCourses = courses.length;
-    final totalHours = courses.fold<double>(0, (sum, c) => sum + (c.durationInMinutes ?? 0) / 60);
     final avgProgress = courses.isEmpty 
         ? 0 
         : courses.fold<int>(0, (sum, c) => sum + c.progress) ~/ courses.length;

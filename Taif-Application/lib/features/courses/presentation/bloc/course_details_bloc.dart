@@ -237,7 +237,7 @@ class CourseDetailsBloc extends Bloc<CourseDetailsEvent, CourseDetailsState> {
     // For now, do nothing as per requirements
   }
 
-  /// Resume learning clicked (placeholder for future implementation)
+  /// Resume learning clicked - navigates to lesson with continue learning logic
   void _onResumeLearningClicked(
     ResumeLearningClicked event,
     Emitter<CourseDetailsState> emit,
@@ -247,15 +247,25 @@ class CourseDetailsBloc extends Bloc<CourseDetailsEvent, CourseDetailsState> {
     final currentState = state as CourseDetailsLoaded;
     AppLogger.info('BLoC: Resume learning clicked');
 
-    // Get the resume item ID
-    final resumeItemId = _repository.getResumeLearningItemId(
-      currentState.course,
+    // Get the resume lesson ID using the lastLessonItemId from enrollment
+    final resumeLessonId = _repository.getResumeLearningLessonId(
+      currentState.enrollment,
       currentState.lessons,
     );
 
-    if (resumeItemId != null) {
-      // TODO: Navigate to lesson content
-      AppLogger.info('BLoC: Would resume at item: $resumeItemId');
+    if (resumeLessonId != null) {
+      AppLogger.info('BLoC: Would resume at lesson: $resumeLessonId');
+      // Emit navigation state - UI will handle navigation
+      emit(CourseDetailsNavigateToLesson(
+        course: currentState.course,
+        lessons: currentState.lessons,
+        enrollment: currentState.enrollment,
+        reviews: currentState.reviews,
+        reviewStatistics: currentState.reviewStatistics,
+        expandedLessonId: currentState.expandedLessonId,
+        hasReviewed: currentState.hasReviewed,
+        lessonId: resumeLessonId,
+      ));
     }
   }
 }

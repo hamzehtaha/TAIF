@@ -171,33 +171,35 @@ class CourseDetailsRepository {
   }
 
   /// Get the resume learning URL/location
-  String? getResumeLearningItemId(CourseModel course, List<LessonModel> lessons) {
-    // If there's a last accessed item, try to find it
-    if (course.progress > 0) {
+  /// Returns the lesson ID to navigate to based on:
+  /// 1. Last accessed lesson item ID from enrollment (if available)
+  /// 2. First lesson with incomplete items
+  /// 3. First lesson (fallback)
+  String? getResumeLearningLessonId(
+    EnrollmentModel? enrollment,
+    List<LessonModel> lessons,
+  ) {
+    if (lessons.isEmpty) return null;
+
+    // If there's a last accessed item ID, find which lesson contains it
+    final lastItemId = enrollment?.lastLessonItemId;
+    if (lastItemId != null && lastItemId.isNotEmpty) {
       for (final lesson in lessons) {
-        for (final item in lesson.items) {
-          if (!item.isCompleted) {
-            return item.id;
-          }
+        if (lesson.items.any((item) => item.id == lastItemId)) {
+          return lesson.id;
         }
       }
     }
-    
-    // Return first incomplete item
+
+    // Find first lesson with incomplete items
     for (final lesson in lessons) {
-      for (final item in lesson.items) {
-        if (!item.isCompleted) {
-          return item.id;
-        }
+      if (lesson.items.any((item) => !item.isCompleted)) {
+        return lesson.id;
       }
     }
-    
-    // All completed or no items, return first item
-    if (lessons.isNotEmpty && lessons.first.items.isNotEmpty) {
-      return lessons.first.items.first.id;
-    }
-    
-    return null;
+
+    // All completed, return first lesson
+    return lessons.first.id;
   }
 }
 

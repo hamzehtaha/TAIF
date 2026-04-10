@@ -1,3 +1,5 @@
+import 'content_model.dart';
+
 /// Lesson Model
 /// Represents a lesson in a course
 class LessonModel {
@@ -116,6 +118,7 @@ class LessonItemModel {
   final int? durationInSeconds;
   final bool isCompleted;
   final String? contentId;
+  final ContentModel? content;
 
   LessonItemModel({
     required this.id,
@@ -127,6 +130,7 @@ class LessonItemModel {
     this.durationInSeconds,
     this.isCompleted = false,
     this.contentId,
+    this.content,
   });
 
   factory LessonItemModel.fromJson(Map<String, dynamic> json) {
@@ -140,6 +144,9 @@ class LessonItemModel {
       durationInSeconds: json['durationInSeconds'] as int?,
       isCompleted: json['isCompleted'] as bool? ?? false,
       contentId: json['contentId'] as String?,
+      content: json['content'] != null
+          ? ContentModel.fromJson(json['content'] as Map<String, dynamic>)
+          : null,
     );
   }
 
@@ -154,6 +161,7 @@ class LessonItemModel {
       'durationInSeconds': durationInSeconds,
       'isCompleted': isCompleted,
       'contentId': contentId,
+      'content': content?.toJson(),
     };
   }
 

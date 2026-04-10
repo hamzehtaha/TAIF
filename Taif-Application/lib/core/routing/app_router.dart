@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/courses/presentation/screens/course_details_screen.dart';
+import '../../features/courses/presentation/screens/lesson_screen.dart';
 import '../../features/main/presentation/screens/main_shell.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
@@ -19,9 +20,13 @@ class AppRoutes {
   static const String example = '/example';
   static const String userInterests = '/interests';
   static const String courseDetails = '/course/:id';
+  static const String lesson = '/course/:courseId/lesson/:lessonId';
 
   /// Generate course details route with course ID
   static String courseDetailsPath(String courseId) => '/course/$courseId';
+  
+  /// Generate lesson route with course ID and lesson ID
+  static String lessonPath(String courseId, String lessonId) => '/course/$courseId/lesson/$lessonId';
 }
 
 /// TAIF Router Configuration
@@ -30,6 +35,7 @@ class AppRouter {
   static GoRouter createRouter() => GoRouter(
         initialLocation: AppRoutes.login,
         debugLogDiagnostics: true,
+        observers: [routeObserver],
         routes: [
           // Home (with bottom navigation)
           GoRoute(
@@ -71,6 +77,21 @@ class AppRouter {
             builder: (context, state) {
               final courseId = state.pathParameters['id']!;
               return CourseDetailsScreen(courseId: courseId);
+            },
+          ),
+          
+          // Lesson Screen
+          GoRoute(
+            path: AppRoutes.lesson,
+            builder: (context, state) {
+              final courseId = state.pathParameters['courseId']!;
+              final lessonId = state.pathParameters['lessonId']!;
+              final lessonItemId = state.uri.queryParameters['itemId'];
+              return LessonScreen(
+                courseId: courseId,
+                lessonId: lessonId,
+                lessonItemId: lessonItemId,
+              );
             },
           ),
         ],

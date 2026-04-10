@@ -16,7 +16,10 @@ class ProgressApiClient {
   Future<List<CourseModel>> getUserCourses() async {
     try {
       AppLogger.info('GET /api/enrollments/user - Requesting...');
-      final response = await _dio.get<Map<String, dynamic>>('/enrollments/user');
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/enrollments/user',
+        queryParameters: {'_t': DateTime.now().millisecondsSinceEpoch},
+      );
       AppLogger.info('GET /api/enrollments/user - Response status: ${response.statusCode}');
 
       final data = response.data?['data'] as List<dynamic>? ?? [];
@@ -37,6 +40,7 @@ class ProgressApiClient {
       AppLogger.info('GET /api/enrollments/details/$courseId/progress - Requesting...');
       final response = await _dio.get<Map<String, dynamic>>(
         '/enrollments/details/$courseId/progress',
+        queryParameters: {'_t': DateTime.now().millisecondsSinceEpoch},
       );
       AppLogger.info('GET /api/enrollments/details/$courseId/progress - Response status: ${response.statusCode}');
 
@@ -60,7 +64,10 @@ class ProgressApiClient {
   Future<List<Map<String, dynamic>>> getLessonsByCourse(String courseId) async {
     try {
       AppLogger.info('GET /api/Lesson/course/$courseId - Requesting...');
-      final response = await _dio.get<Map<String, dynamic>>('/Lesson/course/$courseId');
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/Lesson/course/$courseId',
+        queryParameters: {'_t': DateTime.now().millisecondsSinceEpoch},
+      );
       AppLogger.info('GET /api/Lesson/course/$courseId - Response status: ${response.statusCode}');
 
       final data = response.data?['data'] as List<dynamic>? ?? [];
@@ -71,18 +78,27 @@ class ProgressApiClient {
     }
   }
 
-  /// GET /api/LessonItem/lesson/{lessonId}
-  /// Get lesson items for a lesson
-  Future<List<Map<String, dynamic>>> getLessonItems(String lessonId) async {
+  /// GET /api/LessonItem/lessonProgress/{lessonId}
+  /// Get lesson items for a lesson with user-specific completion status
+  Future<List<Map<String, dynamic>>> getLessonItemsWithProgress(
+    String lessonId,
+    String courseId,
+  ) async {
     try {
-      AppLogger.info('GET /api/LessonItem/lesson/$lessonId - Requesting...');
-      final response = await _dio.get<Map<String, dynamic>>('/LessonItem/lesson/$lessonId');
-      AppLogger.info('GET /api/LessonItem/lesson/$lessonId - Response status: ${response.statusCode}');
+      AppLogger.info('GET /api/LessonItem/lessonProgress/$lessonId - Requesting...');
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/LessonItem/lessonProgress/$lessonId',
+        queryParameters: {
+          'courseId': courseId,
+          '_t': DateTime.now().millisecondsSinceEpoch,
+        },
+      );
+      AppLogger.info('GET /api/LessonItem/lessonProgress/$lessonId - Response status: ${response.statusCode}');
 
       final data = response.data?['data'] as List<dynamic>? ?? [];
       return data.map((json) => json as Map<String, dynamic>).toList();
     } on DioException catch (e) {
-      AppLogger.error('GET /api/LessonItem/lesson/$lessonId - Error: ${e.message}');
+      AppLogger.error('GET /api/LessonItem/lessonProgress/$lessonId - Error: ${e.message}');
       return [];
     }
   }
