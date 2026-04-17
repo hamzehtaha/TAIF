@@ -398,12 +398,12 @@ namespace TAIF.Infrastructure.Data
                 entity.HasIndex(e => new { e.InterestId, e.TagId }).IsUnique();
 
                 entity.HasOne(itm => itm.Interest)
-                      .WithMany()
+                      .WithMany(i => i.TagMappings)
                       .HasForeignKey(itm => itm.InterestId)
                       .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasOne(itm => itm.Tag)
-                      .WithMany()
+                      .WithMany(t => t.InterestMappings)
                       .HasForeignKey(itm => itm.TagId)
                       .OnDelete(DeleteBehavior.Cascade);
             });
@@ -653,17 +653,17 @@ namespace TAIF.Infrastructure.Data
                 entity.HasIndex(u => new { u.PromoCodeId, u.UserId });
                 entity.HasIndex(u => u.UserId);
 
-                entity.HasOne<PromoCode>()
-                      .WithMany()
+                entity.HasOne(u => u.PromoCode)
+                      .WithMany(p => p.Usages)
                       .HasForeignKey(u => u.PromoCodeId)
                       .OnDelete(DeleteBehavior.Cascade);
 
-                entity.HasOne<User>()
+                entity.HasOne(u => u.User)
                       .WithMany()
                       .HasForeignKey(u => u.UserId)
                       .OnDelete(DeleteBehavior.Restrict);
 
-                entity.HasOne<UserSubscription>()
+                entity.HasOne(u => u.UserSubscription)
                       .WithMany()
                       .HasForeignKey(u => u.UserSubscriptionId)
                       .OnDelete(DeleteBehavior.Cascade);
