@@ -45,6 +45,7 @@ namespace TAIF.Domain.Entities
                 LessonItemType.Video => JsonSerializer.Deserialize<Video>(ContentJson, JsonOptions)!,
                 LessonItemType.RichText => JsonSerializer.Deserialize<RichText>(ContentJson, JsonOptions)!,
                 LessonItemType.Quiz => JsonSerializer.Deserialize<Quiz>(ContentJson, JsonOptions)!,
+                LessonItemType.Resource => JsonSerializer.Deserialize<Resource>(ContentJson, JsonOptions)!,
                 _ => throw new NotSupportedException("Unsupported content type")
             };
         }

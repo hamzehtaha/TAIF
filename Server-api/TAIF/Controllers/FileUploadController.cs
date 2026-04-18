@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using TAIF.Application.Interfaces.Services;
+using TAIF.Application.Options;
 using TAIF.Infrastructure.Services;
 
 namespace TAIF.API.Controllers
@@ -13,15 +14,18 @@ namespace TAIF.API.Controllers
     {
         private readonly IFileStorageService _fileStorageService;
         private readonly LocalStorageOptions _storageOptions;
+        private readonly FileUploadOptions _uploadOptions;
         private readonly ILogger<FileUploadController> _logger;
 
         public FileUploadController(
             IFileStorageService fileStorageService,
             IOptions<LocalStorageOptions> storageOptions,
+            IOptions<FileUploadOptions> uploadOptions,
             ILogger<FileUploadController> logger)
         {
             _fileStorageService = fileStorageService;
             _storageOptions = storageOptions.Value;
+            _uploadOptions = uploadOptions.Value;
             _logger = logger;
         }
 
@@ -38,6 +42,14 @@ namespace TAIF.API.Controllers
             if (file == null || file.Length == 0)
             {
                 return BadRequest("No file provided");
+            }
+
+            // Sanitize folder parameter to prevent path traversal
+            if (!string.IsNullOrEmpty(folder))
+            {
+                folder = Path.GetFileName(folder);
+                if (string.IsNullOrWhiteSpace(folder) || folder.Contains(".."))
+                    return BadRequest("Invalid folder name");
             }
 
             // Validate file size
@@ -104,6 +116,52 @@ namespace TAIF.API.Controllers
         public async Task<ActionResult<FileUploadResult>> UploadLessonItemImage(IFormFile file)
         {
             return await UploadImage(file, "lesson-items");
+        }
+
+        /// <summary>
+        /// Upload a downloadable resource file (PDF, documents, images, archives).
+        /// Used by content creators to attach downloadable resources to lesson items.
+        /// </summary>
+        /// <param name="file">The resource file to upload</param>
+        /// <returns>Upload result with URL, file name, file size, and content type</returns>
+        [HttpPost("upload/resource")]
+        [Authorize(Policy = "ContentCreatorOrAbove")]
+        public async Task<ActionResult<FileUploadResult>> UploadResource(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest("No file provided");
+            }
+
+            // Max resource size from configuration
+            if (file.Length > _uploadOptions.ResourceMaxSizeBytes)
+            {
+                return BadRequest($"File size exceeds maximum allowed size of {_uploadOptions.ResourceMaxSizeBytes / (1024 * 1024)}MB");
+            }
+
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+            var allowedExtensions = new HashSet<string>(_uploadOptions.AllowedResourceExtensions);
+
+            if (!allowedExtensions.Contains(extension))
+            {
+                return BadRequest($"File type not allowed. Allowed types: {string.Join(", ", allowedExtensions)}");
+            }
+
+            try
+            {
+                await using var stream = file.OpenReadStream();
+                var result = await _fileStorageService.UploadAsync(stream, file.FileName, file.ContentType, "resources");
+
+                _logger.LogInformation("User {UserId} uploaded resource: {FileName} -> {Url}",
+                    UserId, file.FileName, result.Url);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error uploading resource file: {FileName}", file.FileName);
+                return StatusCode(500, "Error uploading file");
+            }
         }
 
         /// <summary>

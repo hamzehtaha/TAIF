@@ -55,4 +55,9 @@ public interface IRepository<T> where T : Base
     void PermanentDelete(T entity);
     void Restore(T entity);
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+
+    // Transaction support
+    Task<IDisposable> BeginTransactionAsync(CancellationToken cancellationToken = default);
+    Task CommitTransactionAsync(CancellationToken cancellationToken = default);
+    Task RollbackTransactionAsync(CancellationToken cancellationToken = default);
 }

@@ -50,11 +50,8 @@ namespace TAIF.API.Controllers
         [Authorize(Policy = "AdminOrAbove")]
         public async Task<IActionResult> GetAll()
         {
-            var users = await _userService.GetAllAsync();
-            var response = users
-                .Where(u => u.Role != UserRoleType.Student)
-                .Select(u => u.Adapt<UserResponse>())
-                .ToList();
+            var users = await _userService.FindNoTrackingAsync(u => u.Role != UserRoleType.Student);
+            var response = users.Select(u => u.Adapt<UserResponse>()).ToList();
             return Ok(ApiResponse<List<UserResponse>>.SuccessResponse(response));
         }
 
@@ -62,11 +59,8 @@ namespace TAIF.API.Controllers
         [Authorize(Policy = "AdminOrAbove")]
         public async Task<IActionResult> GetAllStudents()
         {
-            var users = await _userService.GetAllAsync();
-            var response = users
-                .Where(u => u.Role == UserRoleType.Student)
-                .Select(u => u.Adapt<UserResponse>())
-                .ToList();
+            var users = await _userService.FindNoTrackingAsync(u => u.Role == UserRoleType.Student);
+            var response = users.Select(u => u.Adapt<UserResponse>()).ToList();
             return Ok(ApiResponse<List<UserResponse>>.SuccessResponse(response));
         }
 

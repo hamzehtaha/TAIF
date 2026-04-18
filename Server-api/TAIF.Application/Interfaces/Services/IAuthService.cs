@@ -8,4 +8,6 @@ public interface IAuthService
     Task<AuthResponse> RegisterAsync(RegisterRequest request);
     Task<AuthResponse?> LoginAsync(string email, string password);
     Task<AuthResponse?> RefreshTokenAsync(string refreshToken);
+    Task ForgotPasswordAsync(string email);
+    Task<bool> ResetPasswordAsync(string email, string otp, string newPassword);
 }

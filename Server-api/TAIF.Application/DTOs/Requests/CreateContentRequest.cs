@@ -15,6 +15,7 @@ namespace TAIF.Application.DTOs.Requests
         public Video? Video { get; set; }
         public RichText? RichText { get; set; }
         public QuizCreateDto? Quiz { get; set; }
+        public Resource? Resource { get; set; }
         public Guid? OrganizationId { get; set; }
 
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
@@ -33,6 +34,11 @@ namespace TAIF.Application.DTOs.Requests
                 yield return new ValidationResult(
                     "Quiz data is required when type is Quiz.",
                     new[] { nameof(Quiz) });
+
+            if (Type == LessonItemType.Resource && Resource is null)
+                yield return new ValidationResult(
+                    "Resource data is required when type is Resource.",
+                    new[] { nameof(Resource) });
         }
     }
 }

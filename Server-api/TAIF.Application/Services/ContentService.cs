@@ -55,6 +55,18 @@ namespace TAIF.Application.Services
                     await _repository.SaveChangesAsync();
                     break;
 
+                case LessonItemType.Resource:
+                    if (request.Resource == null)
+                        throw new Exception("Resource data is required");
+
+                    content = new Content(LessonItemType.Resource, request.Resource)
+                    {
+                        OrganizationId = organizationId
+                    };
+                    await _repository.AddAsync(content);
+                    await _repository.SaveChangesAsync();
+                    break;
+
                 default:
                     throw new Exception("Invalid content type");
             }
@@ -77,13 +89,18 @@ namespace TAIF.Application.Services
 
                 case LessonItemType.Video:
                 case LessonItemType.RichText:
+                case LessonItemType.Resource:
                     var content = await _repository.GetByIdAsync(contentId);
                     if (content == null)
                         throw new Exception("Content not found");
 
-                    content.ContentData = request.Type == LessonItemType.Video
-                        ? request.Video!
-                        : request.RichText!;
+                    content.ContentData = request.Type switch
+                    {
+                        LessonItemType.Video => request.Video!,
+                        LessonItemType.RichText => request.RichText!,
+                        LessonItemType.Resource => request.Resource!,
+                        _ => throw new Exception("Invalid content type")
+                    };
 
                     _repository.Update(content);
                     await _repository.SaveChangesAsync();

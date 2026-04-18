@@ -105,7 +105,7 @@ namespace TAIF.Infrastructure.Repositories
         {
             return await _context.CourseLessons
                 .Where(cl => !cl.IsDeleted)
-                .Join(_context.lessons.Where(l => !l.IsDeleted),
+                .Join(_context.Lessons.Where(l => !l.IsDeleted),
                     cl => cl.LessonId,
                     l => l.Id,
                     (cl, l) => cl.CourseId)
@@ -117,7 +117,7 @@ namespace TAIF.Infrastructure.Repositories
         {
             return await _context.CourseLessons
                 .Where(cl => !cl.IsDeleted && cl.CourseId == courseId)
-                .Join(_context.lessons.Where(l => !l.IsDeleted),
+                .Join(_context.Lessons.Where(l => !l.IsDeleted),
                     cl => cl.LessonId,
                     l => l.Id,
                     (cl, l) => cl)

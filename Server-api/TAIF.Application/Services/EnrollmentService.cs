@@ -46,6 +46,8 @@ namespace TAIF.Application.Services
         public async Task<bool> ToggleCourseFavourite(Guid userId, Guid courseId)
         {
             var enrollment = await _repo.FindOneAsync((x) => x.UserId.Equals(userId) && x.CourseId.Equals(courseId));
+            if (enrollment == null)
+                throw new KeyNotFoundException("Enrollment not found for the given user and course.");
             enrollment.IsFavourite = !enrollment.IsFavourite;
             int number_of_updated = await _repo.SaveChangesAsync();
             return number_of_updated > 0;

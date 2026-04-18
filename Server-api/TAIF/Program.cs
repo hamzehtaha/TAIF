@@ -1,10 +1,12 @@
 using Mapster;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using System.Text;
+using System.Threading.RateLimiting;
 using TAIF.API.Middleware;
 using TAIF.API.Seeder;
 using TAIF.API.Seeder.Scripts;
@@ -16,6 +18,8 @@ using TAIF.Application.Services;
 using TAIF.Infrastructure.Data;
 using TAIF.Infrastructure.Repositories;
 using TAIF.Infrastructure.Services;
+using TAIF.Application.Options;
+using Microsoft.AspNetCore.ResponseCompression;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,6 +36,18 @@ builder.Host.UseSerilog();
 
 builder.Services.AddControllers();
 
+// --- Centralized Options ---
+builder.Services.Configure<RateLimitingOptions>(builder.Configuration.GetSection(RateLimitingOptions.SectionName));
+builder.Services.Configure<BackgroundJobsOptions>(builder.Configuration.GetSection(BackgroundJobsOptions.SectionName));
+builder.Services.Configure<AuthOptions>(builder.Configuration.GetSection(AuthOptions.SectionName));
+builder.Services.Configure<FileUploadOptions>(builder.Configuration.GetSection(FileUploadOptions.SectionName));
+builder.Services.Configure<CacheOptions>(builder.Configuration.GetSection(CacheOptions.SectionName));
+builder.Services.Configure<RecommendationOptions>(builder.Configuration.GetSection(RecommendationOptions.SectionName));
+
+// In-memory caching — backed by ICacheService abstraction (swap to Redis by changing registration)
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<ICacheService, MemoryCacheService>();
+
 var provider = builder.Configuration["Database:Provider"];
 
 builder.Services.AddDbContext<TaifDbContext>(options =>
@@ -40,13 +56,21 @@ builder.Services.AddDbContext<TaifDbContext>(options =>
     {
         case "Postgres":
             options.UseNpgsql(
-                builder.Configuration.GetConnectionString("Postgres"));
+                builder.Configuration.GetConnectionString("Postgres"),
+                npgsqlOptions => npgsqlOptions.EnableRetryOnFailure(
+                    maxRetryCount: 3,
+                    maxRetryDelay: TimeSpan.FromSeconds(5),
+                    errorCodesToAdd: null));
             break;
 
         case "SqlServer":
         default:
             options.UseSqlServer(
-                builder.Configuration.GetConnectionString("SqlServer"));
+                builder.Configuration.GetConnectionString("SqlServer"),
+                sqlOptions => sqlOptions.EnableRetryOnFailure(
+                    maxRetryCount: 3,
+                    maxRetryDelay: TimeSpan.FromSeconds(5),
+                    errorNumbersToAdd: null));
             break;
     }
 });
@@ -164,10 +188,26 @@ builder.Services.AddScoped<TAIF.Application.Interfaces.Repositories.IPromoCodeRe
 builder.Services.AddScoped<TAIF.Application.Interfaces.Repositories.ISubscriptionPaymentRepository, TAIF.Infrastructure.Repositories.SubscriptionPaymentRepository>();
 builder.Services.AddScoped<TAIF.Application.Interfaces.Services.ISubscriptionService, TAIF.Application.Services.SubscriptionService>();
 builder.Services.AddScoped<TAIF.Application.Interfaces.Services.ISubscriptionEmailService, TAIF.Infrastructure.Services.SubscriptionEmailService>();
-builder.Services.AddScoped<TAIF.Application.Interfaces.Payments.IPaymentGateway, TAIF.Infrastructure.Payments.MockPaymentGateway>();
 builder.Services.AddScoped<TAIF.Application.Interfaces.Repositories.ICurrencyRateRepository, TAIF.Infrastructure.Repositories.CurrencyRateRepository>();
 builder.Services.AddScoped<TAIF.Application.Interfaces.Services.ICurrencyConversionService, TAIF.Infrastructure.Services.DbCurrencyConversionService>();
+
+// Payment gateway: MockPaymentGateway in Development, must be replaced for Production
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddScoped<TAIF.Application.Interfaces.Payments.IPaymentGateway, TAIF.Infrastructure.Payments.MockPaymentGateway>();
+}
+else
+{
+    // TODO: Register a real payment gateway (Stripe, PayPal, etc.) for production
+    // Fail fast if no real gateway is configured
+    builder.Services.AddScoped<TAIF.Application.Interfaces.Payments.IPaymentGateway>(sp =>
+        throw new InvalidOperationException("No production payment gateway configured. Register a real IPaymentGateway implementation."));
+}
+
+// Background jobs — all configurable via BackgroundJobs section, can be enabled/disabled individually
 builder.Services.AddHostedService<TAIF.Infrastructure.BackgroundServices.SubscriptionExpiryBackgroundService>();
+builder.Services.AddHostedService<TAIF.Infrastructure.BackgroundServices.MaintenanceBackgroundService>();
+builder.Services.AddHostedService<TAIF.Infrastructure.BackgroundServices.StatisticsBackgroundService>();
 
 // Video services - Mux integration with provider abstraction
 builder.Services.Configure<MuxOptions>(builder.Configuration.GetSection(MuxOptions.SectionName));
@@ -256,16 +296,80 @@ builder.Services.AddAuthorization(options =>
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    if (builder.Environment.IsDevelopment())
     {
-        policy.AllowAnyOrigin()
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+        // Development: allow all origins for testing convenience
+        options.AddPolicy("AllowAll", policy =>
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        });
+    }
+    else
+    {
+        // Production: restrict to configured origins
+        var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+            ?? Array.Empty<string>();
+        options.AddPolicy("AllowAll", policy =>
+        {
+            policy.WithOrigins(allowedOrigins)
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials();
+        });
+    }
+});
+
+// Response compression
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<BrotliCompressionProvider>();
+    options.Providers.Add<GzipCompressionProvider>();
+});
+
+// Rate limiting — values from RateLimiting configuration section
+var rateLimitConfig = builder.Configuration.GetSection(RateLimitingOptions.SectionName).Get<RateLimitingOptions>() ?? new RateLimitingOptions();
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    // Global rate limit for all endpoints (#43)
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = rateLimitConfig.Global?.PermitLimit ?? 100,
+                Window = TimeSpan.FromSeconds(rateLimitConfig.Global?.WindowSeconds ?? 60),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            }));
+
+    options.AddFixedWindowLimiter("AuthRateLimit", opt =>
+    {
+        opt.PermitLimit = rateLimitConfig.Auth.PermitLimit;
+        opt.Window = TimeSpan.FromSeconds(rateLimitConfig.Auth.WindowSeconds);
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 0;
+    });
+
+    options.AddFixedWindowLimiter("VerificationRateLimit", opt =>
+    {
+        opt.PermitLimit = rateLimitConfig.Verification.PermitLimit;
+        opt.Window = TimeSpan.FromSeconds(rateLimitConfig.Verification.WindowSeconds);
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 0;
     });
 });
 
 // Register Mapster mappings
 MappingConfig.RegisterMappings();
+
+// Health checks
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<TaifDbContext>("database");
 
 InjectSeeders();
 
@@ -329,9 +433,10 @@ if (args.Length >= 2 && args[0].Equals("seed", StringComparison.OrdinalIgnoreCas
     return;
 }
 
-// Auto-migrate database on startup
-using (var scope = app.Services.CreateScope())
+// Auto-migrate database on startup (Development only - use migration scripts in production)
+if (app.Environment.IsDevelopment())
 {
+    using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<TaifDbContext>();
     try
     {
@@ -344,50 +449,38 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// TODO: Move  statistics update to a better place (e.g., background job, scheduled task, or manual trigger)
-// Update statistics on startup - Sequential execution to ensure courses are calculated before learning paths
-_ = Task.Run(async () =>
-{
-    using var scope = app.Services.CreateScope();
-    try
-    {
-        // STEP 1: Update course statistics FIRST
-        var courseStatisticsService = scope.ServiceProvider.GetRequiredService<ICourseStatisticsService>();
-        Log.Information("Starting course statistics update on startup");
-        await courseStatisticsService.UpdateAllCourseStatisticsAsync();
-        Log.Information("Course statistics updated successfully on startup");
-
-        // STEP 2: Update learning path statistics AFTER courses are done
-        var learningPathStatisticsService = scope.ServiceProvider.GetRequiredService<ILearningPathStatisticsService>();
-        Log.Information("Starting learning path statistics update on startup");
-        await learningPathStatisticsService.UpdateAllLearningPathStatisticsAsync();
-        Log.Information("Learning path statistics updated successfully on startup");
-    }
-    catch (Exception ex)
-    {
-        Log.Error(ex, "An error occurred while updating statistics on startup");
-    }
-});
+app.UseHttpsRedirection();
 
 app.UseCors("AllowAll");
+
+app.UseResponseCompression();
+
+app.UseRateLimiter();
+
+// Serilog structured request logging
+app.UseSerilogRequestLogging();
 
 // Enable serving static files from wwwroot (for uploaded images)
 app.UseStaticFiles();
 
-app.UseSwagger();
-app.UseSwaggerUI(c =>
+// Swagger: only in Development
+if (app.Environment.IsDevelopment())
 {
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Pulse API v1");
-});
-app.Use(async (context, next) =>
-{
-    if (context.Request.Path == "/")
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
     {
-        context.Response.Redirect("/swagger");
-        return;
-    }
-    await next();
-});
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Pulse API v1");
+    });
+    app.Use(async (context, next) =>
+    {
+        if (context.Request.Path == "/")
+        {
+            context.Response.Redirect("/swagger");
+            return;
+        }
+        await next();
+    });
+}
 app.UseMiddleware<ExceptionMiddleware>();
 
 app.UseAuthentication();
@@ -396,6 +489,7 @@ app.UseMiddleware<OrganizationScopingMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHealthChecks("/health");
 app.Run();
 
 void InjectSeeders()
