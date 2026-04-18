@@ -37,18 +37,21 @@ namespace TAIF.Application.Services
             existingEvaluation.Description = updatedEvaluation.Description;
             existingEvaluation.InterestId = updatedEvaluation.InterestId;
 
-            // Delete existing mappings
+            // Delete existing mappings in bulk
             var existingMappings = await _mappingRepository.GetByEvaluationIdAsync(id);
-            foreach (var mapping in existingMappings)
+            if (existingMappings.Count > 0)
             {
-                _mappingRepository.PermanentDelete(mapping);
+                _mappingRepository.PermanentDeleteRange(existingMappings);
             }
 
-            // Add new mappings
+            // Add new mappings in bulk
             foreach (var newMapping in updatedEvaluation.QuestionMappings)
             {
                 newMapping.EvaluationId = id;
-                await _mappingRepository.AddAsync(newMapping);
+            }
+            if (updatedEvaluation.QuestionMappings.Any())
+            {
+                await _mappingRepository.AddRangeAsync(updatedEvaluation.QuestionMappings);
             }
 
             await _repository.SaveChangesAsync();

@@ -98,12 +98,10 @@ namespace TAIF.Application.Services
 
             var stats = await _lessonRepository.GetCourseStatisticsForSingleCourseAsync(courseId);
 
-            var enrollments = await _enrollmentRepository
-                .FindNoTrackingAsync(e => e.CourseId == courseId);
-            var enrollmentCount = enrollments.Count;
-            
-            var lessonCounts = await _lessonRepository.GetLessonCountPerCourseAsync();
-            var lessonCount = lessonCounts.GetValueOrDefault(courseId);
+            var enrollmentCount = await _enrollmentRepository
+                .CountAsync(e => e.CourseId == courseId);
+
+            var lessonCount = await _lessonRepository.GetLessonCountForCourseAsync(courseId);
 
             course.TotalEnrolled = enrollmentCount;
             course.TotalDurationInSeconds = stats?.TotalDuration ?? 0;
