@@ -33,5 +33,19 @@
     "bio": "Speech-language pathologist with expertise in AAC devices and communication disorders.",
     "expertises": ["Speech Therapy", "AAC Devices", "Communication Disorders", "Language Development"],
     "yearsOfExperience": 9
+  },
+  {
+    "firstName": "Rania",
+    "lastName": "Mansour",
+    "bio": "Behavioral analyst and positive behavior support specialist for students with developmental disabilities.",
+    "expertises": ["Behavior Analysis", "Positive Behavior Support", "ABA Therapy", "IEP Development"],
+    "yearsOfExperience": 11
+  },
+  {
+    "firstName": "David",
+    "lastName": "Williams",
+    "bio": "Creative arts therapist using music, art, and drama to support learners with special needs.",
+    "expertises": ["Art Therapy", "Music Therapy", "Creative Expression", "Emotional Regulation"],
+    "yearsOfExperience": 7
   }
 ]

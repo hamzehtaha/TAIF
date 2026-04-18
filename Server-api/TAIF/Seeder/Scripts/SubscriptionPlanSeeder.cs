@@ -6,6 +6,9 @@ namespace TAIF.API.Seeder.Scripts
     // dotnet run -- seed SubscriptionPlan
     public class SubscriptionPlanSeeder : IEntitySeeder
     {
+        // Production: plans must exist for users to subscribe
+        public SeedCategory Category => SeedCategory.Production;
+
         private readonly TaifDbContext _context;
 
         public SubscriptionPlanSeeder(TaifDbContext context)

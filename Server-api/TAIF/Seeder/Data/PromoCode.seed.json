@@ -1,0 +1,47 @@
+[
+  {
+    "code": "WELCOME50",
+    "description": "50% off your first subscription — new user welcome code",
+    "discountPercent": 50,
+    "maxUses": 200,
+    "maxUsesPerUser": 1,
+    "expiresAt": 365,
+    "isActive": true
+  },
+  {
+    "code": "TAIF30",
+    "description": "30% off any plan — general promotion code",
+    "discountPercent": 30,
+    "maxUses": 500,
+    "maxUsesPerUser": 1,
+    "expiresAt": 180,
+    "isActive": true
+  },
+  {
+    "code": "STUDENT20",
+    "description": "20% off for students — unlimited uses, one per user",
+    "discountPercent": 20,
+    "maxUses": null,
+    "maxUsesPerUser": 1,
+    "expiresAt": null,
+    "isActive": true
+  },
+  {
+    "code": "TESTFREE",
+    "description": "100% off — QA / integration testing use only",
+    "discountPercent": 100,
+    "maxUses": 50,
+    "maxUsesPerUser": 3,
+    "expiresAt": 90,
+    "isActive": true
+  },
+  {
+    "code": "EXPIRED10",
+    "description": "Expired code to validate expiry logic in tests",
+    "discountPercent": 10,
+    "maxUses": 100,
+    "maxUsesPerUser": 1,
+    "expiresAt": -1,
+    "isActive": false
+  }
+]

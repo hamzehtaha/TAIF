@@ -379,36 +379,39 @@ if (args.Length >= 2 && args[0].Equals("seed", StringComparison.OrdinalIgnoreCas
 {
     var entityName = args[1].ToLower();
     using var scope = app.Services.CreateScope();
-    
-    // Get fresh services from scope
+
     var serviceProvider = scope.ServiceProvider;
     var allSeeders = serviceProvider.GetServices<IEntitySeeder>().ToList();
-    
-    if (entityName == "all")
-    {
-        // Order seeders correctly - Organization MUST be first
-        var orderedSeeders = allSeeders
-            .OrderBy(s => s.GetType().Name switch
-            {
-                "OrganizationSeeder" => 0,
-                "SkillSeeder" => 1,
-                "UserSeeder" => 2,
-                "RecommendationSeeder" => 3,
-                "EvaluationQuestionSeeder" => 4,
-                "InstructorSeeder" => 5,
-                "CourseSeeder" => 6,
-                "LearningPathSeeder" => 7,
-                "AnswerSeeder" => 8,
-                "SubscriptionPlanSeeder" => 9,
-                "CurrencyRateSeeder" => 10,
-                _ => 99
-            })
-            .ToList();
 
-        foreach (var s in orderedSeeders) 
+    // Canonical run order across all seeders (lower = earlier)
+    static int SeedOrder(IEntitySeeder s) => s.GetType().Name switch
+    {
+        // --- Production seeders (0–19) ---
+        "OrganizationSeeder"        => 0,
+        "SubscriptionPlanSeeder"    => 1,
+        "CurrencyRateSeeder"        => 2,
+        "EvaluationQuestionSeeder"  => 3,
+        "RecommendationSeeder"      => 4,
+        "SuperAdminSeeder"          => 5,
+        // --- Test seeders (20–99) ---
+        "SkillSeeder"               => 20,
+        "UserSeeder"                => 21,
+        "InstructorSeeder"          => 22,
+        "CourseSeeder"              => 23,
+        "LearningPathSeeder"        => 24,
+        "AnswerSeeder"              => 25,
+        "QuestionSeeder"            => 26,
+        "PromoCodeSeeder"           => 27,
+        _                           => 99
+    };
+
+    async Task RunSeeders(IEnumerable<IEntitySeeder> seeders)
+    {
+        foreach (var s in seeders.OrderBy(SeedOrder))
         {
             try
             {
+                Console.WriteLine($"? Running {s.GetType().Name} ({s.Category})...");
                 await s.SeedAsync();
             }
             catch (Exception ex)
@@ -417,19 +420,49 @@ if (args.Length >= 2 && args[0].Equals("seed", StringComparison.OrdinalIgnoreCas
                 throw;
             }
         }
-        return;
     }
 
-    var seederToRun = allSeeders.FirstOrDefault(s =>
-        s.GetType().Name.Equals($"{entityName}Seeder", StringComparison.OrdinalIgnoreCase));
-
-    if (seederToRun == null)
+    switch (entityName)
     {
-        Console.WriteLine($"Seeder for '{entityName}' not found.");
-        return;
+        case "all":
+            // Run all seeders: production first, then test
+            Console.WriteLine("?? Seeding ALL (production + test)...");
+            await RunSeeders(allSeeders);
+            break;
+
+        case "prod":
+        case "production":
+            // Run only production-required seeders
+            Console.WriteLine("?? Seeding PRODUCTION data only...");
+            await RunSeeders(allSeeders.Where(s => s.Category == SeedCategory.Production));
+            break;
+
+        case "test":
+            // Run production first (as a dependency), then test data
+            Console.WriteLine("?? Seeding PRODUCTION (dependencies) then TEST data...");
+            await RunSeeders(allSeeders.Where(s => s.Category == SeedCategory.Production));
+            await RunSeeders(allSeeders.Where(s => s.Category == SeedCategory.Test));
+            break;
+
+        default:
+            // Run a specific seeder by entity name, e.g.: dotnet run -- seed Course
+            var seederToRun = allSeeders.FirstOrDefault(s =>
+                s.GetType().Name.Equals($"{entityName}Seeder", StringComparison.OrdinalIgnoreCase));
+
+            if (seederToRun == null)
+            {
+                Console.WriteLine($"? Seeder for '{entityName}' not found.");
+                Console.WriteLine("Available seeders:");
+                foreach (var s in allSeeders.OrderBy(SeedOrder))
+                    Console.WriteLine($"  • {s.GetType().Name.Replace("Seeder", "")} [{s.Category}]");
+                return;
+            }
+
+            Console.WriteLine($"? Running {seederToRun.GetType().Name} ({seederToRun.Category})...");
+            await seederToRun.SeedAsync();
+            break;
     }
 
-    await seederToRun.SeedAsync();
     return;
 }
 
@@ -494,17 +527,21 @@ app.Run();
 
 void InjectSeeders()
 {
-    // Only register explicit seeders - order matters for dependencies!
+    // ?? Production seeders ?????????????????????????????????????????????????????
     builder.Services.AddScoped<IEntitySeeder, OrganizationSeeder>();
+    builder.Services.AddScoped<IEntitySeeder, SubscriptionPlanSeeder>();
+    builder.Services.AddScoped<IEntitySeeder, CurrencyRateSeeder>();
+    builder.Services.AddScoped<IEntitySeeder, EvaluationQuestionSeeder>();
+    builder.Services.AddScoped<IEntitySeeder, RecommendationSeeder>();
+    builder.Services.AddScoped<IEntitySeeder, SuperAdminSeeder>();
+
+    // ?? Test / demo seeders ????????????????????????????????????????????????????
     builder.Services.AddScoped<IEntitySeeder, SkillSeeder>();
     builder.Services.AddScoped<IEntitySeeder, UserSeeder>();
-    builder.Services.AddScoped<IEntitySeeder, RecommendationSeeder>();
-    builder.Services.AddScoped<IEntitySeeder, EvaluationQuestionSeeder>();
     builder.Services.AddScoped<IEntitySeeder, InstructorSeeder>();
     builder.Services.AddScoped<IEntitySeeder, CourseSeeder>();
     builder.Services.AddScoped<IEntitySeeder, LearningPathSeeder>();
     builder.Services.AddScoped<IEntitySeeder, AnswerSeeder>();
     builder.Services.AddScoped<IEntitySeeder, QuestionSeeder>();
-    builder.Services.AddScoped<IEntitySeeder, SubscriptionPlanSeeder>();
-    builder.Services.AddScoped<IEntitySeeder, CurrencyRateSeeder>();
+    builder.Services.AddScoped<IEntitySeeder, PromoCodeSeeder>();
 }

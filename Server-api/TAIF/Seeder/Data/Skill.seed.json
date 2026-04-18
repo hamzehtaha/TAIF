@@ -1,27 +1,77 @@
 [
   {
     "name": "Speech Therapy",
-    "description": "Improving communication and speech abilities",
+    "description": "Improving verbal communication, articulation, and language processing abilities",
     "organizationSlug": "taif-academy"
   },
   {
     "name": "Motor Skills Development",
-    "description": "Enhancing fine and gross motor coordination",
+    "description": "Enhancing fine and gross motor coordination through structured exercises",
     "organizationSlug": "taif-academy"
   },
   {
     "name": "Cognitive Training",
-    "description": "Improving memory, focus, and problem-solving skills",
+    "description": "Improving memory, focus, attention, and problem-solving skills",
+    "organizationSlug": "taif-academy"
+  },
+  {
+    "name": "Sign Language (ASL)",
+    "description": "American Sign Language communication for deaf and hard of hearing individuals",
+    "organizationSlug": "taif-academy"
+  },
+  {
+    "name": "Braille Literacy",
+    "description": "Reading and writing in Braille for visually impaired individuals",
+    "organizationSlug": "taif-academy"
+  },
+  {
+    "name": "Assistive Technology",
+    "description": "Using screen readers, AAC devices, and adaptive tools for daily independence",
+    "organizationSlug": "taif-academy"
+  },
+  {
+    "name": "Sensory Integration",
+    "description": "Therapeutic techniques for processing and responding to sensory stimuli",
+    "organizationSlug": "taif-academy"
+  },
+  {
+    "name": "Behavior Support",
+    "description": "Positive behavior support and self-regulation strategies for students with special needs",
+    "organizationSlug": "taif-academy"
+  },
+  {
+    "name": "Inclusive Education",
+    "description": "Designing and delivering education in inclusive and accessible environments",
+    "organizationSlug": "taif-academy"
+  },
+  {
+    "name": "Occupational Therapy",
+    "description": "Supporting daily living skills and independence through occupational therapy techniques",
+    "organizationSlug": "taif-academy"
+  },
+  {
+    "name": "AAC Communication",
+    "description": "Augmentative and Alternative Communication devices and strategies",
     "organizationSlug": "taif-academy"
   },
   {
     "name": "Creative Expression",
-    "description": "Art and creative skill enhancement",
+    "description": "Art, music, and creative activities as therapeutic and educational tools",
     "organizationSlug": "creative-learning-hub"
   },
   {
     "name": "Social Interaction Skills",
     "description": "Building interpersonal and social communication abilities",
+    "organizationSlug": "creative-learning-hub"
+  },
+  {
+    "name": "Emotional Regulation",
+    "description": "Strategies for managing emotions and developing self-control",
+    "organizationSlug": "creative-learning-hub"
+  },
+  {
+    "name": "Learning Strategies",
+    "description": "Evidence-based methods for supporting students with dyslexia, ADHD, and learning disabilities",
     "organizationSlug": "creative-learning-hub"
   }
 ]

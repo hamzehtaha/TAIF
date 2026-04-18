@@ -6,6 +6,9 @@ namespace TAIF.API.Seeder.Scripts
     // dotnet run -- seed CurrencyRate
     public class CurrencyRateSeeder : IEntitySeeder
     {
+        // Production: rates must exist for price conversions
+        public SeedCategory Category => SeedCategory.Production;
+
         private readonly TaifDbContext _context;
 
         public CurrencyRateSeeder(TaifDbContext context)

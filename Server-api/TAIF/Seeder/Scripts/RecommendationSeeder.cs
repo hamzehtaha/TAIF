@@ -7,6 +7,9 @@ namespace TAIF.API.Seeder.Scripts
     // dotnet run -- seed Recommendation
     public class RecommendationSeeder : IEntitySeeder
     {
+        // Production: interests, tags, and mappings are required for the recommendation engine
+        public SeedCategory Category => SeedCategory.Production;
+
         private readonly TaifDbContext _context;
         [Obsolete]
         private readonly Microsoft.AspNetCore.Hosting.IHostingEnvironment _env;

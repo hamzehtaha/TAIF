@@ -9,6 +9,9 @@ namespace TAIF.API.Seeder.Scripts
     // dotnet run -- seed User
     public class UserSeeder: IEntitySeeder
     {
+        // Test: demo users (Admin, ContentCreator, Students); SuperAdmin is handled by SuperAdminSeeder
+        public SeedCategory Category => SeedCategory.Test;
+
         private readonly TaifDbContext _context;
         [Obsolete]
         private readonly Microsoft.AspNetCore.Hosting.IHostingEnvironment _env;
