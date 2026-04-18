@@ -7,6 +7,9 @@ namespace TAIF.API.Seeder.Scripts
 {
     public class LearningPathSeeder : IEntitySeeder
     {
+        // Test: demo learning paths built from seeded courses
+        public SeedCategory Category => SeedCategory.Test;
+
         private readonly TaifDbContext _context;
         [Obsolete]
         private readonly Microsoft.AspNetCore.Hosting.IHostingEnvironment _env;

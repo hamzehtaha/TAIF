@@ -6,6 +6,9 @@ namespace TAIF.API.Seeder.Scripts
 {
     public class AnswerSeeder : IEntitySeeder
     {
+        // Test: quiz answer options used by QuestionSeeder
+        public SeedCategory Category => SeedCategory.Test;
+
         private readonly TaifDbContext _context;
         private readonly IWebHostEnvironment _env;
 

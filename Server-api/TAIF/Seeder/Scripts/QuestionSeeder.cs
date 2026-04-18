@@ -5,6 +5,9 @@ using TAIF.Infrastructure.Data;
 
 public class QuestionSeeder : IEntitySeeder
 {
+    // Test: quiz questions for demo courses
+    public SeedCategory Category => SeedCategory.Test;
+
     private readonly TaifDbContext _context;
     private readonly IWebHostEnvironment _env;
 

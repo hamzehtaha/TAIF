@@ -8,6 +8,9 @@ namespace TAIF.API.Seeder.Scripts
     // dotnet run -- seed Organization
     public class OrganizationSeeder : IEntitySeeder
     {
+        // Production: the default public org is required for all user assignments
+        public SeedCategory Category => SeedCategory.Production;
+
         private readonly TaifDbContext _context;
         [Obsolete]
         private readonly Microsoft.AspNetCore.Hosting.IHostingEnvironment _env;

@@ -7,6 +7,9 @@ namespace TAIF.API.Seeder.Scripts
     // dotnet run -- seed EvaluationQuestion
     public class EvaluationQuestionSeeder : IEntitySeeder
     {
+        // Production: onboarding evaluation questions must exist
+        public SeedCategory Category => SeedCategory.Production;
+
         private readonly TaifDbContext _context;
         private readonly IWebHostEnvironment _env;
 

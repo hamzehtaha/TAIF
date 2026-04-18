@@ -8,6 +8,9 @@ namespace TAIF.API.Seeder.Scripts
     // dotnet run -- seed Instructor
     public class InstructorSeeder : IEntitySeeder
     {
+        // Test: demo instructors for test courses
+        public SeedCategory Category => SeedCategory.Test;
+
         private readonly TaifDbContext _context;
         [Obsolete]
         private readonly Microsoft.AspNetCore.Hosting.IHostingEnvironment _env;

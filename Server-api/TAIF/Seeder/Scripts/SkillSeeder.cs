@@ -7,6 +7,9 @@ namespace TAIF.API.Seeder.Scripts
     // dotnet run -- seed Skill
     public class SkillSeeder : IEntitySeeder
     {
+        // Test: demo skills tied to test organizations
+        public SeedCategory Category => SeedCategory.Test;
+
         private readonly TaifDbContext _context;
         [Obsolete]
         private readonly Microsoft.AspNetCore.Hosting.IHostingEnvironment _env;

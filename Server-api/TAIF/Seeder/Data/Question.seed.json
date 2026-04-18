@@ -1,17 +1,128 @@
 [
   {
-    "info": "What is the purpose of Speech Therapy?",
-    "goals": "Understand speech therapy benefits",
+    "info": "What is the primary purpose of Speech Therapy?",
+    "goals": "Understand the core benefit of speech therapy in special needs education",
     "answers": [
-      "It helps improve speech clarity",
-      "It improves muscle coordination",
-      "It strengthens memory skills"
+      "It helps improve speech clarity and verbal communication",
+      "It improves muscle coordination and motor control",
+      "It strengthens memory and cognitive skills",
+      "It has no proven therapeutic benefit"
     ],
     "correctAnswerIndex": 0,
     "minPercentage": 80,
-    "skills": [
-      "Speech Therapy"
-    ],
+    "skills": ["Speech Therapy"],
     "organizationSlug": "taif-academy"
+  },
+  {
+    "info": "How many dots make up a standard Braille cell?",
+    "goals": "Identify the structure of the Braille writing system",
+    "answers": [
+      "Four dots arranged in a single row",
+      "Six dots arranged in two columns of three",
+      "Eight dots arranged in four columns",
+      "It has no proven therapeutic benefit"
+    ],
+    "correctAnswerIndex": 1,
+    "minPercentage": 80,
+    "skills": ["Braille Literacy"],
+    "organizationSlug": "taif-academy"
+  },
+  {
+    "info": "What is the main function of a screen reader?",
+    "goals": "Understand the role of screen readers as assistive technology",
+    "answers": [
+      "Converting on-screen text to speech or Braille output",
+      "Increasing the font size on a display",
+      "Translating content between languages",
+      "Adjusting screen brightness automatically"
+    ],
+    "correctAnswerIndex": 0,
+    "minPercentage": 75,
+    "skills": ["Assistive Technology"],
+    "organizationSlug": "taif-academy"
+  },
+  {
+    "info": "Which of the following is a widely used screen reader for Windows?",
+    "goals": "Identify common screen reader software used by visually impaired users",
+    "answers": [
+      "JAWS (Job Access With Speech)",
+      "Microsoft Word",
+      "Adobe Acrobat",
+      "Google Chrome extension"
+    ],
+    "correctAnswerIndex": 0,
+    "minPercentage": 70,
+    "skills": ["Assistive Technology"],
+    "organizationSlug": "taif-academy"
+  },
+  {
+    "info": "What challenge does sensory processing disorder commonly cause in individuals with autism?",
+    "goals": "Understand sensory processing challenges associated with autism spectrum disorder",
+    "answers": [
+      "Sensory overload and self-regulation difficulties",
+      "Difficulty processing abstract mathematical concepts only",
+      "Exclusively physical coordination problems",
+      "Adjusting screen brightness automatically"
+    ],
+    "correctAnswerIndex": 0,
+    "minPercentage": 75,
+    "skills": ["Sensory Integration"],
+    "organizationSlug": "taif-academy"
+  },
+  {
+    "info": "What is an AAC device?",
+    "goals": "Identify the role of AAC (Augmentative and Alternative Communication) devices",
+    "answers": [
+      "A device that produces speech output from symbols or text",
+      "A hearing aid for noise amplification",
+      "A mobility scooter for physical disabilities",
+      "A type of magnifying glass"
+    ],
+    "correctAnswerIndex": 0,
+    "minPercentage": 80,
+    "skills": ["AAC Communication", "Speech Therapy"],
+    "organizationSlug": "taif-academy"
+  },
+  {
+    "info": "What does fine motor skills development primarily focus on?",
+    "goals": "Differentiate between fine and gross motor skill development goals",
+    "answers": [
+      "Strengthening and coordinating hand and finger movements",
+      "Improving balance and whole-body movement",
+      "Training long-term visual memory",
+      "It has no proven therapeutic benefit"
+    ],
+    "correctAnswerIndex": 0,
+    "minPercentage": 75,
+    "skills": ["Motor Skills Development"],
+    "organizationSlug": "taif-academy"
+  },
+  {
+    "info": "What does IEP stand for in special education?",
+    "goals": "Identify key terminology used in inclusive and special education planning",
+    "answers": [
+      "Individualized Education Plan",
+      "International Education Protocol",
+      "Integrated Evaluation Procedure",
+      "It has no proven therapeutic benefit"
+    ],
+    "correctAnswerIndex": 0,
+    "minPercentage": 80,
+    "skills": ["Inclusive Education"],
+    "organizationSlug": "taif-academy"
+  },
+  {
+    "info": "How can creative arts support students with special needs?",
+    "goals": "Understand the therapeutic value of creative expression for special needs learners",
+    "answers": [
+      "Through creative art exercises and sensory play",
+      "By limiting social interaction to improve focus",
+      "Through structured competitive sports only",
+      "Adjusting screen brightness automatically"
+    ],
+    "correctAnswerIndex": 0,
+    "minPercentage": 70,
+    "skills": ["Creative Expression"],
+    "organizationSlug": "creative-learning-hub"
   }
 ]

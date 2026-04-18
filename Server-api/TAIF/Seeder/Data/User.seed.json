@@ -28,5 +28,59 @@
     "lastName": "Student",
     "email": "student@taif.com",
     "role": "Student"
+  },
+  {
+    "firstName": "Sara",
+    "lastName": "Al-Mutairi",
+    "email": "sara.admin@taif.com",
+    "role": "Admin"
+  },
+  {
+    "firstName": "Khalid",
+    "lastName": "Al-Harbi",
+    "email": "khalid.creator@taif.com",
+    "role": "ContentCreator"
+  },
+  {
+    "firstName": "Nora",
+    "lastName": "Al-Otaibi",
+    "email": "nora.creator@taif.com",
+    "role": "ContentCreator"
+  },
+  {
+    "firstName": "Youssef",
+    "lastName": "Ibrahim",
+    "email": "youssef.creator@taif.com",
+    "role": "ContentCreator"
+  },
+  {
+    "firstName": "Layla",
+    "lastName": "Hassan",
+    "email": "layla.student@taif.com",
+    "role": "Student"
+  },
+  {
+    "firstName": "Adam",
+    "lastName": "Smith",
+    "email": "adam.student@taif.com",
+    "role": "Student"
+  },
+  {
+    "firstName": "Maha",
+    "lastName": "Al-Rashidi",
+    "email": "maha.student@taif.com",
+    "role": "Student"
+  },
+  {
+    "firstName": "James",
+    "lastName": "Carter",
+    "email": "james.student@taif.com",
+    "role": "Student"
+  },
+  {
+    "firstName": "Reem",
+    "lastName": "Khalid",
+    "email": "reem.student@taif.com",
+    "role": "Student"
   }
 ]
