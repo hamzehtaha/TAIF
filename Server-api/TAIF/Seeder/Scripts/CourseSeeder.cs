@@ -141,7 +141,7 @@ namespace TAIF.API.Seeder.Scripts
                             InstructorId   = instructor.Id
                         };
 
-                        _context.lessons.Add(lesson);
+                        _context.Lessons.Add(lesson);
                         await _context.SaveChangesAsync();
 
                         _context.CourseLessons.Add(new CourseLesson

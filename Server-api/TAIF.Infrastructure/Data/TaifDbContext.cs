@@ -34,7 +34,7 @@ namespace TAIF.Infrastructure.Data
         public DbSet<Instructor> Instructors { get; set; }
         public DbSet<Category> Categories { get; set; }
         public DbSet<Course> Courses { get; set; }
-        public DbSet<Lesson> lessons { get; set; }
+        public DbSet<Lesson> Lessons { get; set; }
         public DbSet<LessonItem> LessonItems { get; set; }
         public DbSet<Enrollment> Enrollments { get; set; }
         public DbSet<LessonItemProgress> LessonItemProgress { get; set; }
@@ -82,6 +82,7 @@ namespace TAIF.Infrastructure.Data
                 entity.HasIndex(o => o.Slug).IsUnique();
                 entity.HasIndex(o => o.Identity).IsUnique();
                 entity.HasIndex(o => o.Type);
+                entity.HasQueryFilter(o => !o.IsDeleted);
             });
 
             // User-Organization configuration
@@ -742,9 +743,10 @@ namespace TAIF.Infrastructure.Data
         private void ApplyTenantFilter<TEntity>(ModelBuilder modelBuilder) where TEntity : OrganizationBase
         {
             modelBuilder.Entity<TEntity>().HasQueryFilter(e =>
-                _tenantProvider == null ||
+                !e.IsDeleted &&
+                (_tenantProvider == null ||
                 !_tenantProvider.ShouldApplyTenantFilter ||
-                e.OrganizationId == _tenantProvider.OrganizationId);
+                e.OrganizationId == _tenantProvider.OrganizationId));
         }
 
         /// <summary>

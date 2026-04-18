@@ -1,37 +1,49 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using TAIF.Application.Interfaces.Services;
+using TAIF.Application.Options;
 
 namespace TAIF.Infrastructure.BackgroundServices
 {
     /// <summary>
-    /// Runs hourly to expire overdue subscriptions and send 7-day warning emails.
-    /// Uses IServiceScopeFactory because ISubscriptionService is scoped.
+    /// Runs periodically to expire overdue subscriptions and send warning emails.
+    /// Configurable via BackgroundJobs:SubscriptionExpiry in appsettings.
     /// </summary>
     public class SubscriptionExpiryBackgroundService : BackgroundService
     {
-        private static readonly TimeSpan Interval = TimeSpan.FromHours(1);
-
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger<SubscriptionExpiryBackgroundService> _logger;
+        private readonly JobOptions _jobOptions;
 
         public SubscriptionExpiryBackgroundService(
             IServiceScopeFactory scopeFactory,
-            ILogger<SubscriptionExpiryBackgroundService> logger)
+            ILogger<SubscriptionExpiryBackgroundService> logger,
+            IOptions<BackgroundJobsOptions> options)
         {
             _scopeFactory = scopeFactory;
             _logger = logger;
+            _jobOptions = options.Value.SubscriptionExpiry;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("SubscriptionExpiryBackgroundService started");
+            if (!_jobOptions.Enabled)
+            {
+                _logger.LogInformation("SubscriptionExpiryBackgroundService is disabled by configuration");
+                return;
+            }
 
-            while (!stoppingToken.IsCancellationRequested)
+            _logger.LogInformation("SubscriptionExpiryBackgroundService started. Interval: {Interval}s", _jobOptions.IntervalSeconds);
+
+            if (_jobOptions.InitialDelaySeconds > 0)
+                await Task.Delay(_jobOptions.InitialDelay, stoppingToken);
+
+            using var timer = new PeriodicTimer(_jobOptions.Interval);
+            while (await timer.WaitForNextTickAsync(stoppingToken))
             {
                 await RunCycleAsync(stoppingToken);
-                await Task.Delay(Interval, stoppingToken);
             }
 
             _logger.LogInformation("SubscriptionExpiryBackgroundService stopped");

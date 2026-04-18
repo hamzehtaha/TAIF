@@ -1,7 +1,6 @@
-﻿using Mapster;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
+using Microsoft.AspNetCore.RateLimiting;
 using TAIF.Application.DTOs.Requests;
 using TAIF.Application.DTOs.Responses;
 using TAIF.Application.Interfaces.Services;
@@ -31,6 +30,7 @@ namespace TAIF.API.Controllers
 
         [HttpPost("register")]
         [AllowAnonymous]
+        [EnableRateLimiting("AuthRateLimit")]
         public async Task<IActionResult> Register(RegisterRequest request)
         {
             var result = await _authService.RegisterAsync(request);
@@ -51,43 +51,49 @@ namespace TAIF.API.Controllers
 
         [HttpPost("login")]
         [AllowAnonymous]
+        [EnableRateLimiting("AuthRateLimit")]
         public async Task<IActionResult> Login(LoginRequest request)
         {
             var result = await _authService.LoginAsync(request.Email, request.Password);
             if (result == null)
-                return Unauthorized();
+                return Unauthorized(ApiResponse<string>.FailResponse("Invalid credentials"));
 
-            return Ok(result);
+            return Ok(ApiResponse<AuthResponse>.SuccessResponse(result));
         }
 
         [HttpPost("refresh")]
         [AllowAnonymous]
+        [EnableRateLimiting("AuthRateLimit")]
         public async Task<IActionResult> Refresh(RefreshTokenRequest request)
         {
             var result = await _authService.RefreshTokenAsync(request.RefreshToken);
             if (result == null)
-                return Unauthorized();
+                return Unauthorized(ApiResponse<string>.FailResponse("Invalid or expired refresh token"));
 
-            return Ok(result);
+            return Ok(ApiResponse<AuthResponse>.SuccessResponse(result));
         }
 
-        [HttpGet("me")]
-        [Authorize]
-        public async Task<IActionResult> Me()
+        [HttpPost("forgot-password")]
+        [AllowAnonymous]
+        [EnableRateLimiting("AuthRateLimit")]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request)
         {
-            var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            if (string.IsNullOrEmpty(userIdValue))
-                return Unauthorized("UserId claim not found");
-
-            if (!Guid.TryParse(userIdValue, out var userId))
-                return Unauthorized("Invalid UserId format");
-
-            var user = await _userService.GetByIdWithOrganizationAsync(userId);
-            if (user == null)
-                return NotFound("User not found");
-
-            return Ok(ApiResponse<UserResponse>.SuccessResponse(user.Adapt<UserResponse>()));
+            await _authService.ForgotPasswordAsync(request.Email);
+            // Always return success to prevent email enumeration
+            return Ok(ApiResponse<string>.SuccessResponse("If the email exists, a password reset code has been sent."));
         }
-    }
-}
+
+        [HttpPost("reset-password")]
+        [AllowAnonymous]
+        [EnableRateLimiting("AuthRateLimit")]
+        public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
+        {
+            var result = await _authService.ResetPasswordAsync(request.Email, request.Otp, request.NewPassword);
+            if (!result)
+                return BadRequest(ApiResponse<string>.FailResponse("Invalid or expired reset code."));
+
+            return Ok(ApiResponse<string>.SuccessResponse("Password has been reset successfully."));
+        }
+
+            }
+        }

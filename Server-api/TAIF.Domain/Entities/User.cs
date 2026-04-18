@@ -18,9 +18,7 @@ namespace TAIF.Domain.Entities
         public bool IsCompleted { get; set; } = true;
         public bool EmailVerified { get; set; } = false;
         public UserRoleType Role { get; set; } = UserRoleType.Student;
-        
-        public Guid? OrganizationId { get; set; }
-        
+
         public string? RefreshToken { get; set; }
         public DateTime? RefreshTokenExpiresAt { get; set; }
 
@@ -29,8 +27,10 @@ namespace TAIF.Domain.Entities
         public DateTime? VerificationTokenExpiresAt { get; set; }
         public string? VerificationChannel { get; set; }       // "Email" | "SMS" | "WhatsApp"
 
+        // Account lockout
+        public int FailedLoginAttempts { get; set; } = 0;
+        public DateTime? LockoutEnd { get; set; }
+
         public ICollection<Guid> Interests { get; set; } = new List<Guid>();
-        
-        public Organization? Organization { get; set; }
     }
 }

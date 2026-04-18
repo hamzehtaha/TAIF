@@ -21,7 +21,7 @@ namespace TAIF.API.Middleware
             {
                 var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 var orgIdClaim = context.User.FindFirst("OrganizationId")?.Value;
-                var roleClaim = context.User.FindFirst("Role")?.Value;
+                var roleClaim = context.User.FindFirst(ClaimTypes.Role)?.Value;
 
                 if (Guid.TryParse(userIdClaim, out var userId))
                 {
@@ -32,9 +32,12 @@ namespace TAIF.API.Middleware
                     }
 
                     int role = (int)UserRoleType.Student;
-                    if (!string.IsNullOrEmpty(roleClaim) && int.TryParse(roleClaim, out var parsedRole))
+                    if (!string.IsNullOrEmpty(roleClaim))
                     {
-                        role = parsedRole;
+                        if (Enum.TryParse<UserRoleType>(roleClaim, out var parsedRole))
+                            role = (int)parsedRole;
+                        else if (int.TryParse(roleClaim, out var parsedRoleInt))
+                            role = parsedRoleInt;
                     }
 
                     orgContext.SetContext(userId, organizationId, role);

@@ -1,35 +1,48 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using TAIF.Application.Interfaces.Repositories;
 using TAIF.Application.Interfaces.Services;
+using TAIF.Application.Options;
 using TAIF.Domain.Entities;
 
 namespace TAIF.Infrastructure.Services
 {
     /// <summary>
     /// Background service that polls Mux API to check status of pending video assets.
+    /// Configurable via BackgroundJobs:VideoPolling in appsettings.
     /// TODO: Enable Webhook instead of long polling for production use.
-    /// This polling approach is used as a temporary solution while webhooks are not configured.
     /// </summary>
     public class VideoAssetPollingService : BackgroundService
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<VideoAssetPollingService> _logger;
-        private readonly TimeSpan _pollingInterval = TimeSpan.FromSeconds(10);
+        private readonly JobOptions _jobOptions;
 
         public VideoAssetPollingService(
             IServiceProvider serviceProvider,
-            ILogger<VideoAssetPollingService> logger)
+            ILogger<VideoAssetPollingService> logger,
+            IOptions<BackgroundJobsOptions> options)
         {
             _serviceProvider = serviceProvider;
             _logger = logger;
+            _jobOptions = options.Value.VideoPolling;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("VideoAssetPollingService started. Polling interval: {Interval}s", 
-                _pollingInterval.TotalSeconds);
+            if (!_jobOptions.Enabled)
+            {
+                _logger.LogInformation("VideoAssetPollingService is disabled by configuration");
+                return;
+            }
+
+            _logger.LogInformation("VideoAssetPollingService started. Polling interval: {Interval}s",
+                _jobOptions.IntervalSeconds);
+
+            if (_jobOptions.InitialDelaySeconds > 0)
+                await Task.Delay(_jobOptions.InitialDelay, stoppingToken);
 
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -42,7 +55,7 @@ namespace TAIF.Infrastructure.Services
                     _logger.LogError(ex, "Error during video asset polling");
                 }
 
-                await Task.Delay(_pollingInterval, stoppingToken);
+                await Task.Delay(_jobOptions.Interval, stoppingToken);
             }
 
             _logger.LogInformation("VideoAssetPollingService stopped");

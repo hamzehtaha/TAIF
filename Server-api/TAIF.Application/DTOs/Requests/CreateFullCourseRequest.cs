@@ -77,7 +77,7 @@ namespace TAIF.Application.DTOs.Requests
         [StringLength(2000, ErrorMessage = "Description must not exceed 2000 characters.")]
         public string? Description { get; set; }
 
-        [Range(0, 2, ErrorMessage = "Type must be 0 (Video), 1 (RichContent), or 2 (Quiz).")]
+        [Range(0, 3, ErrorMessage = "Type must be 0 (Video), 1 (RichContent), 2 (Quiz), or 3 (Resource).")]
         public int Type { get; set; }
 
         [Range(0, int.MaxValue, ErrorMessage = "Order must be a non-negative number.")]
@@ -142,6 +142,11 @@ namespace TAIF.Application.DTOs.Requests
         /// Quiz content data. Required when Type is 2 (Quiz).
         /// </summary>
         public CreateFullCourseQuizContent? Quiz { get; set; }
+
+        /// <summary>
+        /// Downloadable resource content data. Required when Type is 3 (Resource).
+        /// </summary>
+        public CreateFullCourseResourceContent? Resource { get; set; }
     }
 
     public record CreateFullCourseVideoContent
@@ -209,5 +214,31 @@ namespace TAIF.Application.DTOs.Requests
         [Required(ErrorMessage = "Correct answer index is required.")]
         [Range(0, int.MaxValue, ErrorMessage = "Correct answer index must be a non-negative number.")]
         public int CorrectAnswerIndex { get; set; }
+    }
+
+    /// <summary>
+    /// Downloadable resource content data for the full course creation request.
+    /// </summary>
+    public record CreateFullCourseResourceContent
+    {
+        [Required(ErrorMessage = "Resource title is required.")]
+        [StringLength(300, MinimumLength = 2, ErrorMessage = "Resource title must be between 2 and 300 characters.")]
+        public string Title { get; set; } = null!;
+
+        [StringLength(2000, ErrorMessage = "Description must not exceed 2000 characters.")]
+        public string? Description { get; set; }
+
+        [Required(ErrorMessage = "File URL is required.")]
+        [StringLength(2048, ErrorMessage = "File URL must not exceed 2048 characters.")]
+        public string FileUrl { get; set; } = null!;
+
+        [Required(ErrorMessage = "File name is required.")]
+        [StringLength(500, ErrorMessage = "File name must not exceed 500 characters.")]
+        public string FileName { get; set; } = null!;
+
+        public long FileSize { get; set; }
+
+        [StringLength(200, ErrorMessage = "Content type must not exceed 200 characters.")]
+        public string? ContentType { get; set; }
     }
 }

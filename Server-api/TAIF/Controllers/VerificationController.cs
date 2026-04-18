@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using TAIF.Application.DTOs.Responses;
 using TAIF.Application.DTOs.Verification;
 using TAIF.Application.Interfaces.Services;
@@ -29,6 +30,7 @@ public class VerificationController : TaifControllerBase
     /// <param name="channel">Delivery channel: "Email" (default), "SMS", "WhatsApp".</param>
     /// <param name="locale">Optional BCP-47 locale for message language, e.g. "ar", "en".</param>
     [HttpPost("send")]
+    [EnableRateLimiting("VerificationRateLimit")]
     public async Task<IActionResult> Send(
         [FromQuery] string channel = "Email",
         [FromQuery] string? locale = null)
@@ -44,6 +46,7 @@ public class VerificationController : TaifControllerBase
     /// </summary>
     [HttpPost("verify")]
     [AllowAnonymous]
+    [EnableRateLimiting("VerificationRateLimit")]
     public async Task<IActionResult> Verify([FromBody] VerifyCodeRequest request)
     {
         var success = await _verificationService.VerifyAsync(request.UserId, request.Code);

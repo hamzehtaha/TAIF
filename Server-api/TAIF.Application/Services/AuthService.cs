@@ -1,9 +1,11 @@
 ﻿using Mapster;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using TAIF.Application.DTOs.Requests;
 using TAIF.Application.DTOs.Responses;
 using TAIF.Application.Interfaces.Repositories;
 using TAIF.Application.Interfaces.Services;
+using TAIF.Application.Options;
 using TAIF.Domain.Entities;
 
 namespace TAIF.Application.Services
@@ -15,30 +17,36 @@ namespace TAIF.Application.Services
         private readonly IInstructorRepository _instructorProfileRepository;
         private readonly ITokenService _tokenService;
         private readonly IConfiguration _configuration;
+        private readonly AuthOptions _authOptions;
+        private readonly IVerificationService _verificationService;
 
         public AuthService(
             IUserRepository userRepository,
             IOrganizationRepository organizationRepository,
             IInstructorRepository instructorProfileRepository,
             ITokenService tokenService,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IOptions<AuthOptions> authOptions,
+            IVerificationService verificationService)
         {
             _userRepository = userRepository;
             _organizationRepository = organizationRepository;
             _instructorProfileRepository = instructorProfileRepository;
             _tokenService = tokenService;
             _configuration = configuration;
+            _authOptions = authOptions.Value;
+            _verificationService = verificationService;
         }
 
         public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
         {
             var existing = await _userRepository.GetByEmailAsync(request.Email);
             if (existing is not null)
-                throw new Exception("User already exists");
+                throw new InvalidOperationException("Unable to complete registration. Please try again or use a different email.");
 
             var publicOrg = await _organizationRepository.GetPublicOrganizationAsync();
             if (publicOrg == null)
-                throw new Exception("Public organization not found. Please run seeders first.");
+                throw new InvalidOperationException("Public organization not found. Please run seeders first.");
 
             var user = request.Adapt<User>();
             user.Id = Guid.NewGuid();
@@ -74,8 +82,26 @@ namespace TAIF.Application.Services
             if (user == null || !user.IsActive)
                 return null;
 
-            if (!PasswordHelper.Verify(user.PasswordHash, password))
+            // Check if account is locked out
+            if (user.LockoutEnd.HasValue && user.LockoutEnd > DateTime.UtcNow)
                 return null;
+
+            if (!PasswordHelper.Verify(user.PasswordHash, password))
+            {
+                // Increment failed attempts and lock after configured threshold
+                user.FailedLoginAttempts++;
+                if (user.FailedLoginAttempts >= _authOptions.MaxFailedLoginAttempts)
+                {
+                    user.LockoutEnd = DateTime.UtcNow.AddMinutes(_authOptions.LockoutDurationMinutes);
+                }
+                user.UpdatedAt = DateTime.UtcNow;
+                await _userRepository.SaveChangesAsync();
+                return null;
+            }
+
+            // Reset lockout on successful login
+            user.FailedLoginAttempts = 0;
+            user.LockoutEnd = null;
 
             var accessToken = _tokenService.GenerateAccessToken(user);
             var refreshToken = _tokenService.GenerateRefreshToken();
@@ -106,13 +132,21 @@ namespace TAIF.Application.Services
                 return null;
 
             var newAccessToken = _tokenService.GenerateAccessToken(user);
+            var newRefreshToken = _tokenService.GenerateRefreshToken();
             var times = GetTokenExpires();
+
+            // Rotate refresh token to prevent reuse of stolen tokens
+            user.RefreshToken = newRefreshToken;
+            user.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(times.Item1);
+            user.UpdatedAt = DateTime.UtcNow;
+
+            await _userRepository.SaveChangesAsync();
 
             return new AuthResponse(
                 user.Id,
                 newAccessToken,
                 DateTime.UtcNow.AddMinutes(times.Item2),
-                user.RefreshToken ?? "",
+                newRefreshToken,
                 user.RefreshTokenExpiresAt.Value
             );
         }
@@ -130,6 +164,37 @@ namespace TAIF.Application.Services
                 int.TryParse(jwt["AccessTokenMinutes"], out numberOfMinForAccessToken);
 
             return (numberOfDaysForRefresh, numberOfMinForAccessToken);
+        }
+
+        public async Task ForgotPasswordAsync(string email)
+        {
+            var user = await _userRepository.GetByEmailAsync(email);
+            // Always return success to prevent email enumeration
+            if (user == null || !user.IsActive)
+                return;
+
+            await _verificationService.SendAsync(user.Id, "Email");
+        }
+
+        public async Task<bool> ResetPasswordAsync(string email, string otp, string newPassword)
+        {
+            var user = await _userRepository.GetByEmailAsync(email);
+            if (user == null || !user.IsActive)
+                return false;
+
+            var isValid = await _verificationService.VerifyAsync(user.Id, otp);
+            if (!isValid)
+                return false;
+
+            user.PasswordHash = PasswordHelper.Hash(newPassword);
+            user.FailedLoginAttempts = 0;
+            user.LockoutEnd = null;
+            user.RefreshToken = null;
+            user.RefreshTokenExpiresAt = null;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            await _userRepository.SaveChangesAsync();
+            return true;
         }
     }
 }

@@ -64,9 +64,12 @@ namespace TAIF.Application.Services
 
         public async Task<CreateFullCourseResponse> CreateFullCourseAsync(CreateFullCourseRequest request, Guid creatorId)
         {
-            int lessonsCreated = 0;
-            int lessonItemsCreated = 0;
-            int contentsCreated = 0;
+            await using var transaction = (IAsyncDisposable)await _courseRepository.BeginTransactionAsync();
+            try
+            {
+                int lessonsCreated = 0;
+                int lessonItemsCreated = 0;
+                int contentsCreated = 0;
 
             // Step 1: Create the course
             var course = new Course
@@ -194,6 +197,7 @@ namespace TAIF.Application.Services
 
             // Save all changes
             await _courseRepository.SaveChangesAsync();
+            await _courseRepository.CommitTransactionAsync();
 
             return new CreateFullCourseResponse
             {
@@ -204,6 +208,12 @@ namespace TAIF.Application.Services
                 ContentsCreated = contentsCreated,
                 CreatedAt = course.CreatedAt
             };
+            }
+            catch
+            {
+                await _courseRepository.RollbackTransactionAsync();
+                throw;
+            }
         }
 
         private Content CreateContentFromRequest(int type, CreateFullCourseContentRequest contentRequest)
@@ -259,6 +269,21 @@ namespace TAIF.Application.Services
                         }).ToList()
                     };
                     return new Content(contentType, quizData);
+
+                case LessonItemType.Resource:
+                    if (contentRequest.Resource == null)
+                        throw new ArgumentException("Resource content data is required for resource type.");
+
+                    var resourceData = new Resource
+                    {
+                        Title = contentRequest.Resource.Title,
+                        Description = contentRequest.Resource.Description,
+                        FileUrl = contentRequest.Resource.FileUrl,
+                        FileName = contentRequest.Resource.FileName,
+                        FileSize = contentRequest.Resource.FileSize,
+                        ContentType = contentRequest.Resource.ContentType
+                    };
+                    return new Content(contentType, resourceData);
 
                 default:
                     throw new ArgumentException($"Unknown content type: {type}");

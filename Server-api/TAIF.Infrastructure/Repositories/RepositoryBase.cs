@@ -674,6 +674,23 @@ namespace TAIF.Infrastructure.Repositories
             return await _context.SaveChangesAsync(cancellationToken);
         }
 
+        public virtual async Task<IDisposable> BeginTransactionAsync(CancellationToken cancellationToken = default)
+        {
+            return await _context.Database.BeginTransactionAsync(cancellationToken);
+        }
+
+        public virtual async Task CommitTransactionAsync(CancellationToken cancellationToken = default)
+        {
+            if (_context.Database.CurrentTransaction != null)
+                await _context.Database.CommitTransactionAsync(cancellationToken);
+        }
+
+        public virtual async Task RollbackTransactionAsync(CancellationToken cancellationToken = default)
+        {
+            if (_context.Database.CurrentTransaction != null)
+                await _context.Database.RollbackTransactionAsync(cancellationToken);
+        }
+
         #endregion
     }
 
