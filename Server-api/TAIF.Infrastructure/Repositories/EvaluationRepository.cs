@@ -20,7 +20,7 @@ namespace TAIF.Infrastructure.Repositories
             _context = context;
         }
 
-        public override async Task<Evaluation?> GetByIdAsync(Guid id, bool withDeleted = false)
+        public override async Task<Evaluation?> GetByIdAsync(Guid id, bool withDeleted = false, CancellationToken cancellationToken = default)
         {
             IQueryable<Evaluation> query = _context.Evaluations
                 .Include(e => e.QuestionMappings);
@@ -28,10 +28,10 @@ namespace TAIF.Infrastructure.Repositories
             if (!withDeleted)
                 query = query.Where(e => !e.IsDeleted);
 
-            return await query.FirstOrDefaultAsync(e => e.Id == id);
+            return await query.FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
         }
 
-        public override async Task<List<Evaluation>> GetAllAsync(bool withDeleted = false, Expression<Func<Evaluation, object>>? orderBy = null, bool orderByDescending = false)
+        public override async Task<List<Evaluation>> GetAllAsync(bool withDeleted = false, Expression<Func<Evaluation, object>>? orderBy = null, bool orderByDescending = false, CancellationToken cancellationToken = default)
         {
             IQueryable<Evaluation> query = _context.Evaluations
                 .Include(e => e.QuestionMappings);
@@ -44,10 +44,10 @@ namespace TAIF.Infrastructure.Repositories
                 query = orderByDescending ? query.OrderByDescending(orderBy) : query.OrderBy(orderBy);
             }
 
-            return await query.ToListAsync();
+            return await query.ToListAsync(cancellationToken);
         }
 
-        public override async Task<List<Evaluation>> FindNoTrackingAsync(Expression<Func<Evaluation, bool>> predicate, bool withDeleted = false, Expression<Func<Evaluation, object>>? orderBy = null, bool orderByDescending = false)
+        public override async Task<List<Evaluation>> FindNoTrackingAsync(Expression<Func<Evaluation, bool>> predicate, bool withDeleted = false, Expression<Func<Evaluation, object>>? orderBy = null, bool orderByDescending = false, CancellationToken cancellationToken = default)
         {
             IQueryable<Evaluation> query = _context.Evaluations
                 .AsNoTracking()
@@ -63,7 +63,7 @@ namespace TAIF.Infrastructure.Repositories
                 query = orderByDescending ? query.OrderByDescending(orderBy) : query.OrderBy(orderBy);
             }
 
-            return await query.ToListAsync();
+            return await query.ToListAsync(cancellationToken);
         }
     }
 }

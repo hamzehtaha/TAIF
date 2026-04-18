@@ -8,7 +8,6 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json;
 using System.Threading.Tasks;
 using TAIF.Application.Interfaces;
 using TAIF.Domain.Entities;
@@ -287,6 +286,8 @@ namespace TAIF.Infrastructure.Data
                 entity.HasIndex(e => new { e.UserId, e.IsCompleted });
 
                 entity.HasIndex(e => new { e.CourseId, e.IsDeleted });
+
+                entity.HasIndex(e => e.UserId);
             });
 
             // LessonItemProgress configuration
@@ -317,6 +318,8 @@ namespace TAIF.Infrastructure.Data
             {
                 entity.HasIndex(e => new { e.UserId, e.CourseId })
                       .IsUnique();
+
+                entity.HasIndex(e => e.CourseId);
 
                 entity.HasOne(r => r.User)
                       .WithMany()
@@ -377,8 +380,10 @@ namespace TAIF.Infrastructure.Data
                 // Indexes
                 entity.HasIndex(e => e.UserId);
                 entity.HasIndex(e => e.LessonItemId);
-                entity.HasIndex(e => new { e.UserId, e.LessonItemId });
-            });
+                 entity.HasIndex(e => new { e.UserId, e.LessonItemId });
+
+                    entity.HasQueryFilter(e => !e.IsDeleted);
+                });
 
             // Interest configuration
             modelBuilder.Entity<Interest>(entity =>
@@ -557,6 +562,8 @@ namespace TAIF.Infrastructure.Data
                 entity.HasIndex(eqm => new { eqm.EvaluationId, eqm.QuestionId }).IsUnique();
                 entity.HasIndex(eqm => new { eqm.EvaluationId, eqm.Order });
 
+                entity.HasIndex(eqm => eqm.EvaluationId);
+
                 entity.HasOne(eqm => eqm.Evaluation)
                       .WithMany(e => e.QuestionMappings)
                       .HasForeignKey(eqm => eqm.EvaluationId)
@@ -600,6 +607,8 @@ namespace TAIF.Infrastructure.Data
                 entity.HasKey(f => f.Id);
                 entity.HasIndex(f => new { f.PlanId, f.FeatureKey }).IsUnique();
                 entity.Property(f => f.Value).HasMaxLength(500).IsRequired();
+
+                entity.HasQueryFilter(f => !f.Plan.IsDeleted);
             });
 
             // ── User subscription ────────────────────────────────────────────────
@@ -667,6 +676,8 @@ namespace TAIF.Infrastructure.Data
                       .WithMany()
                       .HasForeignKey(u => u.UserSubscriptionId)
                       .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasQueryFilter(u => !u.PromoCode.IsDeleted);
             });
 
             // ── Subscription payment ──────────────────────────────────────────────

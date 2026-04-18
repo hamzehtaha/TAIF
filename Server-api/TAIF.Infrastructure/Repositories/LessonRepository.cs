@@ -112,5 +112,16 @@ namespace TAIF.Infrastructure.Repositories
                 .GroupBy(courseId => courseId)
                 .ToDictionaryAsync(g => g.Key, g => g.Count());
         }
+
+        public async Task<int> GetLessonCountForCourseAsync(Guid courseId)
+        {
+            return await _context.CourseLessons
+                .Where(cl => !cl.IsDeleted && cl.CourseId == courseId)
+                .Join(_context.lessons.Where(l => !l.IsDeleted),
+                    cl => cl.LessonId,
+                    l => l.Id,
+                    (cl, l) => cl)
+                .CountAsync();
+        }
     }
 }

@@ -18,5 +18,10 @@ namespace TAIF.Application.Interfaces.Repositories
         /// Gets lesson count per course using the CourseLesson junction table
         /// </summary>
         Task<Dictionary<Guid, int>> GetLessonCountPerCourseAsync();
+
+        /// <summary>
+        /// Gets lesson count for a single course
+        /// </summary>
+        Task<int> GetLessonCountForCourseAsync(Guid courseId);
     }
 }

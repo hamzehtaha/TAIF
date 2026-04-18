@@ -23,7 +23,8 @@ namespace TAIF.Infrastructure.Repositories
 
         public async Task<List<EvaluationQuestion>> GetAllWithAnswersAsync(bool withDeleted = false)
         {
-            IQueryable<EvaluationQuestion> query = _context.EvaluationQuestions;
+            IQueryable<EvaluationQuestion> query = _context.EvaluationQuestions
+                .AsNoTracking();
 
             if (!withDeleted)
                 query = query.Where(q => !q.IsDeleted);
