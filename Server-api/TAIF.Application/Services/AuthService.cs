@@ -40,19 +40,31 @@ namespace TAIF.Application.Services
 
         public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
         {
-            var existing = await _userRepository.GetByEmailAsync(request.Email);
+            // Resolve the target organization: use slug if provided, otherwise fallback to public org
+            Organization? org = null;
+            if (!string.IsNullOrWhiteSpace(request.OrgSlug))
+            {
+                org = await _organizationRepository.GetBySlugAsync(request.OrgSlug);
+                if (org == null || !org.IsActive)
+                    throw new InvalidOperationException("Organization not found or is inactive.");
+            }
+            else
+            {
+                org = await _organizationRepository.GetPublicOrganizationAsync();
+                if (org == null)
+                    throw new InvalidOperationException("Public organization not found. Please run seeders first.");
+            }
+
+            // Email must be unique within the target org only
+            var existing = await _userRepository.GetByEmailInOrgAsync(request.Email, org.Id);
             if (existing is not null)
                 throw new InvalidOperationException("Unable to complete registration. Please try again or use a different email.");
-
-            var publicOrg = await _organizationRepository.GetPublicOrganizationAsync();
-            if (publicOrg == null)
-                throw new InvalidOperationException("Public organization not found. Please run seeders first.");
 
             var user = request.Adapt<User>();
             user.Id = Guid.NewGuid();
             user.PasswordHash = PasswordHelper.Hash(request.Password);
             user.IsActive = true;
-            user.OrganizationId = publicOrg.Id;
+            user.OrganizationId = org.Id;
             // Public registration always creates a Student — role escalation not allowed here
             user.Role = UserRoleType.Student;
             user.IsCompleted = true;
@@ -76,9 +88,27 @@ namespace TAIF.Application.Services
             );
         }
 
-        public async Task<AuthResponse?> LoginAsync(string email, string password)
+        public async Task<AuthResponse?> LoginAsync(string email, string password, string? orgSlug = null)
         {
-            var user = await _userRepository.GetByEmailAsync(email);
+            // Resolve org for login scope
+            Guid? orgId = null;
+            if (!string.IsNullOrWhiteSpace(orgSlug))
+            {
+                var org = await _organizationRepository.GetBySlugAsync(orgSlug);
+                if (org == null || !org.IsActive)
+                    return null;
+                orgId = org.Id;
+            }
+            else
+            {
+                var publicOrg = await _organizationRepository.GetPublicOrganizationAsync();
+                orgId = publicOrg?.Id;
+            }
+
+            if (orgId == null)
+                return null;
+
+            var user = await _userRepository.GetByEmailInOrgAsync(email, orgId.Value);
             if (user == null || !user.IsActive)
                 return null;
 
@@ -166,19 +196,47 @@ namespace TAIF.Application.Services
             return (numberOfDaysForRefresh, numberOfMinForAccessToken);
         }
 
-        public async Task ForgotPasswordAsync(string email)
+        public async Task ForgotPasswordAsync(string email, string? orgSlug = null)
         {
-            var user = await _userRepository.GetByEmailAsync(email);
+            Guid? orgId = null;
+            if (!string.IsNullOrWhiteSpace(orgSlug))
+            {
+                var org = await _organizationRepository.GetBySlugAsync(orgSlug);
+                orgId = org?.Id;
+            }
+            else
+            {
+                var publicOrg = await _organizationRepository.GetPublicOrganizationAsync();
+                orgId = publicOrg?.Id;
+            }
+
             // Always return success to prevent email enumeration
+            if (orgId == null) return;
+
+            var user = await _userRepository.GetByEmailInOrgAsync(email, orgId.Value);
             if (user == null || !user.IsActive)
                 return;
 
             await _verificationService.SendAsync(user.Id, "Email");
         }
 
-        public async Task<bool> ResetPasswordAsync(string email, string otp, string newPassword)
+        public async Task<bool> ResetPasswordAsync(string email, string otp, string newPassword, string? orgSlug = null)
         {
-            var user = await _userRepository.GetByEmailAsync(email);
+            Guid? orgId = null;
+            if (!string.IsNullOrWhiteSpace(orgSlug))
+            {
+                var org = await _organizationRepository.GetBySlugAsync(orgSlug);
+                orgId = org?.Id;
+            }
+            else
+            {
+                var publicOrg = await _organizationRepository.GetPublicOrganizationAsync();
+                orgId = publicOrg?.Id;
+            }
+
+            if (orgId == null) return false;
+
+            var user = await _userRepository.GetByEmailInOrgAsync(email, orgId.Value);
             if (user == null || !user.IsActive)
                 return false;
 

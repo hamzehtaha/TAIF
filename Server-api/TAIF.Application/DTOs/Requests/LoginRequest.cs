@@ -10,5 +10,11 @@ namespace TAIF.Application.DTOs.Requests
         public required string Email { get; set; }
 
         public required string Password { get; set; }
+
+        /// <summary>
+        /// Org slug to log into. If omitted, defaults to the public organization.
+        /// </summary>
+        [StringLength(200, ErrorMessage = "OrgSlug must not exceed 200 characters.")]
+        public string? OrgSlug { get; set; }
     }
 }

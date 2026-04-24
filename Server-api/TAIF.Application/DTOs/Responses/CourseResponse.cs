@@ -15,6 +15,8 @@ namespace TAIF.Application.DTOs.Responses
         public int TotalLessonItems { get; set; }
         public int TotalLessons { get; set; }
         public CourseStatus Status { get; set; }
+        public bool IsFree { get; set; }
+        public DateTime? FreeUntil { get; set; }
         public double Rating { get; set; }
         public int ReviewCount { get; set; }
         public Guid? OrganizationId { get; set; }

@@ -18,13 +18,16 @@ namespace TAIF.Controllers
     {
         private readonly ILearningPathService _learningPathService;
         private readonly IUserLearningPathProgressService _progressService;
+        private readonly ISubscriptionService _subscriptionService;
 
         public LearningPathController(
             ILearningPathService learningPathService,
-            IUserLearningPathProgressService progressService)
+            IUserLearningPathProgressService progressService,
+            ISubscriptionService subscriptionService)
         {
             _learningPathService = learningPathService;
             _progressService = progressService;
+            _subscriptionService = subscriptionService;
         }
 
         /// <summary>
@@ -198,6 +201,13 @@ namespace TAIF.Controllers
         [HttpPost("{id}/enroll")]
         public async Task<IActionResult> Enroll([FromRoute] Guid id)
         {
+            if (IsStudent)
+            {
+                var canAccess = await _subscriptionService.HasFeatureAsync(UserId, PlanFeatureKey.CanAccessLearningPaths);
+                if (!canAccess)
+                    return StatusCode(403, new { message = "Your current plan does not include access to learning paths. Please upgrade to enroll." });
+            }
+
             var enrollment = await _progressService.EnrollUserAsync(this.UserId, id);
             return Ok(ApiResponse<UserLearningPathProgressResponse>.SuccessResponse(enrollment.Adapt<UserLearningPathProgressResponse>()));
         }

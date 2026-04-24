@@ -31,7 +31,7 @@ namespace TAIF.Controllers
 
         [AllowAnonymous]
         [HttpGet("")]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll([FromQuery] bool? isFree = null)
         {
             var courses = await _courseService.GetAllAsync();
             if (courses is null) return NotFound();
@@ -39,6 +39,9 @@ namespace TAIF.Controllers
             var isNonStudent = User.Identity?.IsAuthenticated == true && !IsStudent;
             if (!isNonStudent)
                 courses = courses.Where(c => c.Status == CourseStatus.Published).ToList();
+
+            if (isFree.HasValue)
+                courses = courses.Where(c => c.IsFree == isFree.Value).ToList();
 
             var response = courses.Select(c => c.Adapt<CourseResponse>()).ToList();
             await EnrichWithReviewStatsAsync(response);
@@ -56,7 +59,8 @@ namespace TAIF.Controllers
                     || c.Description!.Contains(filter.Search))
                 && (!filter.CategoryId.HasValue
                     || c.CategoryId == filter.CategoryId)
-                && (isNonStudent || c.Status == CourseStatus.Published);
+                && (isNonStudent || c.Status == CourseStatus.Published)
+                && (!filter.IsFree.HasValue || c.IsFree == filter.IsFree.Value);
 
             var result = await _courseService.GetPagedAsync(
                 filter: filter,

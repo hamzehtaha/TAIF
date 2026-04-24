@@ -46,7 +46,7 @@ namespace TAIF.API.Seeder.Scripts
 
             foreach (var user in users)
             {
-                if (!_context.Users.Any(f => f.Email == user.Email))
+                if (!_context.Users.Any(f => f.Email == user.Email && f.OrganizationId == publicOrg!.Id))
                 {
                     var newUser = new User
                     {

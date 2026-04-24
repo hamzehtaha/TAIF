@@ -17,15 +17,33 @@ namespace TAIF.API.Controllers
     public class EnrollmentController : TaifControllerBase
     {
         private readonly IEnrollmentService _service;
+        private readonly ICourseService _courseService;
+        private readonly ISubscriptionService _subscriptionService;
 
-        public EnrollmentController(IEnrollmentService service)
+        public EnrollmentController(IEnrollmentService service, ICourseService courseService, ISubscriptionService subscriptionService)
         {
             _service = service;
+            _courseService = courseService;
+            _subscriptionService = subscriptionService;
         }
 
         [HttpPost]
         public async Task<IActionResult> Enroll(EnrollRequest dto)
         {
+            // Guard: students enrolling in a paid course must have CanAccessPaidCourses
+            if (IsStudent)
+            {
+                var course = await _courseService.GetByIdAsync(dto.CourseId);
+                if (course is null) return NotFound(new { message = "Course not found." });
+
+                if (!course.IsFree)
+                {
+                    var canAccess = await _subscriptionService.HasFeatureAsync(UserId, PlanFeatureKey.CanAccessPaidCourses);
+                    if (!canAccess)
+                        return StatusCode(403, new { message = "Your current plan does not include access to paid courses. Please upgrade to enroll." });
+                }
+            }
+
             var enrollment = await _service.CreateAsync(
                 new Enrollment
                 {
