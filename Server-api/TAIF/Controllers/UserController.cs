@@ -97,9 +97,13 @@ namespace TAIF.API.Controllers
 
         private async Task<IActionResult> CreateUserWithRole(CreateUserRequest request, UserRoleType role)
         {
-            var existing = await _userService.GetAllAsync();
-            if (existing.Any(u => u.Email.ToLower() == request.Email.ToLower()))
-                return BadRequest(ApiResponse<UserResponse>.FailResponse("Email already exists"));
+            // Email uniqueness is enforced per-org by the DB unique index on (Email, OrganizationId).
+            // The tenant query filter already scopes GetAllAsync() to the current org, but we do an
+            // explicit check here to return a friendly 400 before hitting the DB constraint.
+            var existingInOrg = await _userService.FindNoTrackingAsync(
+                u => u.Email.ToLower() == request.Email.ToLower());
+            if (existingInOrg.Count > 0)
+                return BadRequest(ApiResponse<UserResponse>.FailResponse("A user with this email already exists in your organization."));
 
             var user = request.Adapt<User>();
             user.Id = Guid.NewGuid();

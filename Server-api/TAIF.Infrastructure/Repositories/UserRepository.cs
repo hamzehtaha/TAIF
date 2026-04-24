@@ -19,6 +19,12 @@ public class UserRepository : RepositoryBase<User>, IUserRepository
         return await _context.Users
             .FirstOrDefaultAsync(x => x.Email == email && !x.IsDeleted);
     }
+
+    public async Task<User?> GetByEmailInOrgAsync(string email, Guid orgId)
+    {
+        return await _context.Users
+            .FirstOrDefaultAsync(x => x.Email == email && x.OrganizationId == orgId && !x.IsDeleted);
+    }
     public async Task<User?> GetByRefreshTokenAsync(string refreshToken)
     {
         return await _context.Users

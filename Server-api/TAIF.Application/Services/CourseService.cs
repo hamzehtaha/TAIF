@@ -79,6 +79,8 @@ namespace TAIF.Application.Services
                 Photo = request.Photo,
                 CategoryId = request.CategoryId,
                 Status = CourseStatus.Draft,
+                IsFree = request.IsFree,
+                FreeUntil = request.FreeUntil,
                 CreatedBy = creatorId
             };
             await _courseRepository.AddAsync(course);

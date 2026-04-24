@@ -15,6 +15,7 @@ namespace TAIF.Application.DTOs.SubscriptionDtos
         string Currency,
         DateTime? TrialEndsAt,
         bool IsInTrial,
-        int? DaysRemaining
+        int? DaysRemaining,
+        Dictionary<string, string> Features
     );
 }

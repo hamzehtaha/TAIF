@@ -17,5 +17,13 @@ namespace TAIF.Domain.Entities
         public int TotalLessonItems { get; set; } = 0;
         public int TotalLessons { get; set; } = 0;
         public CourseStatus Status { get; set; } = CourseStatus.Draft;
+
+        /// <summary>Whether this course is accessible without a paid subscription.</summary>
+        public bool IsFree { get; set; } = false;
+
+        /// <summary>
+        /// Optional: course is free until this UTC date. After this date a background job sets IsFree = false automatically.
+        /// </summary>
+        public DateTime? FreeUntil { get; set; }
     }
 }

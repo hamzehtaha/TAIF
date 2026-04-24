@@ -807,7 +807,8 @@ namespace TAIF.Application.Services
                 sub.Currency,
                 sub.TrialEndsAt,
                 IsInTrial: sub.TrialEndsAt.HasValue && sub.TrialEndsAt > now,
-                DaysRemaining: daysRemaining
+                DaysRemaining: daysRemaining,
+                Features: plan.Features?.ToDictionary(f => f.FeatureKey.ToString(), f => f.Value) ?? new()
             );
         }
 

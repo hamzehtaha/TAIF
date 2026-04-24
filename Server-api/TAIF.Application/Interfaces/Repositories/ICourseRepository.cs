@@ -10,5 +10,8 @@ namespace TAIF.Application.Interfaces.Repositories
         Task<List<Course>> GetByCategoryIdAsync(Guid categoryId, bool withDeleted = false);
         Task<List<Course>> GetByUserIdAsync(Guid userId);
         Task<Course?> GetByIdWithCategoryAsync(Guid id, bool withDeleted = false);
+
+        /// <summary>Sets IsFree = false on all courses whose FreeUntil date has passed.</summary>
+        Task<int> ExpireCourseFreeAccessAsync(DateTime utcNow);
     }
 }

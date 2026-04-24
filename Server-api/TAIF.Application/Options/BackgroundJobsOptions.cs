@@ -8,6 +8,7 @@ public class BackgroundJobsOptions
     public JobOptions SubscriptionExpiry { get; set; } = new() { Enabled = true, IntervalSeconds = 3600, InitialDelaySeconds = 30 };
     public JobOptions VideoPolling { get; set; } = new() { Enabled = true, IntervalSeconds = 10, InitialDelaySeconds = 5 };
     public JobOptions Statistics { get; set; } = new() { Enabled = true, IntervalSeconds = 21600, InitialDelaySeconds = 60 };
+    public JobOptions CourseFreeExpiry { get; set; } = new() { Enabled = true, IntervalSeconds = 86400, InitialDelaySeconds = 300 }; // runs daily
 }
 
 public class JobOptions

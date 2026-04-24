@@ -54,7 +54,7 @@ namespace TAIF.API.Controllers
         [EnableRateLimiting("AuthRateLimit")]
         public async Task<IActionResult> Login(LoginRequest request)
         {
-            var result = await _authService.LoginAsync(request.Email, request.Password);
+            var result = await _authService.LoginAsync(request.Email, request.Password, request.OrgSlug);
             if (result == null)
                 return Unauthorized(ApiResponse<string>.FailResponse("Invalid credentials"));
 
@@ -78,7 +78,7 @@ namespace TAIF.API.Controllers
         [EnableRateLimiting("AuthRateLimit")]
         public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request)
         {
-            await _authService.ForgotPasswordAsync(request.Email);
+            await _authService.ForgotPasswordAsync(request.Email, request.OrgSlug);
             // Always return success to prevent email enumeration
             return Ok(ApiResponse<string>.SuccessResponse("If the email exists, a password reset code has been sent."));
         }
@@ -88,7 +88,7 @@ namespace TAIF.API.Controllers
         [EnableRateLimiting("AuthRateLimit")]
         public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
         {
-            var result = await _authService.ResetPasswordAsync(request.Email, request.Otp, request.NewPassword);
+            var result = await _authService.ResetPasswordAsync(request.Email, request.Otp, request.NewPassword, request.OrgSlug);
             if (!result)
                 return BadRequest(ApiResponse<string>.FailResponse("Invalid or expired reset code."));
 

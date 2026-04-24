@@ -208,6 +208,7 @@ else
 builder.Services.AddHostedService<TAIF.Infrastructure.BackgroundServices.SubscriptionExpiryBackgroundService>();
 builder.Services.AddHostedService<TAIF.Infrastructure.BackgroundServices.MaintenanceBackgroundService>();
 builder.Services.AddHostedService<TAIF.Infrastructure.BackgroundServices.StatisticsBackgroundService>();
+builder.Services.AddHostedService<TAIF.Infrastructure.BackgroundServices.CourseFreeExpiryBackgroundService>();
 
 // Video services - Mux integration with provider abstraction
 builder.Services.Configure<MuxOptions>(builder.Configuration.GetSection(MuxOptions.SectionName));

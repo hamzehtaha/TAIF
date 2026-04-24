@@ -28,8 +28,6 @@ namespace TAIF.API.Seeder.Scripts
                 return;
             }
 
-            var publicOrg = _context.Organizations.FirstOrDefault(o => o.Identity == "default");
-
             var superAdmin = new User
             {
                 FirstName = "Super",
@@ -39,7 +37,7 @@ namespace TAIF.API.Seeder.Scripts
                 IsActive = true,
                 IsCompleted = true,
                 EmailVerified = true,
-                OrganizationId = publicOrg?.Id,
+                OrganizationId = null, // SuperAdmin is system-wide, not bound to any org
                 Birthday = new DateOnly(1990, 1, 1),
                 PasswordHash = PasswordHelper.Hash("123"),
             };

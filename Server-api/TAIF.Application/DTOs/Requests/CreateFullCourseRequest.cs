@@ -26,6 +26,12 @@ namespace TAIF.Application.DTOs.Requests
 
         public List<Guid> Tags { get; set; } = new();
 
+        /// <summary>Whether this course is free to access without a paid subscription.</summary>
+        public bool IsFree { get; set; } = false;
+
+        /// <summary>Optional date until which the course is free. After this date it becomes paid automatically.</summary>
+        public DateTime? FreeUntil { get; set; }
+
         [Required(ErrorMessage = "At least one lesson is required.")]
         [MinLength(1, ErrorMessage = "At least one lesson must be provided.")]
         public List<CreateFullCourseLessonRequest> Lessons { get; set; } = new();

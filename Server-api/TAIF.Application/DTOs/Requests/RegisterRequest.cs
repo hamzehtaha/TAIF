@@ -25,5 +25,11 @@ namespace TAIF.Application.DTOs.Requests
 
         [Required(ErrorMessage = "Birthday is required.")]
         public DateOnly Birthday { get; set; }
+
+        /// <summary>
+        /// Org slug to register under. If omitted, the user is registered in the default public organization.
+        /// </summary>
+        [StringLength(200, ErrorMessage = "OrgSlug must not exceed 200 characters.")]
+        public string? OrgSlug { get; set; }
     }
 }

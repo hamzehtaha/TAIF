@@ -19,5 +19,11 @@ namespace TAIF.Application.DTOs.Requests
 
         [MinLength(1, ErrorMessage = "At least one tag must be provided.")]
         public List<Guid>? Tags { get; set; }
+
+        /// <summary>Whether this course is free to access without a paid subscription.</summary>
+        public bool? IsFree { get; set; }
+
+        /// <summary>Optional date until which the course is free. Set to null to clear.</summary>
+        public DateTime? FreeUntil { get; set; }
     }
 }

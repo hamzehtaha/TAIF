@@ -88,7 +88,9 @@ namespace TAIF.Infrastructure.Data
             // User-Organization configuration
             modelBuilder.Entity<User>(entity =>
             {
-                entity.HasIndex(u => u.Email).IsUnique();
+                // Email is unique within an organization, not globally.
+                // SuperAdmin and other system users use OrganizationId = null — still unique globally for null orgs.
+                entity.HasIndex(u => new { u.Email, u.OrganizationId }).IsUnique();
                 entity.HasIndex(u => u.OrganizationId);
                 entity.HasIndex(u => u.Role);
                 entity.HasIndex(u => new { u.OrganizationId, u.Role, u.IsActive });

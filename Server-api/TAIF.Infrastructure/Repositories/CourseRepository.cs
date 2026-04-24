@@ -29,10 +29,17 @@ namespace TAIF.Infrastructure.Repositories
             var query = _context.Set<Course>()
                 .Include(c => c.Category)
                 .AsQueryable();
-            
+
             if (!withDeleted)
                 query = query.Where(c => !c.IsDeleted);
             return await query.FirstOrDefaultAsync(c => c.Id == id);
+        }
+
+        public async Task<int> ExpireCourseFreeAccessAsync(DateTime utcNow)
+        {
+            return await _context.Set<Course>()
+                .Where(c => c.IsFree && c.FreeUntil.HasValue && c.FreeUntil.Value <= utcNow)
+                .ExecuteUpdateAsync(s => s.SetProperty(c => c.IsFree, false));
         }
     }
 }

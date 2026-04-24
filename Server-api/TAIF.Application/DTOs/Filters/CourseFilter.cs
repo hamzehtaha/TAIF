@@ -17,6 +17,9 @@ namespace TAIF.Application.DTOs.Filters
         public DateTime? CreatedFrom { get; set; }
         public DateTime? CreatedTo { get; set; }
 
+        /// <summary>Filter by free (true) or paid (false) courses. Null returns all.</summary>
+        public bool? IsFree { get; set; }
+
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
             if (CreatedFrom.HasValue && CreatedTo.HasValue && CreatedFrom > CreatedTo)
