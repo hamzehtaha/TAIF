@@ -9,6 +9,7 @@ namespace TAIF.Application.DTOs.Requests
     public class CreateEvaluationQuestionRequest
     {
         public string Text { get; set; } = string.Empty;
+        public List<Guid>? SkillIds { get; set; }
         public List<CreateEvaluationAnswerDto>? Answers { get; set; }
     }
 
@@ -21,6 +22,7 @@ namespace TAIF.Application.DTOs.Requests
     public class UpdateEvaluationQuestionRequest
     {
         public string? Text { get; set; }
+        public List<Guid>? SkillIds { get; set; }
     }
 
     public class CreateEvaluationAnswerRequest

@@ -40,7 +40,6 @@ namespace TAIF.Application.Services
 
             var questionIds = dto.Answers.Select(a => a.QuestionId).ToList();
 
-            // Get all evaluation questions with their answers
             var allQuestions = await _evaluationQuestionRepository.GetAllWithAnswersAsync();
             var questions = allQuestions.Where(q => questionIds.Contains(q.Id)).ToList();
 
@@ -57,25 +56,43 @@ namespace TAIF.Application.Services
                 if (!questionAnswerIds.Contains(submitted.AnswerId))
                     throw new Exception("Invalid answer for question.");
 
-                // Get the selected answer's score
                 var selectedAnswer = question.Answers.First(a => a.Id == submitted.AnswerId);
-                int percentage = selectedAnswer.Score;
 
                 result.Questions.Add(new QuestionEvaluationResult
                 {
                     QuestionId = question.Id,
                     SelectedAnswerId = submitted.AnswerId,
-                    Percentage = percentage
+                    Percentage = selectedAnswer.Score
                 });
             }
-
-            // For evaluation questions, we don't have skill tracking like regular questions
-            result.StrengthSkillIds = new List<Guid>();
-            result.WeaknessSkillIds = new List<Guid>();
 
             result.TotalPercentage = result.Questions.Any()
                 ? (int)result.Questions.Average(q => q.Percentage)
                 : 0;
+
+            // Aggregate per-skill scores across all answered questions
+            var skillScores = new Dictionary<Guid, List<int>>();
+            foreach (var qResult in result.Questions)
+            {
+                var question = questions.First(q => q.Id == qResult.QuestionId);
+                foreach (var skillId in question.SkillIds)
+                {
+                    if (!skillScores.ContainsKey(skillId))
+                        skillScores[skillId] = new List<int>();
+                    skillScores[skillId].Add(qResult.Percentage);
+                }
+            }
+
+            // Strength: avg score >= 75 (knows it well) | Weakness: avg score < 75 (needs to learn it)
+            result.StrengthSkillIds = skillScores
+                .Where(kv => (int)kv.Value.Average() >= 75)
+                .Select(kv => kv.Key)
+                .ToList();
+
+            result.WeaknessSkillIds = skillScores
+                .Where(kv => (int)kv.Value.Average() < 75)
+                .Select(kv => kv.Key)
+                .ToList();
 
             var evaluation = new UserEvaluation
             {

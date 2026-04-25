@@ -35,18 +35,17 @@ import {
 } from "lucide-react";
 
 interface StudentEvaluationFlowProps {
-  interestId: string;
+  evaluation: Evaluation;
   onComplete: () => void;
   onSkip: () => void;
 }
 
 export function StudentEvaluationFlow({
-  interestId,
+  evaluation,
   onComplete,
   onSkip,
 }: StudentEvaluationFlowProps) {
   const [loading, setLoading] = useState(true);
-  const [evaluation, setEvaluation] = useState<Evaluation | null>(null);
   const [questions, setQuestions] = useState<EvaluationQuestion[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Map<string, string>>(new Map());
@@ -56,23 +55,15 @@ export function StudentEvaluationFlow({
   const [showSkipConfirm, setShowSkipConfirm] = useState(false);
 
   useEffect(() => {
-    loadEvaluation();
-  }, [interestId]);
+    loadQuestions();
+  }, [evaluation.id]);
 
-  const loadEvaluation = async () => {
+  const loadQuestions = async () => {
     setLoading(true);
     try {
-      const eval_ = await evaluationService.getEvaluationByInterest(interestId);
-      if (!eval_) {
-        onComplete();
-        return;
-      }
-
-      setEvaluation(eval_);
-
-      // Fetch all questions and filter by the evaluation's question mappings
       const allQuestions = await evaluationService.getAllQuestionsWithAnswers();
-      const sortedMappings = [...eval_.questionMappings].sort((a, b) => a.order - b.order);
+
+      const sortedMappings = [...evaluation.questionMappings].sort((a, b) => a.order - b.order);
       const evaluationQuestions = sortedMappings
         .map((m) => allQuestions.find((q) => q.id === m.questionId))
         .filter((q): q is EvaluationQuestion => q !== undefined);
@@ -84,7 +75,7 @@ export function StudentEvaluationFlow({
 
       setQuestions(evaluationQuestions);
     } catch (error) {
-      console.error("Failed to load evaluation:", error);
+      console.error("Failed to load evaluation questions:", error);
       onComplete();
     } finally {
       setLoading(false);
@@ -146,7 +137,7 @@ export function StudentEvaluationFlow({
     );
   }
 
-  if (!evaluation || questions.length === 0) {
+  if (questions.length === 0) {
     return null;
   }
 
@@ -159,35 +150,64 @@ export function StudentEvaluationFlow({
           </div>
           <CardTitle className="text-2xl">Evaluation Complete!</CardTitle>
           <CardDescription>
-            Here are your results
+            Your skill profile is ready — we&apos;ll use this to guide your learning path.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="text-center">
-            <div className="text-5xl font-bold text-primary mb-2">
-              {results.totalPercentage}%
-            </div>
-            <p className="text-muted-foreground">Overall Score</p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Card className="bg-green-50 dark:bg-green-950/20 border-green-200">
-              <CardContent className="p-4 text-center">
-                <CheckCircle2 className="h-8 w-8 text-green-600 mx-auto mb-2" />
+        <CardContent className="space-y-4">
+          <Card className="bg-green-50 dark:bg-green-950/20 border-green-200">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <CheckCircle2 className="h-5 w-5 text-green-600" />
                 <p className="font-semibold text-green-700 dark:text-green-400">
-                  {results.strengthSkillIds.length} Strengths
+                  Your Strengths ({results.strengthSkillIds.length})
                 </p>
-              </CardContent>
-            </Card>
-            <Card className="bg-orange-50 dark:bg-orange-950/20 border-orange-200">
-              <CardContent className="p-4 text-center">
-                <ClipboardCheck className="h-8 w-8 text-orange-600 mx-auto mb-2" />
+              </div>
+              {results.strengthSkillIds.length === 0 ? (
+                <p className="text-xs text-muted-foreground">No strong skills identified yet — keep learning!</p>
+              ) : (
+                <div className="flex flex-wrap gap-1">
+                  {results.strengthSkillIds.map((id) => (
+                    <span
+                      key={id}
+                      className="text-xs bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300 px-2 py-0.5 rounded-full"
+                    >
+                      {results.skillNames[id] ?? id}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="bg-orange-50 dark:bg-orange-950/20 border-orange-200">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <ClipboardCheck className="h-5 w-5 text-orange-600" />
                 <p className="font-semibold text-orange-700 dark:text-orange-400">
-                  {results.weaknessSkillIds.length} Areas to Improve
+                  Skills to Develop ({results.weaknessSkillIds.length})
                 </p>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+              {results.weaknessSkillIds.length === 0 ? (
+                <p className="text-xs text-muted-foreground">No gaps identified — great foundation!</p>
+              ) : (
+                <>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    We&apos;ll recommend courses to build these skills.
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {results.weaknessSkillIds.map((id) => (
+                      <span
+                        key={id}
+                        className="text-xs bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-300 px-2 py-0.5 rounded-full"
+                      >
+                        {results.skillNames[id] ?? id}
+                      </span>
+                    ))}
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
 
           <Button onClick={onComplete} className="w-full" size="lg">
             Continue to Dashboard

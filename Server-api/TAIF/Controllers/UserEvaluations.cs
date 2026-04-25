@@ -18,10 +18,12 @@ namespace TAIF.API.Controllers
     public class UserEvaluationsController : TaifControllerBase
     {
         private readonly IUserEvaluationService _service;
+        private readonly ISkillService _skillService;
 
-        public UserEvaluationsController(IUserEvaluationService service)
+        public UserEvaluationsController(IUserEvaluationService service, ISkillService skillService)
         {
             _service = service;
+            _skillService = skillService;
         }
 
         // ===============================
@@ -82,13 +84,24 @@ namespace TAIF.API.Controllers
             if (IsStudent && evaluation.UserId != this.UserId)
                 return Forbid();
 
+            var allSkillIds = evaluation.Result.StrengthSkillIds
+                .Concat(evaluation.Result.WeaknessSkillIds)
+                .Distinct()
+                .ToList();
+
+            var skills = await _skillService.GetByIdsGlobalAsync(allSkillIds);
+            var skillNames = skills.ToDictionary(s => s.Id.ToString(), s => s.Name);
+
             var response = new UserEvaluationResponseDto
             {
                 Id = evaluation.Id,
                 UserId = evaluation.UserId,
                 OrganizationId = evaluation.OrganizationId,
                 TotalPercentage = evaluation.Result.TotalPercentage,
-                CompletedAt = evaluation.CreatedAt
+                CompletedAt = evaluation.CreatedAt,
+                StrengthSkillIds = evaluation.Result.StrengthSkillIds,
+                WeaknessSkillIds = evaluation.Result.WeaknessSkillIds,
+                SkillNames = skillNames
             };
 
             return Ok(ApiResponse<UserEvaluationResponseDto>
@@ -137,6 +150,14 @@ namespace TAIF.API.Controllers
         {
             var result = await _service.SubmitAsync(UserId, OrganizationId!.Value, dto);
 
+            var allSkillIds = result.Result.StrengthSkillIds
+                .Concat(result.Result.WeaknessSkillIds)
+                .Distinct()
+                .ToList();
+
+            var skills = await _skillService.GetByIdsGlobalAsync(allSkillIds);
+            var skillNames = skills.ToDictionary(s => s.Id.ToString(), s => s.Name);
+
             var response = new SubmitEvaluationResponseDto
             {
                 EvaluationId = result.Id,
@@ -144,6 +165,7 @@ namespace TAIF.API.Controllers
                 CompletedAt = result.CreatedAt,
                 StrengthSkillIds = result.Result.StrengthSkillIds,
                 WeaknessSkillIds = result.Result.WeaknessSkillIds,
+                SkillNames = skillNames,
                 Questions = result.Result.Questions.Select(q => new QuestionEvaluationResultDto
                 {
                     QuestionId = q.QuestionId,

@@ -1,0 +1,35 @@
+[
+  {
+    "Name": "Speech & Communication Assessment",
+    "Description": "Assess your knowledge of speech therapy techniques and AAC communication strategies to receive personalized course recommendations.",
+    "InterestName": "Speech & Communication",
+    "QuestionTexts": [
+      "Can you use basic articulation techniques to help a student produce clear speech sounds?",
+      "Do you understand how to conduct a speech-language screening for students?",
+      "Are you familiar with Augmentative and Alternative Communication (AAC) devices?",
+      "Can you teach a non-verbal student to communicate using AAC strategies?"
+    ]
+  },
+  {
+    "Name": "Cognitive & Sensory Assessment",
+    "Description": "Evaluate your understanding of cognitive training methods and sensory integration to guide your learning path.",
+    "InterestName": "Cognitive Development",
+    "QuestionTexts": [
+      "Do you know evidence-based strategies for improving a student's working memory?",
+      "Can you design attention and focus training activities for students with cognitive challenges?",
+      "Do you understand how sensory processing difficulties affect student behavior?",
+      "Are you familiar with sensory diet activities that support student self-regulation?"
+    ]
+  },
+  {
+    "Name": "Assistive Technology & Behavior Assessment",
+    "Description": "Evaluate your skills in assistive technology tools and positive behavior support strategies.",
+    "InterestName": "Assistive Technology",
+    "QuestionTexts": [
+      "Can you set up and configure screen reader software for a visually impaired student?",
+      "Do you know how to evaluate and recommend adaptive devices for students with physical disabilities?",
+      "Can you implement a Positive Behavior Support (PBS) plan for a student?",
+      "Do you know how to conduct a Functional Behavior Assessment (FBA)?"
+    ]
+  }
+]

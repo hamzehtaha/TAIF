@@ -13,5 +13,8 @@ namespace TAIF.Application.DTOs.Responses
         public Guid? OrganizationId { get; set; }
         public int TotalPercentage { get; set; }
         public DateTime CompletedAt { get; set; }
+        public List<Guid> StrengthSkillIds { get; set; } = new();
+        public List<Guid> WeaknessSkillIds { get; set; } = new();
+        public Dictionary<string, string> SkillNames { get; set; } = new();
     }
 }

@@ -55,6 +55,7 @@ namespace TAIF.API.Controllers
             {
                 Id = question.Id,
                 Text = question.Text,
+                SkillIds = question.SkillIds,
                 Answers = answers.Select(a => new EvaluationAnswerResponseDto
                 {
                     Id = a.Id,
@@ -75,7 +76,8 @@ namespace TAIF.API.Controllers
         {
             var question = new EvaluationQuestion
             {
-                Text = request.Text
+                Text = request.Text,
+                SkillIds = request.SkillIds ?? new List<Guid>()
             };
 
             await _service.CreateAsync(question);
@@ -99,6 +101,7 @@ namespace TAIF.API.Controllers
             {
                 Id = question.Id,
                 Text = question.Text,
+                SkillIds = question.SkillIds,
                 Answers = answers.Select(a => new EvaluationAnswerResponseDto
                 {
                     Id = a.Id,
@@ -124,6 +127,9 @@ namespace TAIF.API.Controllers
             if (request.Text != null)
                 question.Text = request.Text;
 
+            if (request.SkillIds != null)
+                question.SkillIds = request.SkillIds;
+
             await _service.UpdateAsync(id, question);
 
             var answers = await _answerService.GetByQuestionIdAsync(id);
@@ -131,6 +137,7 @@ namespace TAIF.API.Controllers
             {
                 Id = question.Id,
                 Text = question.Text,
+                SkillIds = question.SkillIds,
                 Answers = answers.Select(a => new EvaluationAnswerResponseDto
                 {
                     Id = a.Id,

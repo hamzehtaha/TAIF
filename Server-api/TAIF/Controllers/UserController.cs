@@ -32,18 +32,6 @@ namespace TAIF.API.Controllers
             return Ok(ApiResponse<UserResponse>.SuccessResponse(user.Adapt<UserResponse>()));
         }
 
-        [HttpGet("me")]
-        public async Task<IActionResult> Me()
-        {
-            var user = await _userService.GetByIdWithOrganizationAsync(this.UserId);
-
-            if (user == null)
-                return NotFound(ApiResponse<UserResponse>.FailResponse("User not found"));
-
-            var userResponse = user.Adapt<UserResponse>();
-            return Ok(ApiResponse<UserResponse>.SuccessResponse(userResponse));
-        }
-
         #region Admin User Management
 
         [HttpGet]

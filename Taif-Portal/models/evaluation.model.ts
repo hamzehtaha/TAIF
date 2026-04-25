@@ -8,6 +8,7 @@ export interface EvaluationAnswer {
 export interface EvaluationQuestion {
   id: string;
   text: string;
+  skillIds: string[];
   answers: EvaluationAnswer[];
 }
 
@@ -27,11 +28,13 @@ export interface Evaluation {
 
 export interface CreateEvaluationQuestionRequest {
   text: string;
+  skillIds?: string[];
   answers: Omit<EvaluationAnswer, 'id' | 'evaluationQuestionId'>[];
 }
 
 export interface UpdateEvaluationQuestionRequest {
   text?: string;
+  skillIds?: string[];
 }
 
 export interface CreateEvaluationAnswerRequest {
@@ -94,6 +97,7 @@ export interface SubmitEvaluationResponse {
   completedAt: string;
   strengthSkillIds: string[];
   weaknessSkillIds: string[];
+  skillNames: Record<string, string>;
   questions: QuestionEvaluationResult[];
 }
 
@@ -103,4 +107,7 @@ export interface UserEvaluationResponse {
   organizationId?: string;
   totalPercentage: number;
   completedAt: string;
+  strengthSkillIds: string[];
+  weaknessSkillIds: string[];
+  skillNames: Record<string, string>;
 }

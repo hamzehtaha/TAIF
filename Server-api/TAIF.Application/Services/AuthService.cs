@@ -90,25 +90,36 @@ namespace TAIF.Application.Services
 
         public async Task<AuthResponse?> LoginAsync(string email, string password, string? orgSlug = null)
         {
-            // Resolve org for login scope
-            Guid? orgId = null;
-            if (!string.IsNullOrWhiteSpace(orgSlug))
+            User? user;
+
+            // SuperAdmin (role = 0) has no org — bypass org resolution
+            var superAdminCandidate = await _userRepository.GetByEmailAsync(email);
+            if (superAdminCandidate?.Role == UserRoleType.SuperAdmin)
             {
-                var org = await _organizationRepository.GetBySlugAsync(orgSlug);
-                if (org == null || !org.IsActive)
-                    return null;
-                orgId = org.Id;
+                user = superAdminCandidate;
             }
             else
             {
-                var publicOrg = await _organizationRepository.GetPublicOrganizationAsync();
-                orgId = publicOrg?.Id;
+                // Resolve org for login scope
+                Guid? orgId = null;
+                if (!string.IsNullOrWhiteSpace(orgSlug))
+                {
+                    var org = await _organizationRepository.GetBySlugAsync(orgSlug);
+                    if (org == null || !org.IsActive)
+                        return null;
+                    orgId = org.Id;
+                }
+                else
+                {
+                    var publicOrg = await _organizationRepository.GetPublicOrganizationAsync();
+                    orgId = publicOrg?.Id;
+                }
+
+                if (orgId == null)
+                    return null;
+
+                user = await _userRepository.GetByEmailInOrgAsync(email, orgId.Value);
             }
-
-            if (orgId == null)
-                return null;
-
-            var user = await _userRepository.GetByEmailInOrgAsync(email, orgId.Value);
             if (user == null || !user.IsActive)
                 return null;
 

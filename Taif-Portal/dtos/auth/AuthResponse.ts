@@ -3,4 +3,5 @@ export interface AuthResponse {
   accessTokenExpiresAt: string;
   refreshToken: string;
   refreshTokenExpiresAt: string;
+  role: string;
 }

@@ -44,7 +44,7 @@ builder.Services.Configure<FileUploadOptions>(builder.Configuration.GetSection(F
 builder.Services.Configure<CacheOptions>(builder.Configuration.GetSection(CacheOptions.SectionName));
 builder.Services.Configure<RecommendationOptions>(builder.Configuration.GetSection(RecommendationOptions.SectionName));
 
-// In-memory caching — backed by ICacheService abstraction (swap to Redis by changing registration)
+// In-memory caching ï¿½ backed by ICacheService abstraction (swap to Redis by changing registration)
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<ICacheService, MemoryCacheService>();
 
@@ -81,7 +81,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 
-// Verification system — multi-channel, extensible
+// Verification system ï¿½ multi-channel, extensible
 // To add SMS: implement IVerificationChannel with ChannelName="SMS" and register below
 builder.Services.Configure<TAIF.Application.Options.VerificationOptions>(
     builder.Configuration.GetSection(TAIF.Application.Options.VerificationOptions.SectionName));
@@ -148,7 +148,6 @@ builder.Services.AddScoped<ILearningPathSectionService, LearningPathSectionServi
 builder.Services.AddScoped<ILearningPathCourseService, LearningPathCourseService>();
 builder.Services.AddScoped<IUserLearningPathProgressService, UserLearningPathProgressService>();
 builder.Services.AddScoped<ILearningPathStatisticsService, LearningPathStatisticsService>();
-builder.Services.AddSingleton<IAiHelperService, OllamaAiHelperService>();
 
 builder.Services.AddScoped<IEvaluationQuestionRepository, EvaluationQuestionRepository>();
 builder.Services.AddScoped<IEvaluationAnswerRepository, EvaluationAnswerRepository>();
@@ -204,7 +203,7 @@ else
         throw new InvalidOperationException("No production payment gateway configured. Register a real IPaymentGateway implementation."));
 }
 
-// Background jobs — all configurable via BackgroundJobs section, can be enabled/disabled individually
+// Background jobs ï¿½ all configurable via BackgroundJobs section, can be enabled/disabled individually
 builder.Services.AddHostedService<TAIF.Infrastructure.BackgroundServices.SubscriptionExpiryBackgroundService>();
 builder.Services.AddHostedService<TAIF.Infrastructure.BackgroundServices.MaintenanceBackgroundService>();
 builder.Services.AddHostedService<TAIF.Infrastructure.BackgroundServices.StatisticsBackgroundService>();
@@ -330,7 +329,7 @@ builder.Services.AddResponseCompression(options =>
     options.Providers.Add<GzipCompressionProvider>();
 });
 
-// Rate limiting — values from RateLimiting configuration section
+// Rate limiting ï¿½ values from RateLimiting configuration section
 var rateLimitConfig = builder.Configuration.GetSection(RateLimitingOptions.SectionName).Get<RateLimitingOptions>() ?? new RateLimitingOptions();
 builder.Services.AddRateLimiter(options =>
 {
@@ -387,22 +386,23 @@ if (args.Length >= 2 && args[0].Equals("seed", StringComparison.OrdinalIgnoreCas
     // Canonical run order across all seeders (lower = earlier)
     static int SeedOrder(IEntitySeeder s) => s.GetType().Name switch
     {
-        // --- Production seeders (0–19) ---
+        // --- Production seeders (0ï¿½19) ---
         "OrganizationSeeder"        => 0,
         "SubscriptionPlanSeeder"    => 1,
         "CurrencyRateSeeder"        => 2,
-        "EvaluationQuestionSeeder"  => 3,
-        "RecommendationSeeder"      => 4,
-        "SuperAdminSeeder"          => 5,
-        // --- Test seeders (20–99) ---
+        "RecommendationSeeder"      => 3,
+        "SuperAdminSeeder"          => 4,
+        // --- Test seeders (20ï¿½99) ---
         "SkillSeeder"               => 20,
         "UserSeeder"                => 21,
         "InstructorSeeder"          => 22,
-        "CourseSeeder"              => 23,
-        "LearningPathSeeder"        => 24,
-        "AnswerSeeder"              => 25,
-        "QuestionSeeder"            => 26,
-        "PromoCodeSeeder"           => 27,
+        "EvaluationQuestionSeeder"  => 23,
+        "EvaluationSeeder"          => 24,
+        "CourseSeeder"              => 25,
+        "LearningPathSeeder"        => 26,
+        "AnswerSeeder"              => 27,
+        "QuestionSeeder"            => 28,
+        "PromoCodeSeeder"           => 29,
         _                           => 99
     };
 
@@ -455,7 +455,7 @@ if (args.Length >= 2 && args[0].Equals("seed", StringComparison.OrdinalIgnoreCas
                 Console.WriteLine($"? Seeder for '{entityName}' not found.");
                 Console.WriteLine("Available seeders:");
                 foreach (var s in allSeeders.OrderBy(SeedOrder))
-                    Console.WriteLine($"  • {s.GetType().Name.Replace("Seeder", "")} [{s.Category}]");
+                    Console.WriteLine($"  ï¿½ {s.GetType().Name.Replace("Seeder", "")} [{s.Category}]");
                 return;
             }
 
@@ -532,7 +532,6 @@ void InjectSeeders()
     builder.Services.AddScoped<IEntitySeeder, OrganizationSeeder>();
     builder.Services.AddScoped<IEntitySeeder, SubscriptionPlanSeeder>();
     builder.Services.AddScoped<IEntitySeeder, CurrencyRateSeeder>();
-    builder.Services.AddScoped<IEntitySeeder, EvaluationQuestionSeeder>();
     builder.Services.AddScoped<IEntitySeeder, RecommendationSeeder>();
     builder.Services.AddScoped<IEntitySeeder, SuperAdminSeeder>();
 
@@ -540,6 +539,8 @@ void InjectSeeders()
     builder.Services.AddScoped<IEntitySeeder, SkillSeeder>();
     builder.Services.AddScoped<IEntitySeeder, UserSeeder>();
     builder.Services.AddScoped<IEntitySeeder, InstructorSeeder>();
+    builder.Services.AddScoped<IEntitySeeder, EvaluationQuestionSeeder>();
+    builder.Services.AddScoped<IEntitySeeder, EvaluationSeeder>();
     builder.Services.AddScoped<IEntitySeeder, CourseSeeder>();
     builder.Services.AddScoped<IEntitySeeder, LearningPathSeeder>();
     builder.Services.AddScoped<IEntitySeeder, AnswerSeeder>();

@@ -26,6 +26,9 @@ namespace TAIF.Application.Services
             _mappingRepository = mappingRepository;
         }
 
+        public Task<List<Evaluation>> GetByInterestIdsAsync(List<Guid> interestIds)
+            => _repository.GetByInterestIdsAsync(interestIds);
+
         public async Task<Evaluation> UpdateWithMappingsAsync(Guid id, Evaluation updatedEvaluation)
         {
             var existingEvaluation = await _repository.GetByIdAsync(id);

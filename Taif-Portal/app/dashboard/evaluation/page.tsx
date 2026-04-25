@@ -18,10 +18,16 @@ import { ClipboardCheck, CheckCircle2, ArrowRight } from "lucide-react";
 export default function EvaluationPage() {
   const router = useRouter();
   const user = authService.getUser();
+
   const [loading, setLoading] = useState(true);
-  const [availableEvaluation, setAvailableEvaluation] = useState<Evaluation | null>(null);
   const [hasTakenEvaluation, setHasTakenEvaluation] = useState(false);
+
+  // Queue of evaluations matched to the user's interests
+  const [evaluationQueue, setEvaluationQueue] = useState<Evaluation[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [showEvaluation, setShowEvaluation] = useState(false);
+
+  const currentEvaluation = evaluationQueue[currentIndex] ?? null;
 
   useEffect(() => {
     checkEvaluationStatus();
@@ -34,21 +40,16 @@ export default function EvaluationPage() {
     }
 
     try {
-      // Check if user has already taken an evaluation
       const taken = await evaluationService.hasUserTakenEvaluation(user.id);
       setHasTakenEvaluation(taken);
 
       if (!taken) {
-        // Get user's interests and find an evaluation for any of them
         const userInterests = await interestService.getUserInterests();
-        
-        // Try to find an evaluation for any of the user's interests
-        for (const interest of userInterests) {
-          const evaluation = await evaluationService.getEvaluationByInterest(interest.id);
-          if (evaluation) {
-            setAvailableEvaluation(evaluation);
-            break;
-          }
+        if (userInterests.length > 0) {
+          const interestIds = userInterests.map((i) => i.id);
+          // Single batch request — avoids serial calls and bypasses the tenant filter
+          const matched = await evaluationService.getEvaluationsByInterests(interestIds);
+          setEvaluationQueue(matched);
         }
       }
     } catch (error) {
@@ -59,17 +60,20 @@ export default function EvaluationPage() {
   };
 
   const handleComplete = () => {
-    setShowEvaluation(false);
-    setHasTakenEvaluation(true);
+    const nextIndex = currentIndex + 1;
+    if (nextIndex < evaluationQueue.length) {
+      // More evaluations in the queue — advance to next
+      setCurrentIndex(nextIndex);
+    } else {
+      // All done
+      setShowEvaluation(false);
+      setHasTakenEvaluation(true);
+    }
   };
 
   const handleSkip = () => {
     setShowEvaluation(false);
     router.push("/dashboard");
-  };
-
-  const handleStartEvaluation = () => {
-    setShowEvaluation(true);
   };
 
   if (loading) {
@@ -84,13 +88,19 @@ export default function EvaluationPage() {
     );
   }
 
-  if (showEvaluation && availableEvaluation?.interestId) {
+  if (showEvaluation && currentEvaluation) {
     return (
       <ProtectedRoute>
         <MainLayout>
           <div className="container mx-auto px-4 py-12">
+            {evaluationQueue.length > 1 && (
+              <p className="text-center text-sm text-muted-foreground mb-6">
+                Evaluation {currentIndex + 1} of {evaluationQueue.length}
+              </p>
+            )}
             <StudentEvaluationFlow
-              interestId={availableEvaluation.interestId}
+              key={currentEvaluation.id}
+              evaluation={currentEvaluation}
               onComplete={handleComplete}
               onSkip={handleSkip}
             />
@@ -134,7 +144,7 @@ export default function EvaluationPage() {
                   </Button>
                 </CardContent>
               </Card>
-            ) : availableEvaluation ? (
+            ) : evaluationQueue.length > 0 ? (
               <Card>
                 <CardHeader className="text-center">
                   <div className="mx-auto mb-4 p-4 bg-primary/10 rounded-full w-fit">
@@ -142,7 +152,7 @@ export default function EvaluationPage() {
                   </div>
                   <CardTitle>Take Your Skills Evaluation</CardTitle>
                   <CardDescription>
-                    Complete this short evaluation to help us understand your current
+                    Complete {evaluationQueue.length === 1 ? "this evaluation" : `these ${evaluationQueue.length} evaluations`} to help us understand your current
                     skill level and provide personalized course recommendations.
                   </CardDescription>
                 </CardHeader>
@@ -151,12 +161,15 @@ export default function EvaluationPage() {
                     <Badge variant="secondary">5-10 minutes</Badge>
                     <Badge variant="secondary">Multiple choice</Badge>
                     <Badge variant="secondary">Personalized results</Badge>
+                    {evaluationQueue.length > 1 && (
+                      <Badge variant="outline">{evaluationQueue.length} evaluations</Badge>
+                    )}
                   </div>
                   <div className="flex justify-center gap-4 pt-4">
                     <Button variant="outline" onClick={() => router.push("/dashboard")}>
                       Skip for Now
                     </Button>
-                    <Button onClick={handleStartEvaluation}>
+                    <Button onClick={() => setShowEvaluation(true)}>
                       Start Evaluation
                       <ArrowRight className="h-4 w-4 ml-2" />
                     </Button>
@@ -168,14 +181,13 @@ export default function EvaluationPage() {
                 <CardHeader className="text-center">
                   <CardTitle>No Evaluation Available</CardTitle>
                   <CardDescription>
-                    There is no evaluation available for your selected interest at this time.
+                    There is no evaluation available for your selected interests at this time.
                     Please check back later or contact support.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="text-center">
                   <Button onClick={() => router.push("/dashboard")}>
                     Go to Dashboard
-                    <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                 </CardContent>
               </Card>

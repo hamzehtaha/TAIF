@@ -16,5 +16,8 @@ namespace TAIF.Application.Services
         {
             _repository = repository;
         }
+
+        public Task<List<Skill>> GetByIdsGlobalAsync(IEnumerable<Guid> ids)
+            => _repository.GetByIdsGlobalAsync(ids);
     }
 }

@@ -9,5 +9,6 @@ namespace TAIF.Application.Interfaces.Repositories
 {
     public interface IEvaluationRepository : IRepository<Evaluation>
     {
+        Task<List<Evaluation>> GetByInterestIdsAsync(List<Guid> interestIds);
     }
 }

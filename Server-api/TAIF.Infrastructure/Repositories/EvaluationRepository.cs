@@ -65,5 +65,17 @@ namespace TAIF.Infrastructure.Repositories
 
             return await query.ToListAsync(cancellationToken);
         }
+
+        // Bypasses the global tenant filter so that null-org (global) evaluations
+        // created by SuperAdmin are visible to all organisation-scoped users.
+        public async Task<List<Evaluation>> GetByInterestIdsAsync(List<Guid> interestIds)
+        {
+            return await _context.Evaluations
+                .IgnoreQueryFilters()
+                .AsNoTracking()
+                .Include(e => e.QuestionMappings)
+                .Where(e => !e.IsDeleted && e.InterestId.HasValue && interestIds.Contains(e.InterestId.Value))
+                .ToListAsync();
+        }
     }
 }

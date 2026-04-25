@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.EntityFrameworkCore;
 using TAIF.Application.Interfaces.Repositories;
 using TAIF.Domain.Entities;
 using TAIF.Infrastructure.Data;
@@ -16,5 +12,11 @@ namespace TAIF.Infrastructure.Repositories
         {
             _context = context;
         }
+
+        public Task<List<Skill>> GetByIdsGlobalAsync(IEnumerable<Guid> ids)
+            => _context.Skills
+                .IgnoreQueryFilters()
+                .Where(s => !s.IsDeleted && ids.Contains(s.Id))
+                .ToListAsync();
     }
 }

@@ -1,11 +1,5 @@
 [
   {
-    "firstName": "Super",
-    "lastName": "Admin",
-    "email": "super@taif.com",
-    "role": "SuperAdmin"
-  },
-  {
     "firstName": "Admin",
     "lastName": "User",
     "email": "admin@taif.com",
