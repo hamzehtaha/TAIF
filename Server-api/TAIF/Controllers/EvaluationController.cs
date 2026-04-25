@@ -72,33 +72,49 @@ namespace TAIF.API.Controllers
         }
 
         // =========================
-        // GET BY INTEREST
+        // GET BY INTEREST (single)
         // =========================
         [HttpGet("interest/{interestId}")]
         [AllowAnonymous]
         public async Task<IActionResult> GetByInterest(Guid interestId)
         {
-            var evaluations = await _evaluationService.FindNoTrackingAsync(e => e.InterestId == interestId);
+            var evaluations = await _evaluationService.GetByInterestIdsAsync(new List<Guid> { interestId });
             var evaluation = evaluations.FirstOrDefault();
 
             if (evaluation == null)
                 return NotFound(ApiResponse<EvaluationResponse>.FailResponse("No evaluation found for this interest"));
 
-            var response = new EvaluationResponse
-            {
-                Id = evaluation.Id,
-                Name = evaluation.Name,
-                Description = evaluation.Description,
-                InterestId = evaluation.InterestId,
-                QuestionMappings = evaluation.QuestionMappings.Select(qm => new QuestionMappingResponseDto
-                {
-                    QuestionId = qm.QuestionId,
-                    Order = qm.Order
-                }).ToList()
-            };
-
-            return Ok(ApiResponse<EvaluationResponse>.SuccessResponse(response));
+            return Ok(ApiResponse<EvaluationResponse>.SuccessResponse(ToResponse(evaluation)));
         }
+
+        // =========================
+        // GET BY INTERESTS (batch)
+        // =========================
+        [HttpGet("by-interests")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetByInterests([FromQuery] List<Guid> interestIds)
+        {
+            if (interestIds == null || interestIds.Count == 0)
+                return BadRequest(ApiResponse<List<EvaluationResponse>>.FailResponse("At least one interest ID is required"));
+
+            var evaluations = await _evaluationService.GetByInterestIdsAsync(interestIds);
+
+            var response = evaluations.Select(ToResponse).ToList();
+            return Ok(ApiResponse<List<EvaluationResponse>>.SuccessResponse(response));
+        }
+
+        private static EvaluationResponse ToResponse(Evaluation e) => new()
+        {
+            Id = e.Id,
+            Name = e.Name,
+            Description = e.Description,
+            InterestId = e.InterestId,
+            QuestionMappings = e.QuestionMappings.Select(qm => new QuestionMappingResponseDto
+            {
+                QuestionId = qm.QuestionId,
+                Order = qm.Order
+            }).ToList()
+        };
 
         // =========================
         // CREATE

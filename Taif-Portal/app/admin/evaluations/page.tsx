@@ -21,7 +21,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -389,8 +388,8 @@ export default function EvaluationsPage() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh]">
-          <DialogHeader>
+        <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col gap-0 p-0">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
             <DialogTitle>
               {editingEvaluation ? "Edit Evaluation" : "Create Evaluation"}
             </DialogTitle>
@@ -400,120 +399,144 @@ export default function EvaluationsPage() {
                 : "Add a new evaluation and assign questions to it"}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <Label htmlFor="name">Name *</Label>
-                <Input
-                  id="name"
-                  value={evaluationName}
-                  onChange={(e) => setEvaluationName(e.target.value)}
-                  placeholder="e.g., Skills Assessment"
-                />
-              </div>
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={evaluationDescription}
-                  onChange={(e) => setEvaluationDescription(e.target.value)}
-                  placeholder="Optional description of the evaluation"
-                  rows={3}
-                />
-              </div>
-              <div>
-                <Label htmlFor="interest">Interest</Label>
-                <select
-                  id="interest"
-                  value={selectedInterestId}
-                  onChange={(e) => setSelectedInterestId(e.target.value)}
-                  className="w-full h-10 px-3 py-2 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-                >
-                  <option value="">Select an interest (optional)</option>
-                  {interests.map((interest) => (
-                    <option key={interest.id} value={interest.id}>
-                      {interest.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+
+          {/* Scrollable body */}
+          <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+            <div>
+              <Label htmlFor="name">Name *</Label>
+              <Input
+                id="name"
+                value={evaluationName}
+                onChange={(e) => setEvaluationName(e.target.value)}
+                placeholder="e.g., Skills Assessment"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={evaluationDescription}
+                onChange={(e) => setEvaluationDescription(e.target.value)}
+                placeholder="Optional description of the evaluation"
+                rows={3}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="interest">Interest</Label>
+              <select
+                id="interest"
+                value={selectedInterestId}
+                onChange={(e) => setSelectedInterestId(e.target.value)}
+                className="mt-1 w-full h-10 px-3 py-2 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="">Select an interest (optional)</option>
+                {interests.map((interest) => (
+                  <option key={interest.id} value={interest.id}>
+                    {interest.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>
-              <Label className="mb-3 block">
-                Assign Questions ({questionMappings.length} selected)
-              </Label>
-              <ScrollArea className="h-64 border rounded-lg p-4">
-                {questions.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">
-                    No questions available. Create questions first.
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    {questions.map((question) => {
-                      const mapping = questionMappings.find((m) => m.questionId === question.id);
-                      const isSelected = !!mapping;
-                      return (
+              <div className="flex items-center justify-between mb-2">
+                <Label>
+                  Assign Questions
+                </Label>
+                {questionMappings.length > 0 && (
+                  <Badge variant="secondary">
+                    {questionMappings.length} selected
+                  </Badge>
+                )}
+              </div>
+
+              {questions.length === 0 ? (
+                <p className="text-sm text-center text-muted-foreground py-8 border rounded-lg">
+                  No questions available. Create questions first.
+                </p>
+              ) : (
+                <div className="border rounded-lg divide-y overflow-hidden">
+                  {questions.map((question) => {
+                    const mapping = questionMappings.find((m) => m.questionId === question.id);
+                    const isSelected = !!mapping;
+                    const sortedMappings = [...questionMappings].sort((a, b) => a.order - b.order);
+                    const positionIndex = sortedMappings.findIndex((m) => m.questionId === question.id);
+                    const isFirst = positionIndex === 0;
+                    const isLast = positionIndex === sortedMappings.length - 1;
+
+                    return (
+                      <div
+                        key={question.id}
+                        className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors select-none ${
+                          isSelected ? "bg-primary/5" : "hover:bg-muted/40"
+                        }`}
+                        onClick={() => handleToggleQuestion(question.id)}
+                      >
+                        {/* Custom checkbox */}
                         <div
-                          key={question.id}
-                          className={`flex items-start gap-3 p-3 border rounded-lg transition-colors ${
+                          className={`shrink-0 h-5 w-5 rounded border-2 flex items-center justify-center transition-colors ${
                             isSelected
-                              ? "bg-primary/5 border-primary/30"
-                              : "hover:bg-muted/50"
+                              ? "bg-primary border-primary"
+                              : "border-muted-foreground/40 bg-background"
                           }`}
                         >
-                          <Checkbox
-                            checked={isSelected}
-                            onCheckedChange={() =>
-                              handleToggleQuestion(question.id)
-                            }
-                          />
-                          <div className="flex-1 cursor-pointer" onClick={() => handleToggleQuestion(question.id)}>
-                            <span className="font-medium text-sm">
-                              {question.text}
-                            </span>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {question.answers.length} answer(s)
-                            </p>
-                          </div>
                           {isSelected && (
-                            <div className="flex items-center gap-1">
-                              <Badge variant="outline" className="font-mono text-xs">
-                                #{mapping?.order}
-                              </Badge>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleMoveQuestion(question.id, "up");
-                                }}
-                              >
-                                <ArrowUp className="h-3 w-3" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleMoveQuestion(question.id, "down");
-                                }}
-                              >
-                                <ArrowDown className="h-3 w-3" />
-                              </Button>
-                            </div>
+                            <svg className="h-3 w-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
                           )}
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </ScrollArea>
+
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium leading-snug">{question.text}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {question.answers.length} answer(s)
+                            {question.skillIds?.length > 0 && (
+                              <span className="ml-2 text-primary/70">· {question.skillIds.length} skill(s)</span>
+                            )}
+                          </p>
+                        </div>
+
+                        {isSelected && (
+                          <div
+                            className="flex items-center gap-1 shrink-0"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Badge variant="outline" className="font-mono text-xs tabular-nums">
+                              #{positionIndex + 1}
+                            </Badge>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              disabled={isFirst}
+                              onClick={() => handleMoveQuestion(question.id, "up")}
+                            >
+                              <ArrowUp className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              disabled={isLast}
+                              onClick={() => handleMoveQuestion(question.id, "down")}
+                            >
+                              <ArrowDown className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
-          <DialogFooter>
+
+          {/* Sticky footer */}
+          <DialogFooter className="px-6 py-4 border-t shrink-0">
             <Button variant="outline" onClick={handleCloseDialog}>
               Cancel
             </Button>

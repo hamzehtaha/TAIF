@@ -9,5 +9,6 @@ namespace TAIF.Application.Interfaces.Repositories
 {
     public interface ISkillRepository : IRepository<Skill>
     {
+        Task<List<Skill>> GetByIdsGlobalAsync(IEnumerable<Guid> ids);
     }
 }

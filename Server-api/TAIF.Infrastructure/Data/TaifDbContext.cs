@@ -535,6 +535,24 @@ namespace TAIF.Infrastructure.Data
                        .IsRequired();
             });
 
+            modelBuilder.Entity<EvaluationQuestion>(builder =>
+            {
+                builder.ToTable("EvaluationQuestions");
+
+                builder.HasKey(x => x.Id);
+
+                builder.Property(x => x.Text)
+                       .IsRequired();
+
+                builder.Property(x => x.SkillIds)
+                       .IsRequired();
+
+                builder.HasMany(x => x.Answers)
+                       .WithOne(a => a.EvaluationQuestion)
+                       .HasForeignKey(a => a.EvaluationQuestionId)
+                       .OnDelete(DeleteBehavior.Cascade);
+            });
+
             // VideoAsset configuration - standalone reference table for video processing tracking
             modelBuilder.Entity<VideoAsset>(entity =>
             {

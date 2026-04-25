@@ -9,5 +9,6 @@ namespace TAIF.Application.Interfaces.Services
 {
     public interface ISkillService : IService<Skill>
     {
+        Task<List<Skill>> GetByIdsGlobalAsync(IEnumerable<Guid> ids);
     }
 }

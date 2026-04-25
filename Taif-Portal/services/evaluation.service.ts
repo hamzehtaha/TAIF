@@ -52,6 +52,16 @@ class EvaluationService {
     }
   }
 
+  async getEvaluationsByInterests(interestIds: string[]): Promise<Evaluation[]> {
+    if (interestIds.length === 0) return [];
+    const params = interestIds.map((id) => `interestIds=${id}`).join("&");
+    try {
+      return await httpService.get<Evaluation[]>(`${this.evaluationPath}/by-interests?${params}`);
+    } catch {
+      return [];
+    }
+  }
+
   // ==================== EVALUATION QUESTIONS ====================
 
   async getAllQuestionsWithAnswers(): Promise<EvaluationQuestion[]> {
@@ -98,8 +108,8 @@ class EvaluationService {
     return httpService.get<UserEvaluation[]>(this.userEvaluationPath);
   }
 
-  async getUserEvaluationById(id: string): Promise<UserEvaluation> {
-    return httpService.get<UserEvaluation>(`${this.userEvaluationPath}/${id}`);
+  async getUserEvaluationById(id: string): Promise<UserEvaluationResponse> {
+    return httpService.get<UserEvaluationResponse>(`${this.userEvaluationPath}/${id}`);
   }
 
   async getUserEvaluationsByUserId(userId: string): Promise<UserEvaluationResponse[]> {

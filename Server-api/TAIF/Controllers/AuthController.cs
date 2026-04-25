@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Mapster;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using TAIF.Application.DTOs.Requests;
@@ -26,6 +27,18 @@ namespace TAIF.API.Controllers
             _logger = logger;
             _userService = userService;
             _verificationService = verificationService;
+        }
+
+        [HttpGet("me")]
+        public async Task<IActionResult> Me()
+        {
+            var user = await _userService.GetByIdWithOrganizationAsync(this.UserId);
+
+            if (user == null)
+                return NotFound(ApiResponse<UserResponse>.FailResponse("User not found"));
+
+            var userResponse = user.Adapt<UserResponse>();
+            return Ok(ApiResponse<UserResponse>.SuccessResponse(userResponse));
         }
 
         [HttpPost("register")]

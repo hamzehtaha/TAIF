@@ -10,6 +10,7 @@ import {
   Loader2,
   ChevronDown,
   ChevronRight,
+  X,
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,12 +41,27 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { evaluationService } from "@/services/evaluation.service";
+import { skillService } from "@/services/skill.service";
 import {
   EvaluationQuestion,
   EvaluationAnswer,
   CreateEvaluationQuestionRequest,
 } from "@/models/evaluation.model";
+import { Skill } from "@/models/skill.model";
 import { PuzzleLoader } from "@/components/PuzzleLoader";
 import { useToast } from "@/hooks/use-toast";
 
@@ -56,6 +72,7 @@ interface AnswerFormData {
 
 export default function EvaluationQuestionsPage() {
   const [questions, setQuestions] = useState<EvaluationQuestion[]>([]);
+  const [allSkills, setAllSkills] = useState<Skill[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -63,6 +80,8 @@ export default function EvaluationQuestionsPage() {
   const [questionDialogOpen, setQuestionDialogOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<EvaluationQuestion | null>(null);
   const [questionText, setQuestionText] = useState("");
+  const [selectedSkillIds, setSelectedSkillIds] = useState<string[]>([]);
+  const [skillPickerOpen, setSkillPickerOpen] = useState(false);
   const [answers, setAnswers] = useState<AnswerFormData[]>([
     { text: "", score: 0 },
   ]);
@@ -79,23 +98,25 @@ export default function EvaluationQuestionsPage() {
   const [deleteType, setDeleteType] = useState<"question" | "answer">("question");
   const [deleteId, setDeleteId] = useState<string>("");
 
-  // Expanded questions state
   const [expandedQuestions, setExpandedQuestions] = useState<Set<string>>(new Set());
-
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    loadQuestions();
+    loadData();
   }, []);
 
-  const loadQuestions = async () => {
+  const loadData = async () => {
     setIsLoading(true);
     try {
-      const data = await evaluationService.getAllQuestionsWithAnswers();
-      setQuestions(data);
+      const [questionsData, skillsData] = await Promise.all([
+        evaluationService.getAllQuestionsWithAnswers(),
+        skillService.getAllSkills(),
+      ]);
+      setQuestions(questionsData);
+      setAllSkills(skillsData);
     } catch (error) {
-      console.error("Failed to load questions:", error);
+      console.error("Failed to load data:", error);
       toast({
         title: "Error",
         description: "Failed to load evaluation questions",
@@ -109,20 +130,31 @@ export default function EvaluationQuestionsPage() {
   const toggleQuestion = (id: string) => {
     setExpandedQuestions((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   };
+
+  const toggleSkill = (skillId: string) => {
+    setSelectedSkillIds((prev) =>
+      prev.includes(skillId) ? prev.filter((id) => id !== skillId) : [...prev, skillId]
+    );
+  };
+
+  const removeSkill = (skillId: string) => {
+    setSelectedSkillIds((prev) => prev.filter((id) => id !== skillId));
+  };
+
+  const getSkillName = (id: string) =>
+    allSkills.find((s) => s.id === id)?.name ?? id;
 
   // Question Dialog Handlers
   const handleOpenQuestionDialog = (question?: EvaluationQuestion) => {
     if (question) {
       setEditingQuestion(question);
       setQuestionText(question.text);
+      setSelectedSkillIds(question.skillIds ?? []);
       setAnswers(
         question.answers.length > 0
           ? question.answers.map((a) => ({ text: a.text, score: a.score }))
@@ -131,6 +163,7 @@ export default function EvaluationQuestionsPage() {
     } else {
       setEditingQuestion(null);
       setQuestionText("");
+      setSelectedSkillIds([]);
       setAnswers([{ text: "", score: 0 }]);
     }
     setQuestionDialogOpen(true);
@@ -140,6 +173,7 @@ export default function EvaluationQuestionsPage() {
     setQuestionDialogOpen(false);
     setEditingQuestion(null);
     setQuestionText("");
+    setSelectedSkillIds([]);
     setAnswers([{ text: "", score: 0 }]);
   };
 
@@ -148,9 +182,7 @@ export default function EvaluationQuestionsPage() {
   };
 
   const handleRemoveAnswer = (index: number) => {
-    if (answers.length > 1) {
-      setAnswers(answers.filter((_, i) => i !== index));
-    }
+    if (answers.length > 1) setAnswers(answers.filter((_, i) => i !== index));
   };
 
   const handleAnswerChange = (
@@ -165,21 +197,13 @@ export default function EvaluationQuestionsPage() {
 
   const handleSubmitQuestion = async () => {
     if (!questionText.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "Question text is required",
-        variant: "destructive",
-      });
+      toast({ title: "Validation Error", description: "Question text is required", variant: "destructive" });
       return;
     }
 
     const validAnswers = answers.filter((a) => a.text.trim());
-    if (validAnswers.length === 0) {
-      toast({
-        title: "Validation Error",
-        description: "At least one answer is required",
-        variant: "destructive",
-      });
+    if (!editingQuestion && validAnswers.length === 0) {
+      toast({ title: "Validation Error", description: "At least one answer is required", variant: "destructive" });
       return;
     }
 
@@ -188,31 +212,23 @@ export default function EvaluationQuestionsPage() {
       if (editingQuestion) {
         await evaluationService.updateQuestion(editingQuestion.id, {
           text: questionText,
+          skillIds: selectedSkillIds,
         });
-        toast({
-          title: "Success",
-          description: "Question updated successfully",
-        });
+        toast({ title: "Success", description: "Question updated successfully" });
       } else {
         const request: CreateEvaluationQuestionRequest = {
           text: questionText,
+          skillIds: selectedSkillIds,
           answers: validAnswers,
         };
         await evaluationService.createQuestion(request);
-        toast({
-          title: "Success",
-          description: "Question created successfully",
-        });
+        toast({ title: "Success", description: "Question created successfully" });
       }
       handleCloseQuestionDialog();
-      loadQuestions();
+      loadData();
     } catch (error) {
       console.error("Failed to save question:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save question",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to save question", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
@@ -243,45 +259,24 @@ export default function EvaluationQuestionsPage() {
 
   const handleSubmitAnswer = async () => {
     if (!answerText.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "Answer text is required",
-        variant: "destructive",
-      });
+      toast({ title: "Validation Error", description: "Answer text is required", variant: "destructive" });
       return;
     }
 
     setIsSubmitting(true);
     try {
       if (editingAnswer) {
-        await evaluationService.updateAnswer(editingAnswer.id, {
-          text: answerText,
-          score: answerScore,
-        });
-        toast({
-          title: "Success",
-          description: "Answer updated successfully",
-        });
+        await evaluationService.updateAnswer(editingAnswer.id, { text: answerText, score: answerScore });
+        toast({ title: "Success", description: "Answer updated successfully" });
       } else {
-        await evaluationService.createAnswer({
-          evaluationQuestionId: answerQuestionId,
-          text: answerText,
-          score: answerScore,
-        });
-        toast({
-          title: "Success",
-          description: "Answer created successfully",
-        });
+        await evaluationService.createAnswer({ evaluationQuestionId: answerQuestionId, text: answerText, score: answerScore });
+        toast({ title: "Success", description: "Answer created successfully" });
       }
       handleCloseAnswerDialog();
-      loadQuestions();
+      loadData();
     } catch (error) {
       console.error("Failed to save answer:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save answer",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to save answer", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
@@ -302,20 +297,13 @@ export default function EvaluationQuestionsPage() {
       } else {
         await evaluationService.deleteAnswer(deleteId);
       }
-      toast({
-        title: "Success",
-        description: `${deleteType === "question" ? "Question" : "Answer"} deleted successfully`,
-      });
+      toast({ title: "Success", description: `${deleteType === "question" ? "Question" : "Answer"} deleted successfully` });
       setDeleteDialogOpen(false);
       setDeleteId("");
-      loadQuestions();
+      loadData();
     } catch (error) {
       console.error("Failed to delete:", error);
-      toast({
-        title: "Error",
-        description: `Failed to delete ${deleteType}`,
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: `Failed to delete ${deleteType}`, variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
@@ -372,128 +360,104 @@ export default function EvaluationQuestionsPage() {
           <CardContent>
             {filteredQuestions.length === 0 ? (
               <div className="text-center text-muted-foreground py-8">
-                {searchQuery
-                  ? "No questions found matching your search"
-                  : "No questions yet. Create your first question!"}
+                {searchQuery ? "No questions found matching your search" : "No questions yet. Create your first question!"}
               </div>
             ) : (
               <div className="space-y-3">
                 {filteredQuestions.map((question) => (
-                    <Collapsible
-                      key={question.id}
-                      open={expandedQuestions.has(question.id)}
-                      onOpenChange={() => toggleQuestion(question.id)}
-                    >
-                      <Card className="border shadow-sm">
-                        <div className="p-4">
-                          <div className="flex items-start justify-between gap-4">
-                            <CollapsibleTrigger className="flex items-center gap-3 flex-1 text-left">
-                              <div className="flex-1">
-                                <p className="font-medium">{question.text}</p>
-                                <p className="text-sm text-muted-foreground mt-1">
+                  <Collapsible
+                    key={question.id}
+                    open={expandedQuestions.has(question.id)}
+                    onOpenChange={() => toggleQuestion(question.id)}
+                  >
+                    <Card className="border shadow-sm">
+                      <div className="p-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <CollapsibleTrigger className="flex items-center gap-3 flex-1 text-left">
+                            <div className="flex-1">
+                              <p className="font-medium">{question.text}</p>
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                {(question.skillIds ?? []).map((sid) => (
+                                  <Badge key={sid} variant="secondary" className="text-xs">
+                                    {getSkillName(sid)}
+                                  </Badge>
+                                ))}
+                                <span className="text-sm text-muted-foreground">
+                                  {(question.skillIds ?? []).length === 0 && "No skills assigned · "}
                                   {question.answers.length} answer(s)
-                                </p>
+                                </span>
                               </div>
-                              {expandedQuestions.has(question.id) ? (
-                                <ChevronDown className="h-4 w-4" />
-                              ) : (
-                                <ChevronRight className="h-4 w-4" />
-                              )}
-                            </CollapsibleTrigger>
-                            <div className="flex gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleOpenQuestionDialog(question);
-                                }}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleConfirmDelete("question", question.id);
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
                             </div>
+                            {expandedQuestions.has(question.id) ? (
+                              <ChevronDown className="h-4 w-4" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" />
+                            )}
+                          </CollapsibleTrigger>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => { e.stopPropagation(); handleOpenQuestionDialog(question); }}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => { e.stopPropagation(); handleConfirmDelete("question", question.id); }}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
                           </div>
                         </div>
-                        <CollapsibleContent>
-                          <div className="border-t px-4 py-3 bg-muted/30">
-                            <div className="flex items-center justify-between mb-3">
-                              <h4 className="text-sm font-medium">Answers</h4>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleOpenAnswerDialog(question.id)}
-                              >
-                                <Plus className="h-3 w-3 mr-1" />
-                                Add Answer
-                              </Button>
-                            </div>
-                            {question.answers.length === 0 ? (
-                              <p className="text-sm text-muted-foreground text-center py-4">
-                                No answers yet
-                              </p>
-                            ) : (
-                              <div className="space-y-2">
-                                {question.answers.map((answer) => (
-                                  <div
-                                    key={answer.id}
-                                    className="flex items-center justify-between p-3 bg-background rounded-lg border"
-                                  >
-                                    <div className="flex items-center gap-3">
-                                      <Badge
-                                        variant={
-                                          answer.score >= 75
-                                            ? "default"
-                                            : answer.score >= 50
-                                            ? "secondary"
-                                            : "outline"
-                                        }
-                                        className="min-w-[60px] justify-center"
-                                      >
-                                        {answer.score}%
-                                      </Badge>
-                                      <span className="text-sm">{answer.text}</span>
-                                    </div>
-                                    <div className="flex gap-1">
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8"
-                                        onClick={() =>
-                                          handleOpenAnswerDialog(question.id, answer)
-                                        }
-                                      >
-                                        <Pencil className="h-3 w-3" />
-                                      </Button>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8"
-                                        onClick={() =>
-                                          handleConfirmDelete("answer", answer.id)
-                                        }
-                                      >
-                                        <Trash2 className="h-3 w-3 text-destructive" />
-                                      </Button>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
+                      </div>
+                      <CollapsibleContent>
+                        <div className="border-t px-4 py-3 bg-muted/30">
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="text-sm font-medium">Answers</h4>
+                            <Button variant="outline" size="sm" onClick={() => handleOpenAnswerDialog(question.id)}>
+                              <Plus className="h-3 w-3 mr-1" />
+                              Add Answer
+                            </Button>
                           </div>
-                        </CollapsibleContent>
-                      </Card>
-                    </Collapsible>
-                  ))}
+                          {question.answers.length === 0 ? (
+                            <p className="text-sm text-muted-foreground text-center py-4">No answers yet</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {question.answers.map((answer) => (
+                                <div
+                                  key={answer.id}
+                                  className="flex items-center justify-between p-3 bg-background rounded-lg border"
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <Badge
+                                      variant={answer.score >= 75 ? "default" : answer.score >= 50 ? "secondary" : "outline"}
+                                      className="min-w-[60px] justify-center"
+                                    >
+                                      {answer.score}%
+                                    </Badge>
+                                    <span className="text-sm">{answer.text}</span>
+                                  </div>
+                                  <div className="flex gap-1">
+                                    <Button variant="ghost" size="icon" className="h-8 w-8"
+                                      onClick={() => handleOpenAnswerDialog(question.id, answer)}>
+                                      <Pencil className="h-3 w-3" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8"
+                                      onClick={() => handleConfirmDelete("answer", answer.id)}>
+                                      <Trash2 className="h-3 w-3 text-destructive" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </CollapsibleContent>
+                    </Card>
+                  </Collapsible>
+                ))}
               </div>
             )}
           </CardContent>
@@ -504,13 +468,9 @@ export default function EvaluationQuestionsPage() {
       <Dialog open={questionDialogOpen} onOpenChange={setQuestionDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              {editingQuestion ? "Edit Question" : "Create Question"}
-            </DialogTitle>
+            <DialogTitle>{editingQuestion ? "Edit Question" : "Create Question"}</DialogTitle>
             <DialogDescription>
-              {editingQuestion
-                ? "Update the question and its answers"
-                : "Add a new evaluation question with answers"}
+              {editingQuestion ? "Update the question, skills and answers" : "Add a new evaluation question with skills and answers"}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-6">
@@ -524,32 +484,77 @@ export default function EvaluationQuestionsPage() {
               />
             </div>
 
+            {/* Skill picker */}
+            <div className="space-y-2">
+              <Label>Skills</Label>
+              <Popover open={skillPickerOpen} onOpenChange={setSkillPickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start text-muted-foreground font-normal">
+                    <Plus className="h-4 w-4 mr-2" />
+                    {selectedSkillIds.length === 0 ? "Select skills..." : `${selectedSkillIds.length} skill(s) selected`}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-72 p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search skills..." />
+                    <CommandList>
+                      <CommandEmpty>No skills found.</CommandEmpty>
+                      <CommandGroup>
+                        {allSkills.map((skill) => (
+                          <CommandItem
+                            key={skill.id}
+                            onSelect={() => toggleSkill(skill.id)}
+                            className="flex items-center gap-2"
+                          >
+                            <div className={`h-4 w-4 border rounded flex items-center justify-center ${selectedSkillIds.includes(skill.id) ? "bg-primary border-primary" : "border-input"}`}>
+                              {selectedSkillIds.includes(skill.id) && (
+                                <svg className="h-3 w-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </div>
+                            {skill.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+
+              {selectedSkillIds.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {selectedSkillIds.map((sid) => (
+                    <Badge key={sid} variant="secondary" className="gap-1">
+                      {getSkillName(sid)}
+                      <button onClick={() => removeSkill(sid)} className="hover:text-destructive">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Skills linked to this question determine strength/weakness assessment after evaluation
+              </p>
+            </div>
+
             {!editingQuestion && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <Label>Answers *</Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleAddAnswer}
-                  >
+                  <Button type="button" variant="outline" size="sm" onClick={handleAddAnswer}>
                     <Plus className="h-3 w-3 mr-1" />
                     Add Answer
                   </Button>
                 </div>
                 {answers.map((answer, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-3 p-3 border rounded-lg bg-muted/30"
-                  >
+                  <div key={index} className="flex items-center gap-3 p-3 border rounded-lg bg-muted/30">
                     <div className="flex-1">
                       <Input
                         placeholder="Answer text"
                         value={answer.text}
-                        onChange={(e) =>
-                          handleAnswerChange(index, "text", e.target.value)
-                        }
+                        onChange={(e) => handleAnswerChange(index, "text", e.target.value)}
                       />
                     </div>
                     <div className="w-24">
@@ -559,13 +564,7 @@ export default function EvaluationQuestionsPage() {
                         max={100}
                         placeholder="Score"
                         value={answer.score}
-                        onChange={(e) =>
-                          handleAnswerChange(
-                            index,
-                            "score",
-                            parseInt(e.target.value) || 0
-                          )
-                        }
+                        onChange={(e) => handleAnswerChange(index, "score", parseInt(e.target.value) || 0)}
                       />
                     </div>
                     <Button
@@ -580,21 +579,16 @@ export default function EvaluationQuestionsPage() {
                   </div>
                 ))}
                 <p className="text-xs text-muted-foreground">
-                  Score represents the percentage value (0-100) for each answer
+                  Score (0-100): ≥75 = strength, &lt;50 = weakness
                 </p>
               </div>
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={handleCloseQuestionDialog}>
-              Cancel
-            </Button>
+            <Button variant="outline" onClick={handleCloseQuestionDialog}>Cancel</Button>
             <Button onClick={handleSubmitQuestion} disabled={isSubmitting}>
               {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Saving...
-                </>
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving...</>
               ) : (
                 <>{editingQuestion ? "Update" : "Create"}</>
               )}
@@ -607,13 +601,9 @@ export default function EvaluationQuestionsPage() {
       <Dialog open={answerDialogOpen} onOpenChange={setAnswerDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>
-              {editingAnswer ? "Edit Answer" : "Add Answer"}
-            </DialogTitle>
+            <DialogTitle>{editingAnswer ? "Edit Answer" : "Add Answer"}</DialogTitle>
             <DialogDescription>
-              {editingAnswer
-                ? "Update the answer details"
-                : "Add a new answer to the question"}
+              {editingAnswer ? "Update the answer details" : "Add a new answer to the question"}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -637,20 +627,15 @@ export default function EvaluationQuestionsPage() {
                 onChange={(e) => setAnswerScore(parseInt(e.target.value) || 0)}
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Score represents the percentage value for this answer
+                ≥75 = strength, &lt;50 = weakness for linked skills
               </p>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={handleCloseAnswerDialog}>
-              Cancel
-            </Button>
+            <Button variant="outline" onClick={handleCloseAnswerDialog}>Cancel</Button>
             <Button onClick={handleSubmitAnswer} disabled={isSubmitting}>
               {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Saving...
-                </>
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving...</>
               ) : (
                 <>{editingAnswer ? "Update" : "Add"}</>
               )}
@@ -659,19 +644,14 @@ export default function EvaluationQuestionsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Confirmation */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              Delete {deleteType === "question" ? "Question" : "Answer"}
-            </AlertDialogTitle>
+            <AlertDialogTitle>Delete {deleteType === "question" ? "Question" : "Answer"}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this{" "}
-              {deleteType === "question" ? "question" : "answer"}? This action
-              cannot be undone.
-              {deleteType === "question" &&
-                " All associated answers will also be deleted."}
+              Are you sure you want to delete this {deleteType === "question" ? "question" : "answer"}? This action cannot be undone.
+              {deleteType === "question" && " All associated answers will also be deleted."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -682,13 +662,8 @@ export default function EvaluationQuestionsPage() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                "Delete"
-              )}
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Deleting...</>
+              ) : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

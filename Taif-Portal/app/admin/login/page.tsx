@@ -41,12 +41,11 @@ export default function AdminLogin() {
         email: formData.email,
         password: formData.password,
       });
-
       // Check if user is an instructor
       const user = authService.getUser();
       if (user?.role !== UserRole.Instructor && user?.role !== UserRole.OrgAdmin && user?.role !== UserRole.SystemAdmin) {
         setError("This login is for admins only. Please use the student login page.");
-        authService.logout();
+        //authService.logout();
         return;
       }
 
